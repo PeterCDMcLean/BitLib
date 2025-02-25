@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <type_traits>
+#include <cstddef>
 // Project sources
 // Third-party libraries
 // Miscellaneous
@@ -38,20 +39,23 @@ template <class Iterator> class bit_iterator;
 
 /* ***************************** BINARY DIGITS ****************************** */
 // Binary digits structure definition
-template <class UIntType>
-struct binary_digits
-: std::conditional<
-    std::is_const<UIntType>::value || std::is_volatile<UIntType>::value,
-    binary_digits<typename std::remove_cv<UIntType>::type>,
-    std::integral_constant<std::size_t, std::numeric_limits<UIntType>::digits>
->::type
+// Implementation template: only instantiates static_asserts for non-byte types.
+template <typename T, bool = std::is_same<T, std::byte>::value>
+struct binary_digits_impl : std::integral_constant<std::size_t, std::numeric_limits<T>::digits>
 {
-    // Assertions
-    static_assert(std::is_integral<UIntType>::value, "");
-    static_assert(std::is_unsigned<UIntType>::value, "");
-    static_assert(!std::is_same<UIntType, bool>::value, "");
-    static_assert(!std::is_same<UIntType, char>::value, "");
+    static_assert(std::is_integral<T>::value, "Type must be integral");
+    static_assert(std::is_unsigned<T>::value, "Type must be unsigned");
+    static_assert(!std::is_same<T, bool>::value, "Type must not be bool");
+    static_assert(!std::is_same<T, char>::value, "Type must not be char");
 };
+
+// Specialization for std::byte.
+template <>
+struct binary_digits_impl<std::byte, true> : std::integral_constant<std::size_t, std::numeric_limits<unsigned char>::digits> {};
+
+// Public interface that removes cv-qualifiers.
+template <typename UIntType>
+struct binary_digits : binary_digits_impl<std::remove_cv_t<UIntType>> {};
 
 // Binary digits value
 template <class T>

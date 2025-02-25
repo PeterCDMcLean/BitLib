@@ -1,6 +1,6 @@
 // =============================== FIXTURES ================================= //
 // Project:         The Experimental Bit Algorithms Library
-// Description:     Fixtures for testing 
+// Description:     Fixtures for testing
 // Contributor(s):  Bryce Kille
 // License:         BSD 3-Clause License
 // ========================================================================== //
@@ -12,6 +12,7 @@
 #include <type_traits>
 // Project sources
 #include "bitlib/bit-containers/bit-containers.hpp"
+#include "bitlib/bit-containers/bit_bitsof.hpp"
 #include "fixtures.hpp"
 // Third-party libraries
 #include "gtest/gtest.h"
@@ -29,6 +30,7 @@ TYPED_TEST(VectorTest, DefaultConstructor) {
 // Tests the size c'tor.
 TYPED_TEST(VectorTest, SizeInitializerConstructor) {
     EXPECT_EQ(18, this->v2_.size());
+    EXPECT_EQ(18, bitsof(this->v2_));
     for (auto bv: this->v2_) {
         EXPECT_FALSE(bv);
     }
@@ -44,7 +46,7 @@ TYPED_TEST(VectorTest, SizeInitializerConstructor) {
         // TODO misplaced test for range-based for loop
         for (auto bv: this->empty_vec) {
             EXPECT_FALSE(bv);
-            i++; 
+            i++;
         }
         EXPECT_EQ(i, veclen);
     }
@@ -58,7 +60,7 @@ TYPED_TEST(VectorTest, CountValueConstructor) {
         // TODO misplaced test for range-based for loop
         for (auto bv: this->empty_vec) {
             EXPECT_TRUE(bv);
-            i++; 
+            i++;
         }
         EXPECT_EQ(i, veclen);
         this->empty_vec = vec_type(veclen, bit::bit0);
@@ -66,7 +68,7 @@ TYPED_TEST(VectorTest, CountValueConstructor) {
         // TODO misplaced test for range-based for loop
         for (auto bv: this->empty_vec) {
             EXPECT_FALSE(bv);
-            i++; 
+            i++;
         }
         EXPECT_EQ(i, veclen);
     }
@@ -81,8 +83,8 @@ TYPED_TEST(VectorTest, WordIterPairConstructor) {
         std::vector<WordType> word_vec = get_random_vec<WordType>(veclen);
         vec_type test(word_vec.begin(), word_vec.end());
         EXPECT_TRUE(std::equal(
-                    test.begin(), 
-                    test.end(), 
+                    test.begin(),
+                    test.end(),
                     bit::bit_iterator<iterator_type>(word_vec.begin()),
                     bit::bit_iterator<iterator_type>(word_vec.end())));
     }
@@ -95,8 +97,8 @@ TYPED_TEST(VectorTest, BoolIterPairConstructor) {
         auto& boolvec = this->random_boolvecs[vec_idx];
         vec_type test = vec_type(boolvec.begin(), boolvec.end());
         EXPECT_TRUE(std::equal(
-                test.begin(), 
-                test.end(), 
+                test.begin(),
+                test.end(),
                 boolvec.begin(),
                 boolvec.end(),
                 comparator));
@@ -111,8 +113,8 @@ TYPED_TEST(VectorTest, CopyConstructor) {
         auto& boolvec = this->random_boolvecs[vec_idx];
         vec_type test = vec_type(bitvec);
         EXPECT_TRUE(std::equal(
-                test.begin(), 
-                test.end(), 
+                test.begin(),
+                test.end(),
                 boolvec.begin(),
                 boolvec.end(),
                 comparator));
@@ -126,8 +128,8 @@ TYPED_TEST(VectorTest, MoveConstructor) {
         auto& boolvec = this->random_boolvecs[vec_idx];
         vec_type test = vec_type(std::move(bitvec));
         EXPECT_TRUE(std::equal(
-                test.begin(), 
-                test.end(), 
+                test.begin(),
+                test.end(),
                 boolvec.begin(),
                 boolvec.end(),
                 comparator));
@@ -149,10 +151,10 @@ TYPED_TEST(VectorTest, StringConstructor) {
         }
         this->empty_vec = bit::bit_vector<WordType>(rand_bs);
         EXPECT_TRUE(std::equal(
-                    this->empty_vec.begin(), 
-                    this->empty_vec.end(), 
-                    this->empty_vec_bool.begin(), 
-                    this->empty_vec_bool.end(), 
+                    this->empty_vec.begin(),
+                    this->empty_vec.end(),
+                    this->empty_vec_bool.begin(),
+                    this->empty_vec_bool.end(),
                     comparator));
     }
 }
@@ -174,10 +176,10 @@ TYPED_TEST(VectorTest, CopyAssignment) {
         this->empty_vec = bitvec;
         EXPECT_NE(this->empty_vec.begin().base(), bitvec.begin().base());
         EXPECT_TRUE(std::equal(
-                    this->empty_vec.begin(), 
-                    this->empty_vec.end(), 
-                    boolvec.begin(), 
-                    boolvec.end(), 
+                    this->empty_vec.begin(),
+                    this->empty_vec.end(),
+                    boolvec.begin(),
+                    boolvec.end(),
                     comparator));
         if (bitvec.size() > 0) {
             bitvec[0] = ~bitvec[0];
@@ -201,10 +203,10 @@ TYPED_TEST(VectorTest, MoveAssignment) {
         this->empty_vec = std::move(bitvec);
         EXPECT_EQ(this->empty_vec.begin().base(), bitvec_base);
         EXPECT_TRUE(std::equal(
-                    this->empty_vec.begin(), 
-                    this->empty_vec.end(), 
-                    boolvec.begin(), 
-                    boolvec.end(), 
+                    this->empty_vec.begin(),
+                    this->empty_vec.end(),
+                    boolvec.begin(),
+                    boolvec.end(),
                     comparator));
     }
 }
@@ -217,10 +219,10 @@ TYPED_TEST(VectorTest, InitializerListConstructor) {
     std::vector<bool> boolvec {true, false, true, true, true, false, false, true, false, true, true, false};
     vec_type test {true, false, true, true, true, false, false, true, false, true, true, false};
     EXPECT_TRUE(std::equal(
-            test.begin(), 
-            test.end(), 
-            boolvec.begin(), 
-            boolvec.end(), 
+            test.begin(),
+            test.end(),
+            boolvec.begin(),
+            boolvec.end(),
             comparator));
 }
 
@@ -252,10 +254,10 @@ TYPED_TEST(VectorTest, BracketWrite) {
             boolvec[i] = !boolvec[i];
         }
         EXPECT_TRUE(std::equal(
-                bitvec.begin(), 
-                bitvec.end(), 
-                boolvec.begin(), 
-                boolvec.end(), 
+                bitvec.begin(),
+                bitvec.end(),
+                boolvec.begin(),
+                boolvec.end(),
                 comparator));
 }
 }
@@ -361,19 +363,19 @@ TYPED_TEST(VectorTest, InsertAtEnd1) {
         bool to_insert_bool = generate_random_number(0, 1) > 0 ? true : false;
         bit::bit_value to_insert_bit = to_insert_bool ? bit::bit1 : bit::bit0;
         auto bitret = this->empty_vec.insert(
-                this->empty_vec.end(), 
+                this->empty_vec.end(),
                 to_insert_bit);
         auto boolret = this->empty_vec_bool.insert(
-                this->empty_vec_bool.end(), 
+                this->empty_vec_bool.end(),
                 to_insert_bool);
         EXPECT_TRUE(std::equal(
-                    this->empty_vec.begin(), 
-                    this->empty_vec.end(), 
-                    this->empty_vec_bool.begin(), 
-                    this->empty_vec_bool.end(), 
+                    this->empty_vec.begin(),
+                    this->empty_vec.end(),
+                    this->empty_vec_bool.begin(),
+                    this->empty_vec_bool.end(),
                     comparator));
         EXPECT_EQ(
-                std::distance(this->empty_vec.begin(), bitret), 
+                std::distance(this->empty_vec.begin(), bitret),
                 std::distance(this->empty_vec_bool.begin(), boolret));
     }
 }
@@ -383,19 +385,19 @@ TYPED_TEST(VectorTest, InsertAtBegin1) {
         bool to_insert_bool = generate_random_number(0, 1) > 0 ? true : false;
         bit::bit_value to_insert_bit = to_insert_bool ? bit::bit1 : bit::bit0;
         auto bitret = this->empty_vec.insert(
-                this->empty_vec.begin(), 
+                this->empty_vec.begin(),
                 to_insert_bit);
         auto boolret = this->empty_vec_bool.insert(
-                this->empty_vec_bool.begin(), 
+                this->empty_vec_bool.begin(),
                 to_insert_bool);
         EXPECT_TRUE(std::equal(
-                    this->empty_vec.begin(), 
-                    this->empty_vec.end(), 
-                    this->empty_vec_bool.begin(), 
-                    this->empty_vec_bool.end(), 
+                    this->empty_vec.begin(),
+                    this->empty_vec.end(),
+                    this->empty_vec_bool.begin(),
+                    this->empty_vec_bool.end(),
                     comparator));
         EXPECT_EQ(
-                std::distance(this->empty_vec.begin(), bitret), 
+                std::distance(this->empty_vec.begin(), bitret),
                 std::distance(this->empty_vec_bool.begin(), boolret));
     }
 }
@@ -410,16 +412,16 @@ TYPED_TEST(VectorTest, InsertAtRand1) {
                 this->empty_vec.begin() + insert_location,
                 to_insert_bit);
         auto boolret = this->empty_vec_bool.insert(
-                this->empty_vec_bool.begin() + insert_location, 
+                this->empty_vec_bool.begin() + insert_location,
                 to_insert_bool);
         EXPECT_TRUE(std::equal(
-                    this->empty_vec.begin(), 
-                    this->empty_vec.end(), 
-                    this->empty_vec_bool.begin(), 
-                    this->empty_vec_bool.end(), 
+                    this->empty_vec.begin(),
+                    this->empty_vec.end(),
+                    this->empty_vec_bool.begin(),
+                    this->empty_vec_bool.end(),
                     comparator));
         EXPECT_EQ(
-                std::distance(this->empty_vec.begin(), bitret), 
+                std::distance(this->empty_vec.begin(), bitret),
                 std::distance(this->empty_vec_bool.begin(), boolret));
     }
 }
@@ -429,21 +431,21 @@ TYPED_TEST(VectorTest, InsertAtBegin2) {
     for (auto _ = 16; _--;) {
         auto to_insert = generate_random_number(0, 4*this->digits);
         auto bitret = this->empty_vec.insert(
-                this->empty_vec.begin(), 
-                to_insert, 
+                this->empty_vec.begin(),
+                to_insert,
                 bit::bit1);
         auto boolret = this->empty_vec_bool.insert(
                 this->empty_vec_bool.begin(),
-                to_insert, 
+                to_insert,
                 true);
         EXPECT_TRUE(std::equal(
-                    this->empty_vec.begin(), 
-                    this->empty_vec.end(), 
-                    this->empty_vec_bool.begin(), 
-                    this->empty_vec_bool.end(), 
+                    this->empty_vec.begin(),
+                    this->empty_vec.end(),
+                    this->empty_vec_bool.begin(),
+                    this->empty_vec_bool.end(),
                     comparator));
         EXPECT_EQ(
-                std::distance(this->empty_vec.begin(), bitret), 
+                std::distance(this->empty_vec.begin(), bitret),
                 std::distance(this->empty_vec_bool.begin(), boolret));
     }
 }
@@ -453,21 +455,21 @@ TYPED_TEST(VectorTest, InsertAtEnd2) {
     for (auto _ = 16; _--;) {
         auto to_insert = generate_random_number(0, 444*this->digits);
         auto bitret = this->empty_vec.insert(
-                this->empty_vec.end(), 
-                to_insert, 
+                this->empty_vec.end(),
+                to_insert,
                 bit::bit1);
         auto boolret = this->empty_vec_bool.insert(
-                this->empty_vec_bool.end(), 
-                to_insert, 
+                this->empty_vec_bool.end(),
+                to_insert,
                 true);
         EXPECT_TRUE(std::equal(
-                    this->empty_vec.begin(), 
-                    this->empty_vec.end(), 
-                    this->empty_vec_bool.begin(), 
-                    this->empty_vec_bool.end(), 
+                    this->empty_vec.begin(),
+                    this->empty_vec.end(),
+                    this->empty_vec_bool.begin(),
+                    this->empty_vec_bool.end(),
                     comparator));
         EXPECT_EQ(
-                std::distance(this->empty_vec.begin(), bitret), 
+                std::distance(this->empty_vec.begin(), bitret),
                 std::distance(this->empty_vec_bool.begin(), boolret));
     }
 }
@@ -478,21 +480,21 @@ TYPED_TEST(VectorTest, InsertAtRand2) {
         auto to_insert = generate_random_number(0, 4*this->digits);
         auto insert_location = generate_random_number(0, this->empty_vec.size());
         auto bitret = this->empty_vec.insert(
-                this->empty_vec.begin() + insert_location, 
-                to_insert, 
+                this->empty_vec.begin() + insert_location,
+                to_insert,
                 bit::bit1);
         auto boolret = this->empty_vec_bool.insert(
-                this->empty_vec_bool.begin() + insert_location, 
-                to_insert, 
+                this->empty_vec_bool.begin() + insert_location,
+                to_insert,
                 true);
         EXPECT_TRUE(std::equal(
-                    this->empty_vec.begin(), 
-                    this->empty_vec.end(), 
-                    this->empty_vec_bool.begin(), 
-                    this->empty_vec_bool.end(), 
+                    this->empty_vec.begin(),
+                    this->empty_vec.end(),
+                    this->empty_vec_bool.begin(),
+                    this->empty_vec_bool.end(),
                     comparator));
         EXPECT_EQ(
-                std::distance(this->empty_vec.begin(), bitret), 
+                std::distance(this->empty_vec.begin(), bitret),
                 std::distance(this->empty_vec_bool.begin(), boolret));
     }
 }
@@ -504,21 +506,21 @@ TYPED_TEST(VectorTest, InsertAtBegin3) {
         auto insert_bitvec = this->random_bitvecs[to_insert];
         auto insert_boolvec = this->random_boolvecs[to_insert];
         auto bitret = this->empty_vec.insert(
-                this->empty_vec.begin(), 
-                insert_bitvec.begin(), 
+                this->empty_vec.begin(),
+                insert_bitvec.begin(),
                 insert_bitvec.end());
         auto boolret = this->empty_vec_bool.insert(
-                this->empty_vec_bool.begin(), 
-                insert_boolvec.begin(), 
+                this->empty_vec_bool.begin(),
+                insert_boolvec.begin(),
                 insert_boolvec.end());
         EXPECT_TRUE(std::equal(
-                    this->empty_vec.begin(), 
-                    this->empty_vec.end(), 
-                    this->empty_vec_bool.begin(), 
-                    this->empty_vec_bool.end(), 
+                    this->empty_vec.begin(),
+                    this->empty_vec.end(),
+                    this->empty_vec_bool.begin(),
+                    this->empty_vec_bool.end(),
                     comparator));
         EXPECT_EQ(
-                std::distance(this->empty_vec.begin(), bitret), 
+                std::distance(this->empty_vec.begin(), bitret),
                 std::distance(this->empty_vec_bool.begin(), boolret));
     }
 }
@@ -530,21 +532,21 @@ TYPED_TEST(VectorTest, InsertAtEnd3) {
         auto insert_bitvec = this->random_bitvecs[to_insert];
         auto insert_boolvec = this->random_boolvecs[to_insert];
         auto bitret = this->empty_vec.insert(
-                this->empty_vec.end(), 
-                insert_bitvec.begin(), 
+                this->empty_vec.end(),
+                insert_bitvec.begin(),
                 insert_bitvec.end());
         auto boolret = this->empty_vec_bool.insert(
-                this->empty_vec_bool.end(), 
-                insert_boolvec.begin(), 
+                this->empty_vec_bool.end(),
+                insert_boolvec.begin(),
                 insert_boolvec.end());
         EXPECT_TRUE(std::equal(
-                    this->empty_vec.begin(), 
-                    this->empty_vec.end(), 
-                    this->empty_vec_bool.begin(), 
-                    this->empty_vec_bool.end(), 
+                    this->empty_vec.begin(),
+                    this->empty_vec.end(),
+                    this->empty_vec_bool.begin(),
+                    this->empty_vec_bool.end(),
                     comparator));
         EXPECT_EQ(
-                std::distance(this->empty_vec.begin(), bitret), 
+                std::distance(this->empty_vec.begin(), bitret),
                 std::distance(this->empty_vec_bool.begin(), boolret));
     }
 }
@@ -557,21 +559,21 @@ TYPED_TEST(VectorTest, InsertAtRand3) {
         auto insert_boolvec = this->random_boolvecs[to_insert];
         auto insert_location = generate_random_number(0, this->empty_vec.size());
         auto bitret = this->empty_vec.insert(
-                this->empty_vec.begin() + insert_location, 
-                insert_bitvec.begin(), 
+                this->empty_vec.begin() + insert_location,
+                insert_bitvec.begin(),
                 insert_bitvec.end());
         auto boolret = this->empty_vec_bool.insert(
-                this->empty_vec_bool.begin() + insert_location, 
-                insert_boolvec.begin(), 
+                this->empty_vec_bool.begin() + insert_location,
+                insert_boolvec.begin(),
                 insert_boolvec.end());
         EXPECT_TRUE(std::equal(
-                    this->empty_vec.begin(), 
-                    this->empty_vec.end(), 
-                    this->empty_vec_bool.begin(), 
-                    this->empty_vec_bool.end(), 
+                    this->empty_vec.begin(),
+                    this->empty_vec.end(),
+                    this->empty_vec_bool.begin(),
+                    this->empty_vec_bool.end(),
                     comparator));
         EXPECT_EQ(
-                std::distance(this->empty_vec.begin(), bitret), 
+                std::distance(this->empty_vec.begin(), bitret),
                 std::distance(this->empty_vec_bool.begin(), boolret));
     }
 }
@@ -587,13 +589,13 @@ TYPED_TEST(VectorTest, EraseAtBegin1) {
         auto bitret = bitvec.erase(bitvec.begin());
         auto boolret = boolvec.erase(boolvec.begin());
         EXPECT_TRUE(std::equal(
-                    bitvec.begin(), 
-                    bitvec.end(), 
-                    boolvec.begin(), 
-                    boolvec.end(), 
+                    bitvec.begin(),
+                    bitvec.end(),
+                    boolvec.begin(),
+                    boolvec.end(),
                     comparator));
         EXPECT_EQ(
-                std::distance(bitvec.begin(), bitret), 
+                std::distance(bitvec.begin(), bitret),
                 std::distance(boolvec.begin(), boolret));
     }
 }
@@ -608,13 +610,13 @@ TYPED_TEST(VectorTest, EraseAtEnd1) {
         auto bitret = bitvec.erase(bitvec.end() - 1);
         auto boolret = boolvec.erase(boolvec.end() - 1);
         EXPECT_TRUE(std::equal(
-                    bitvec.begin(), 
-                    bitvec.end(), 
-                    boolvec.begin(), 
-                    boolvec.end(), 
+                    bitvec.begin(),
+                    bitvec.end(),
+                    boolvec.begin(),
+                    boolvec.end(),
                     comparator));
         EXPECT_EQ(
-                std::distance(bitvec.begin(), bitret), 
+                std::distance(bitvec.begin(), bitret),
                 std::distance(boolvec.begin(), boolret));
     }
 }
@@ -630,13 +632,13 @@ TYPED_TEST(VectorTest, EraseAtRand1) {
         auto bitret = bitvec.erase(bitvec.begin() + erase_location);
         auto boolret = boolvec.erase(boolvec.begin() + erase_location);
         EXPECT_TRUE(std::equal(
-                    bitvec.begin(), 
-                    bitvec.end(), 
-                    boolvec.begin(), 
-                    boolvec.end(), 
+                    bitvec.begin(),
+                    bitvec.end(),
+                    boolvec.begin(),
+                    boolvec.end(),
                     comparator));
         EXPECT_EQ(
-                std::distance(bitvec.begin(), bitret), 
+                std::distance(bitvec.begin(), bitret),
                 std::distance(boolvec.begin(), boolret));
     }
 }
@@ -652,13 +654,13 @@ TYPED_TEST(VectorTest, EraseAtBegin2) {
         auto bitret = bitvec.erase(bitvec.begin(), bitvec.begin() + erase_size);
         auto boolret = boolvec.erase(boolvec.begin(), boolvec.begin() + erase_size);
         EXPECT_TRUE(std::equal(
-                    bitvec.begin(), 
-                    bitvec.end(), 
-                    boolvec.begin(), 
-                    boolvec.end(), 
+                    bitvec.begin(),
+                    bitvec.end(),
+                    boolvec.begin(),
+                    boolvec.end(),
                     comparator));
         EXPECT_EQ(
-                std::distance(bitvec.begin(), bitret), 
+                std::distance(bitvec.begin(), bitret),
                 std::distance(boolvec.begin(), boolret));
     }
 }
@@ -674,13 +676,13 @@ TYPED_TEST(VectorTest, EraseAtEnd2) {
         auto bitret = bitvec.erase(bitvec.begin() + erase_start, bitvec.end());
         auto boolret = boolvec.erase(boolvec.begin() + erase_start, boolvec.end());
         EXPECT_TRUE(std::equal(
-                    bitvec.begin(), 
-                    bitvec.end(), 
-                    boolvec.begin(), 
-                    boolvec.end(), 
+                    bitvec.begin(),
+                    bitvec.end(),
+                    boolvec.begin(),
+                    boolvec.end(),
                     comparator));
         EXPECT_EQ(
-                std::distance(bitvec.begin(), bitret), 
+                std::distance(bitvec.begin(), bitret),
                 std::distance(boolvec.begin(), boolret));
     }
 }
@@ -697,13 +699,13 @@ TYPED_TEST(VectorTest, EraseAtRand2) {
         auto bitret = bitvec.erase(bitvec.begin() + erase_start, bitvec.begin() + erase_end);
         auto boolret = boolvec.erase(boolvec.begin() + erase_start, boolvec.begin() + erase_end);
         EXPECT_TRUE(std::equal(
-                    bitvec.begin(), 
-                    bitvec.end(), 
-                    boolvec.begin(), 
-                    boolvec.end(), 
+                    bitvec.begin(),
+                    bitvec.end(),
+                    boolvec.begin(),
+                    boolvec.end(),
                     comparator));
         EXPECT_EQ(
-                std::distance(bitvec.begin(), bitret), 
+                std::distance(bitvec.begin(), bitret),
                 std::distance(boolvec.begin(), boolret));
     }
 }
@@ -720,10 +722,10 @@ TYPED_TEST(VectorTest, PushBack) {
             bitvec.push_back(to_insert_bit);
             boolvec.push_back(to_insert_bool);
             EXPECT_TRUE(std::equal(
-                        bitvec.begin(), 
-                        bitvec.end(), 
-                        boolvec.begin(), 
-                        boolvec.end(), 
+                        bitvec.begin(),
+                        bitvec.end(),
+                        boolvec.begin(),
+                        boolvec.end(),
                         comparator));
         }
     }
@@ -739,10 +741,10 @@ TYPED_TEST(VectorTest, PopBack) {
             bitvec.pop_back();
             boolvec.pop_back();
             EXPECT_TRUE(std::equal(
-                        bitvec.begin(), 
-                        bitvec.end(), 
-                        boolvec.begin(), 
-                        boolvec.end(), 
+                        bitvec.begin(),
+                        bitvec.end(),
+                        boolvec.begin(),
+                        boolvec.end(),
                         comparator));
         }
     }
