@@ -22,8 +22,8 @@ endif()
 # endif()
 
 # specify test-specific libraries
-include_directories(${googletest_SOURCE_DIR}/googletest/include/gtest src/utils)
-target_link_libraries(bitlib-tests PUBLIC GTest::gtest GTest::gtest_main -pthread -lgcov --coverage)
+target_link_libraries(bitlib-tests PRIVATE bitlib GTest::gtest GTest::gtest_main)
+target_link_options(bitlib-tests PRIVATE -pthread -lgcov --coverage)
 
 if (NOT BITLIB_GTEST_REPEAT)
     set(BITLIB_GTEST_REPEAT 1)

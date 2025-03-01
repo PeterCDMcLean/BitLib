@@ -7,12 +7,6 @@ project(Bit-Vector VERSION 0.3.0)
 # set output directory of builds
 #set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# set CXX standard
-# Things seem to be faster in cxx 20, and there is also std::shift_* 
-# Should fall back on 17 if 20 is not supported
-set(CMAKE_CXX_STANDARD 17 CACHE STRING "C++ standard to be used")
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 # set up linters/checkers
 #set(CMAKE_CXX_CPPCHECK cppcheck;--std=c++17;--file-filter=*bitlib*)
 #set(CMAKE_CXX_CPPLINT cpplint;--linelength=100;--filter=-whitespace;)
@@ -27,6 +21,8 @@ target_include_directories(bitlib INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
+
+target_compile_features(bitlib INTERFACE cxx_std_20)
 
 
 # specify global compiler flags
