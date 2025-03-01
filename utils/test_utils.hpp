@@ -3,7 +3,7 @@
 // Name:            test_utils.hpp
 // Description:     General utilities for testing
 // Creator:         Bryce Kille
-// Contributor(s):  Bryce Kille [2019], 
+// Contributor(s):  Bryce Kille [2019],
 //                  Collin Gress [2019]
 // License: BSD 3-Clause License
 // ========================================================================== //
@@ -39,10 +39,10 @@ constexpr auto comparator = [](auto b1, auto b2){
 template <class Container, class NewType> struct rebind_container;
 
 // Helper struct for rebind_container
-template <class T, 
-          class Alloc, 
-          template <class, class, class...> class Container, 
-          class NewType, 
+template <class T,
+          class Alloc,
+          template <class, class, class...> class Container,
+          class NewType,
           class... Parameters
          >
 struct rebind_container<Container<T, Alloc, Parameters...>, NewType>
@@ -56,7 +56,7 @@ template <class Container, typename T = typename Container::value_type>
 auto bitcont_to_boolcont(const Container bitcont){
     auto bfirst = bit::bit_iterator<decltype(std::begin(bitcont))>(std::begin(bitcont));
     auto blast = bit::bit_iterator<decltype(std::end(bitcont))>(std::end(bitcont));
-    typename rebind_container<Container, bool>::type c(std::distance(bfirst, 
+    typename rebind_container<Container, bool>::type c(std::distance(bfirst,
                                                                      blast)
     );
     auto benchmark_it = std::begin(c);
@@ -70,9 +70,9 @@ auto bitcont_to_boolcont(const Container bitcont){
 // Produces container of random numbers from min to max
 template <class Container, typename T = typename Container::value_type>
 Container make_random_container(
-    std::size_t size, 
-    T min = std::numeric_limits<T>::min(), 
-    T max = std::numeric_limits<T>::max(), 
+    std::size_t size,
+    T min = std::numeric_limits<T>::min(),
+    T max = std::numeric_limits<T>::max(),
     const T& seed = T()
 )
 {
@@ -80,7 +80,7 @@ Container make_random_container(
     std::random_device device;
     std::mt19937 engine(seed == T() ? device() : seed);
     std::uniform_int_distribution<std::uintmax_t> distribution(min, max);
-    auto it = std::begin(c); 
+    auto it = std::begin(c);
     for (std::size_t i = 0; i < size; ++i) {
         *it = distribution(engine);
         ++it;
@@ -95,15 +95,13 @@ inline unsigned long long generate_random_number(size_t min, size_t max) {
     // Specify the engine and distribution.
     std::mt19937 mersenne_engine {rnd_device()};  // Generates random integers
     std::uniform_int_distribution<unsigned long long> dist {min, max};
-    
+
     return dist(mersenne_engine);
 }
 
-
-template <typename WordType>
-std::vector<WordType> get_random_vec(
-        unsigned long long int size,
-        WordType min = std::numeric_limits<WordType>::min(), 
+template <typename WordType, std::size_t N>
+std::array<WordType, N> get_random_arr(
+        WordType min = std::numeric_limits<WordType>::min(),
         WordType max = std::numeric_limits<WordType>::max()
 ) {
     // First create an instance of an engine.
@@ -111,7 +109,27 @@ std::vector<WordType> get_random_vec(
     // Specify the engine and distribution.
     std::mt19937 mersenne_engine {rnd_device()};  // Generates random integers
     std::uniform_int_distribution<WordType> dist {min, max};
-    
+
+    auto gen = [&dist, &mersenne_engine](){
+                   return dist(mersenne_engine);
+   };
+    std::array<WordType, N> arr{};
+    generate(begin(arr), end(arr), gen);
+    return arr;
+}
+
+template <typename WordType>
+std::vector<WordType> get_random_vec(
+        unsigned long long int size,
+        WordType min = std::numeric_limits<WordType>::min(),
+        WordType max = std::numeric_limits<WordType>::max()
+) {
+    // First create an instance of an engine.
+    std::random_device rnd_device;
+    // Specify the engine and distribution.
+    std::mt19937 mersenne_engine {rnd_device()};  // Generates random integers
+    std::uniform_int_distribution<WordType> dist {min, max};
+
     auto gen = [&dist, &mersenne_engine](){
                    return dist(mersenne_engine);
    };
@@ -136,7 +154,7 @@ template <typename WordType>
 std::vector<bool> boolvec_from_bitvec(bit::bit_vector<WordType> bv) {
     std::vector<bool> ret_vec{};
     for (bit::bit_value value : bv) {
-       ret_vec.push_back(value == bit::bit1 ? true : false); 
+       ret_vec.push_back(value == bit::bit1 ? true : false);
     }
     return ret_vec;
 }

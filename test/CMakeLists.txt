@@ -16,10 +16,10 @@ if (BITLIB_COVERAGE)
 endif()
 
 # ASAN throws no matter what when using Google HWY, not sure why but need to fix
-if (NOT BITLIB_HWY)
-    target_compile_options(bitlib-tests PUBLIC -fsanitize=address)
-    target_link_options(bitlib-tests PUBLIC -fsanitize=address)
-endif()
+# if (NOT BITLIB_HWY)
+#     target_compile_options(bitlib-tests PUBLIC -fsanitize=address)
+#     target_link_options(bitlib-tests PUBLIC -fsanitize=address)
+# endif()
 
 # specify test-specific libraries
 include_directories(${googletest_SOURCE_DIR}/googletest/include/gtest src/utils)

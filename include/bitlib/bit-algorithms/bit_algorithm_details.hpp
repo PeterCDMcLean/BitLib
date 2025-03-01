@@ -108,8 +108,9 @@ T get_word(bit_iterator<InputIt> first, size_t len=binary_digits<T>::value)
     using native_word_type = typename bit_iterator<InputIt>::word_type;
     constexpr T digits = binary_digits<native_word_type>::value;
     assert(digits >= len);
-    T offset = digits - first.position();
-    T ret_word = *first.base() >> first.position();
+    using non_const_T = std::remove_cv_t<T>;
+    non_const_T offset = digits - first.position();
+    non_const_T ret_word = *first.base() >> first.position();
 
     // We've already assigned enough bits
     if (len <= offset) {

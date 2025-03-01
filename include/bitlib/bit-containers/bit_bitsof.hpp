@@ -1,6 +1,16 @@
 #ifndef _BIT_BITSOF_HPP_INCLUDED
 #define _BIT_BITSOF_HPP_INCLUDED
 
+/*
+A bitsof() template function that resembles sizeof() as much as possible.
+Possible calling styles:
+  - `bitsof(_var_)`
+  - `bitsof<_type>()`
+  - `bitsof(_type())` <- Default constructor required
+  - `bitsof(_type{})` <- Default constructor required
+When calling within template code with a type, the callee must use the `bitsof<type>()` or `bitsof(type())` form
+*/
+
 namespace bit {
 
 // Forward declare

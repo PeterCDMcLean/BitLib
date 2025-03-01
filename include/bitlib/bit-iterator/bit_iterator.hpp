@@ -51,6 +51,7 @@ class bit_iterator
     constexpr bit_iterator(const bit_iterator<T>& other);
     explicit constexpr bit_iterator(iterator_type i);
     constexpr bit_iterator(iterator_type i, size_type pos);
+    explicit constexpr bit_iterator(const pointer& ptr);
 
     // Assignment
     public:
@@ -176,6 +177,15 @@ constexpr bit_iterator<Iterator>::bit_iterator(
 )
 : _current(i)
 , _position((assert(pos < binary_digits<word_type>::value), pos))
+{
+}
+
+
+// Explicitly constructs an unaligned bit iterator from a pointer
+template <class Iterator>
+constexpr bit_iterator<Iterator>::bit_iterator(const pointer& ptr)
+: _current(ptr->address())
+, _position(ptr->position())
 {
 }
 // -------------------------------------------------------------------------- //

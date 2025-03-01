@@ -64,54 +64,54 @@ TEST(ArrayTest, ZeroSize) {
 }
 
 // Test that the default constructor initializes all bits to false.
-TEST(BitArrayTest, DefaultInitialization) {
-    bit_array<8> ba;
+TEST(ArrayTest, DefaultInitialization) {
+    bit::bit_array<8> ba;
     for (size_t i = 0; i < ba.size(); ++i) {
         EXPECT_FALSE(ba[i]) << "Bit " << i << " should be false by default";
     }
 }
 
 // Test the fill() method.
-TEST(BitArrayTest, FillMethod) {
-    bit_array<10> ba;
-    ba.fill(true);
+TEST(ArrayTest, FillMethod) {
+    bit::bit_array<10> ba;
+    ba.fill(bit::bit_value(true));
     for (size_t i = 0; i < ba.size(); ++i) {
         EXPECT_TRUE(ba[i]) << "Bit " << i << " should be true after fill(true)";
     }
-    ba.fill(false);
+    ba.fill(bit::bit_value(false));
     for (size_t i = 0; i < ba.size(); ++i) {
         EXPECT_FALSE(ba[i]) << "Bit " << i << " should be false after fill(false)";
     }
 }
 
 // Test element access via operator[] and at(), including out-of-range checking.
-TEST(BitArrayTest, ElementAccess) {
-    bit_array<5> ba;
-    ba.fill(false);
-    ba[2] = true;
+TEST(ArrayTest, ElementAccess) {
+    bit::bit_array<5> ba;
+    ba.fill(bit::bit_value(false));
+    ba[2] = bit::bit_value(true);
     EXPECT_TRUE(ba.at(2));
     EXPECT_THROW(ba.at(5), std::out_of_range);
 }
 
 // Test front() and back() member functions.
-TEST(BitArrayTest, FrontBackAccess) {
-    bit_array<4> ba;
-    ba.fill(false);
-    ba.front() = true;
-    ba.back() = true;
+TEST(ArrayTest, FrontBackAccess) {
+    bit::bit_array<4> ba;
+    ba.fill(bit::bit_value(false));
+    ba.front() = bit::bit_value(true);
+    ba.back() = bit::bit_value(true);
     EXPECT_TRUE(ba.front());
     EXPECT_TRUE(ba.back());
 }
 
 // Test iterator functionality (both non-const and range-based).
-TEST(BitArrayTest, IteratorFunctionality) {
-    bit_array<4> ba;
-    ba.fill(false);
+TEST(ArrayTest, IteratorFunctionality) {
+    bit::bit_array<4> ba;
+    ba.fill(bit::bit_value(false));
     int index = 0;
     for (auto it = ba.begin(); it != ba.end(); ++it) {
         // Change the second element using the iterator.
         if (index == 1) {
-            *it = true;
+            *it = bit::bit_value(true);
         }
         ++index;
     }
@@ -119,20 +119,20 @@ TEST(BitArrayTest, IteratorFunctionality) {
 }
 
 // Test const_iterator functionality.
-TEST(BitArrayTest, ConstIteratorFunctionality) {
-    bit_array<4> ba;
-    ba.fill(true);
-    const bit_array<4>& const_ba = ba;
+TEST(ArrayTest, ConstIteratorFunctionality) {
+    bit::bit_array<4> ba;
+    ba.fill(bit::bit_value(true));
+    const bit::bit_array<4>& const_ba = ba;
     for (auto it = const_ba.begin(); it != const_ba.end(); ++it) {
         EXPECT_TRUE(*it);
     }
 }
 
 // Test the swap() member function.
-TEST(BitArrayTest, SwapFunctionality) {
-    bit_array<4> ba1, ba2;
-    ba1.fill(false);
-    ba2.fill(true);
+TEST(ArrayTest, SwapFunctionality) {
+    bit::bit_array<4> ba1, ba2;
+    ba1.fill(bit::bit_value(false));
+    ba2.fill(bit::bit_value(true));
     ba1.swap(ba2);
     for (size_t i = 0; i < ba1.size(); ++i) {
         EXPECT_TRUE(ba1[i]) << "After swap, ba1[" << i << "] should be true";
@@ -141,59 +141,59 @@ TEST(BitArrayTest, SwapFunctionality) {
 }
 
 // Test comparison operators (== and !=).
-TEST(BitArrayTest, ComparisonOperators) {
-    bit_array<5> ba1 = { true, true, false, false, true };
-    bit_array<5> ba2 = { true, true, false, false, true };
+TEST(ArrayTest, ComparisonOperators) {
+    bit::bit_array<5> ba1 = { bit::bit1, bit::bit1, bit::bit0, bit::bit0, bit::bit1 };
+    bit::bit_array<5> ba2 = { bit::bit1, bit::bit1, bit::bit0, bit::bit0, bit::bit1 };
     EXPECT_EQ(ba1, ba2);
-    ba2[2] = true;  // Change one element
+    ba2[2] = bit::bit_value(true);  // Change one element
     EXPECT_NE(ba1, ba2);
 }
 
 // Test the data() method to access the underlying storage.
-TEST(BitArrayTest, DataAccess) {
-    bit_array<8> ba;
-    ba.fill(false);
+TEST(ArrayTest, DataAccess) {
+    bit::bit_array<8> ba;
+    ba.fill(bit::bit_value(false));
     // Assume data() returns a pointer to a boolean array.
-    bool* data_ptr = ba.data();
+    uint8_t* data_ptr = ba.data();
     EXPECT_FALSE(data_ptr[0]);
-    ba[0] = true;
+    ba[0] = bit::bit_value(true);
     EXPECT_TRUE(data_ptr[0]);
 }
 
 // Test size() and empty() functions.
-TEST(BitArrayTest, SizeAndEmpty) {
-    bit_array<0> ba_empty;
+TEST(ArrayTest, SizeAndEmpty) {
+    bit::bit_array<0> ba_empty;
     EXPECT_EQ(ba_empty.size(), 0);
     EXPECT_TRUE(ba_empty.empty());
 
-    bit_array<5> ba;
+    bit::bit_array<5> ba;
     EXPECT_EQ(ba.size(), 5);
     EXPECT_FALSE(ba.empty());
 }
 
 // Test initializer list construction.
-TEST(BitArrayTest, InitializerListConstruction) {
-    bit_array<3> ba = { true, false, true };
+TEST(ArrayTest, InitializerListConstruction) {
+    bit::bit_array<3> ba = { bit::bit1, bit::bit0, bit::bit1 };
     EXPECT_TRUE(ba[0]);
     EXPECT_FALSE(ba[1]);
     EXPECT_TRUE(ba[2]);
 }
 
 // Test copy constructor and copy assignment operator.
-TEST(BitArrayTest, CopyAndAssignment) {
-    bit_array<5> ba1 = { true, false, true, false, true };
-    bit_array<5> ba_copy(ba1);
+TEST(ArrayTest, CopyAndAssignment) {
+    bit::bit_array<5> ba1 = { bit::bit1, bit::bit0, bit::bit1, bit::bit0, bit::bit1 };
+    bit::bit_array<5> ba_copy(ba1);
     EXPECT_EQ(ba1, ba_copy);
 
-    bit_array<5> ba_assigned;
+    bit::bit_array<5> ba_assigned;
     ba_assigned = ba1;
     EXPECT_EQ(ba1, ba_assigned);
 }
 
 // Test move semantics (move constructor and move assignment), if implemented.
-TEST(BitArrayTest, MoveSemantics) {
-    bit_array<5> ba1 = { true, false, true, false, true };
-    bit_array<5> ba_moved(std::move(ba1));
+TEST(ArrayTest, MoveSemantics) {
+    bit::bit_array<5> ba1 = { bit::bit1, bit::bit0, bit::bit1, bit::bit0, bit::bit1 };
+    bit::bit_array<5> ba_moved(std::move(ba1));
     // We test the moved-to container's values. The moved-from object is valid but unspecified.
     EXPECT_TRUE(ba_moved[0]);
     EXPECT_FALSE(ba_moved[1]);
@@ -201,7 +201,7 @@ TEST(BitArrayTest, MoveSemantics) {
     EXPECT_FALSE(ba_moved[3]);
     EXPECT_TRUE(ba_moved[4]);
 
-    bit_array<5> ba2 = { false, false, false, false, false };
+    bit::bit_array<5> ba2 = { bit::bit0, bit::bit0, bit::bit0, bit::bit0, bit::bit0 };
     ba2 = std::move(ba_moved);
     EXPECT_TRUE(ba2[0]);
     EXPECT_FALSE(ba2[1]);
