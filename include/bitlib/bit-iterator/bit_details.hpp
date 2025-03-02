@@ -30,7 +30,7 @@
 // Miscellaneous
 namespace bit {
 class bit_value;
-template <class WordType> class bit_reference;
+template <class WordType, typename MaskType> class bit_reference;
 template <class WordType> class bit_pointer;
 template <class Iterator> class bit_iterator;
 // ========================================================================== //

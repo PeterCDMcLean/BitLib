@@ -28,7 +28,7 @@ namespace bit {
 class bit_value
 {
     // Friendship
-    template <class> friend class bit_reference;
+    template <class, typename> friend class bit_reference;
 
     // Types
     public:
@@ -37,8 +37,8 @@ class bit_value
     // Lifecycle
     public:
     constexpr bit_value() noexcept;
-    template <class T>
-    constexpr bit_value(bit_reference<T> ref) noexcept;
+    template <class T,typename M>
+    constexpr bit_value(bit_reference<T,M> ref) noexcept;
     template <class WordType>
     explicit constexpr bit_value(WordType val) noexcept;
     explicit constexpr bit_value(bool val) noexcept;
@@ -47,8 +47,8 @@ class bit_value
 
     // Assignment
     public:
-    template <class T>
-    constexpr bit_value& operator=(bit_reference<T> ref) noexcept;
+    template <class T,typename M>
+    constexpr bit_value& operator=(bit_reference<T,M> ref) noexcept;
     template <class WordType>
     constexpr bit_value& assign(WordType val) noexcept;
     template <class WordType>
@@ -67,8 +67,8 @@ class bit_value
     // Swap members
     public:
     void swap(bit_value& other) noexcept;
-    template <class T>
-    void swap(bit_reference<T> other) noexcept;
+    template <class T,typename M>
+    void swap(bit_reference<T,M> other) noexcept;
 
     // Bit manipulation
     public:
@@ -153,9 +153,9 @@ constexpr bit_value::bit_value(
 }
 
 // Implicitly constructs a bit value from a bit reference
-template <class T>
+template <class T,typename M>
 constexpr bit_value::bit_value(
-    bit_reference<T> ref
+    bit_reference<T,M> ref
 ) noexcept
 : _value(static_cast<bool>(ref))
 {
@@ -195,9 +195,9 @@ constexpr bit_value::bit_value(
 
 // ------------------------- BIT VALUE: ASSIGNMENT -------------------------- //
 // Assigns a bit reference to the bit value
-template <class T>
+template <class T, typename M>
 constexpr bit_value& bit_value::operator=(
-    bit_reference<T> ref
+    bit_reference<T,M> ref
 ) noexcept
 {
     _value = static_cast<bool>(ref);
@@ -282,9 +282,9 @@ inline void bit_value::swap(
 }
 
 // Swaps the bit value with the value of a bit reference
-template <class T>
+template <class T,typename M>
 void bit_value::swap(
-    bit_reference<T> other
+    bit_reference<T,M> other
 ) noexcept
 {
     if (other != _value) {

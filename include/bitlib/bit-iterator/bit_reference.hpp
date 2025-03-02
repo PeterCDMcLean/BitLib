@@ -25,14 +25,14 @@ namespace bit {
 
 /* ***************************** BIT REFERENCE ****************************** */
 // Bit reference class definition
-template <class WordType>
+template <class WordType, typename MaskType=std::remove_cv<WordType>::type>
 class bit_reference
 {
     // Assertions
     static_assert(binary_digits<WordType>::value, "");
 
     // Friendship
-    template <class> friend class bit_reference;
+    template <class, typename> friend class bit_reference;
     friend class bit_pointer<WordType>;
 
     // Types
@@ -42,8 +42,8 @@ class bit_reference
 
     // Lifecycle
     public:
-    template <class T>
-    constexpr bit_reference(const bit_reference<T>& other) noexcept;
+    template <class T, typename M>
+    constexpr bit_reference(const bit_reference<T, M>& other) noexcept;
     constexpr bit_reference(const bit_reference& other) noexcept;
     explicit constexpr bit_reference(word_type& ref) noexcept;
     constexpr bit_reference(word_type& ref, size_type pos);
@@ -51,8 +51,8 @@ class bit_reference
     // Assignment
     public:
     constexpr bit_reference& operator=(const bit_reference& other) noexcept;
-    template <class T>
-    constexpr bit_reference& operator=(const bit_reference<T>& other) noexcept;
+    template <class T, typename M>
+    constexpr bit_reference& operator=(const bit_reference<T, M>& other) noexcept;
     constexpr bit_reference& operator=(const bit_value val) noexcept;
     constexpr bit_reference& assign(word_type val) noexcept;
     constexpr bit_reference& assign(word_type val, size_type pos);
@@ -100,7 +100,7 @@ class bit_reference
     // Implementation details: data members
     private:
     word_type* _ptr;
-    typename std::remove_cv<word_type>::type _mask;
+    MaskType _mask;
 };
 
 // Swap
@@ -137,19 +137,19 @@ std::basic_ostream<CharT, Traits>& operator<<(
 
 // ------------------------ BIT REFERENCE: LIFECYCLE ------------------------ //
 // Implicitly constructs a bit reference from another bit reference
-template <class WordType>
-template <class T>
-constexpr bit_reference<WordType>::bit_reference(
-    const bit_reference<T>& other
+template <class WordType, typename MaskType>
+template <class T,typename M>
+constexpr bit_reference<WordType,MaskType>::bit_reference(
+    const bit_reference<T,M>& other
 ) noexcept
 : _ptr(other._ptr)
 , _mask(other._mask)
 {
 }
 
-template <class WordType>
-constexpr bit_reference<WordType>::bit_reference(
-    const bit_reference<WordType>& other
+template <class WordType, typename MaskType>
+constexpr bit_reference<WordType,MaskType>::bit_reference(
+    const bit_reference<WordType,MaskType>& other
 ) noexcept
 : _ptr(other._ptr)
 , _mask(other._mask)
@@ -157,8 +157,8 @@ constexpr bit_reference<WordType>::bit_reference(
 }
 
 // Explicitly constructs an aligned bit reference
-template <class WordType>
-constexpr bit_reference<WordType>::bit_reference(
+template <class WordType, typename MaskType>
+constexpr bit_reference<WordType,MaskType>::bit_reference(
     word_type& ref
 ) noexcept
 : _ptr(&ref)
@@ -167,8 +167,8 @@ constexpr bit_reference<WordType>::bit_reference(
 }
 
 // Explicitly constructs an unaligned bit reference
-template <class WordType>
-constexpr bit_reference<WordType>::bit_reference(
+template <class WordType, typename MaskType>
+constexpr bit_reference<WordType,MaskType>::bit_reference(
     word_type& ref,
     size_type pos
 )
@@ -182,8 +182,8 @@ constexpr bit_reference<WordType>::bit_reference(
 
 // ----------------------- BIT REFERENCE: ASSIGNMENT ------------------------ //
 // Copies a bit reference to the bit reference
-template <class WordType>
-constexpr bit_reference<WordType>& bit_reference<WordType>::operator=(
+template <class WordType, typename MaskType>
+constexpr bit_reference<WordType,MaskType>& bit_reference<WordType,MaskType>::operator=(
     const bit_reference& other
 ) noexcept
 {
@@ -192,10 +192,10 @@ constexpr bit_reference<WordType>& bit_reference<WordType>::operator=(
 }
 
 // Assigns a bit reference to the bit reference
-template <class WordType>
-template <class T>
-constexpr bit_reference<WordType>& bit_reference<WordType>::operator=(
-    const bit_reference<T>& other
+template <class WordType, typename MaskType>
+template <class T, typename M>
+constexpr bit_reference<WordType,MaskType>& bit_reference<WordType,MaskType>::operator=(
+    const bit_reference<T,M>& other
 ) noexcept
 {
     other ? set() : reset();
@@ -203,8 +203,8 @@ constexpr bit_reference<WordType>& bit_reference<WordType>::operator=(
 }
 
 // Assigns a bit value to the bit reference
-template <class WordType>
-constexpr bit_reference<WordType>& bit_reference<WordType>::operator=(
+template <class WordType, typename MaskType>
+constexpr bit_reference<WordType,MaskType>& bit_reference<WordType,MaskType>::operator=(
     const bit_value val
 ) noexcept
 {
@@ -213,8 +213,8 @@ constexpr bit_reference<WordType>& bit_reference<WordType>::operator=(
 }
 
 // Assigns the aligned bit of a value to the bit reference
-template <class WordType>
-constexpr bit_reference<WordType>& bit_reference<WordType>::assign(
+template <class WordType, typename MaskType>
+constexpr bit_reference<WordType,MaskType>& bit_reference<WordType,MaskType>::assign(
     word_type val
 ) noexcept
 {
@@ -223,8 +223,8 @@ constexpr bit_reference<WordType>& bit_reference<WordType>::assign(
 }
 
 // Assigns an unaligned bit of a value to the bit reference
-template <class WordType>
-constexpr bit_reference<WordType>& bit_reference<WordType>::assign(
+template <class WordType, typename MaskType>
+constexpr bit_reference<WordType,MaskType>& bit_reference<WordType,MaskType>::assign(
     word_type val,
     size_type pos
 )
@@ -239,8 +239,8 @@ constexpr bit_reference<WordType>& bit_reference<WordType>::assign(
 
 // -------------- BIT REFERENCE: BITWISE ASSIGNMENT OPERATORS --------------- //
 // Assigns the value of the referenced bit through a bitwise and operation
-template <class WordType>
-constexpr bit_reference<WordType>& bit_reference<WordType>::operator&=(
+template <class WordType, typename MaskType>
+constexpr bit_reference<WordType,MaskType>& bit_reference<WordType,MaskType>::operator&=(
     bit_value other
 ) noexcept
 {
@@ -249,8 +249,8 @@ constexpr bit_reference<WordType>& bit_reference<WordType>::operator&=(
 }
 
 // Assigns the value of the referenced bit through a bitwise or operation
-template <class WordType>
-constexpr bit_reference<WordType>& bit_reference<WordType>::operator|=(
+template <class WordType, typename MaskType>
+constexpr bit_reference<WordType,MaskType>& bit_reference<WordType,MaskType>::operator|=(
     bit_value other
 ) noexcept
 {
@@ -259,8 +259,8 @@ constexpr bit_reference<WordType>& bit_reference<WordType>::operator|=(
 }
 
 // Assigns the value of the referenced bit through a bitwise xor operation
-template <class WordType>
-constexpr bit_reference<WordType>& bit_reference<WordType>::operator^=(
+template <class WordType, typename MaskType>
+constexpr bit_reference<WordType,MaskType>& bit_reference<WordType,MaskType>::operator^=(
     bit_value other
 ) noexcept
 {
@@ -273,8 +273,8 @@ constexpr bit_reference<WordType>& bit_reference<WordType>::operator^=(
 
 // ----------------------- BIT REFERENCE: CONVERSION ------------------------ //
 // Explicitly converts the bit reference to a boolean value
-template <class WordType>
-constexpr bit_reference<WordType>::operator bool(
+template <class WordType, typename MaskType>
+constexpr bit_reference<WordType,MaskType>::operator bool(
 ) const noexcept
 {
     return *_ptr & _mask;
@@ -285,8 +285,8 @@ constexpr bit_reference<WordType>::operator bool(
 
 // ------------------------- BIT REFERENCE: ACCESS -------------------------- //
 // Gets a bit pointer from the bit reference
-template <class WordType>
-constexpr bit_pointer<WordType> bit_reference<WordType>::operator&(
+template <class WordType, typename MaskType>
+constexpr bit_pointer<WordType> bit_reference<WordType,MaskType>::operator&(
 ) const noexcept
 {
     return bit_pointer<WordType>(_ptr, position());
@@ -297,9 +297,9 @@ constexpr bit_pointer<WordType> bit_reference<WordType>::operator&(
 
 // ---------------------- BIT REFERENCE: SWAP MEMBERS ----------------------- //
 // Swaps the value of the referenced bit with another bit reference
-template <class WordType>
+template <class WordType, typename MaskType>
 template <class T>
-void bit_reference<WordType>::swap(
+void bit_reference<WordType,MaskType>::swap(
     bit_reference<T> other
 )
 {
@@ -310,8 +310,8 @@ void bit_reference<WordType>::swap(
 }
 
 // Swaps the value of the referenced bit with a bit value
-template <class WordType>
-void bit_reference<WordType>::swap(
+template <class WordType, typename MaskType>
+void bit_reference<WordType,MaskType>::swap(
     bit_value& other
 )
 {
@@ -326,8 +326,8 @@ void bit_reference<WordType>::swap(
 
 // -------------------- BIT REFERENCE: BIT MANIPULATION --------------------- //
 // Sets the value of the referenced bit to the provided boolean value
-template <class WordType>
-constexpr bit_reference<WordType>& bit_reference<WordType>::set(
+template <class WordType, typename MaskType>
+constexpr bit_reference<WordType,MaskType>& bit_reference<WordType,MaskType>::set(
     bool b
 ) noexcept
 {
@@ -336,8 +336,8 @@ constexpr bit_reference<WordType>& bit_reference<WordType>::set(
 }
 
 // Sets the value of the referenced bit to 1
-template <class WordType>
-constexpr bit_reference<WordType>& bit_reference<WordType>::set(
+template <class WordType, typename MaskType>
+constexpr bit_reference<WordType,MaskType>& bit_reference<WordType,MaskType>::set(
 ) noexcept
 {
     *_ptr |= _mask;
@@ -345,8 +345,8 @@ constexpr bit_reference<WordType>& bit_reference<WordType>::set(
 }
 
 // Resets the value of the referenced bit to 0
-template <class WordType>
-constexpr bit_reference<WordType>& bit_reference<WordType>::reset(
+template <class WordType, typename MaskType>
+constexpr bit_reference<WordType,MaskType>& bit_reference<WordType,MaskType>::reset(
 ) noexcept
 {
     *_ptr &= ~_mask;
@@ -354,8 +354,8 @@ constexpr bit_reference<WordType>& bit_reference<WordType>::reset(
 }
 
 // Flips the value of the referenced bit
-template <class WordType>
-constexpr bit_reference<WordType>& bit_reference<WordType>::flip(
+template <class WordType, typename MaskType>
+constexpr bit_reference<WordType,MaskType>& bit_reference<WordType,MaskType>::flip(
 ) noexcept
 {
     *_ptr ^= _mask;
@@ -367,28 +367,28 @@ constexpr bit_reference<WordType>& bit_reference<WordType>::flip(
 
 // ------------------- BIT REFERENCE: UNDERLYING DETAILS -------------------- //
 // Returns a pointer to the underlying word
-template <class WordType>
-constexpr typename bit_reference<WordType>::word_type*
-bit_reference<WordType>::address(
+template <class WordType, typename MaskType>
+constexpr typename bit_reference<WordType,MaskType>::word_type*
+bit_reference<WordType,MaskType>::address(
 ) const noexcept
 {
     return _ptr;
 }
 
 // Returns the position of the referenced bit within the underlying word
-template <class WordType>
-constexpr typename bit_reference<WordType>::size_type
-bit_reference<WordType>::position(
+template <class WordType, typename MaskType>
+constexpr typename bit_reference<WordType,MaskType>::size_type
+bit_reference<WordType,MaskType>::position(
 ) const noexcept
 {
     return _tzcnt(_mask);
 }
 
 // Returns a mask corresponding to the referenced bit
-template <class WordType>
+template <class WordType, typename MaskType>
 constexpr typename std::remove_cv<
-    typename bit_reference<WordType>::word_type
->::type bit_reference<WordType>::mask(
+    typename bit_reference<WordType,MaskType>::word_type
+>::type bit_reference<WordType,MaskType>::mask(
 ) const noexcept
 {
     return _mask;
@@ -510,8 +510,8 @@ std::basic_ostream<CharT, Traits>& operator<<(
 
 // -------- BIT REFERENCE: IMPLEMENTATION DETAILS: FUNCTION MEMBERS --------- //
 // Privately explicitly constructs a bit reference from a nullptr
-template <class WordType>
-constexpr bit_reference<WordType>::bit_reference(
+template <class WordType, typename MaskType>
+constexpr bit_reference<WordType,MaskType>::bit_reference(
     std::nullptr_t
 ) noexcept
 : _ptr(nullptr)
@@ -520,8 +520,8 @@ constexpr bit_reference<WordType>::bit_reference(
 }
 
 // Privately explicitly constructs an aligned bit reference from a pointer
-template <class WordType>
-constexpr bit_reference<WordType>::bit_reference(
+template <class WordType, typename MaskType>
+constexpr bit_reference<WordType,MaskType>::bit_reference(
     word_type* ptr
 ) noexcept
 : _ptr(ptr)
@@ -530,8 +530,8 @@ constexpr bit_reference<WordType>::bit_reference(
 }
 
 // Privately explicitly constructs an unaligned bit reference from a pointer
-template <class WordType>
-constexpr bit_reference<WordType>::bit_reference(
+template <class WordType, typename MaskType>
+constexpr bit_reference<WordType,MaskType>::bit_reference(
     word_type* ptr,
     size_type pos
 )
