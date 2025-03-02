@@ -30,9 +30,9 @@
 // Miscellaneous
 namespace bit {
 class bit_value;
-template <class WordType, typename MaskType> class bit_reference;
-template <class WordType> class bit_pointer;
-template <class Iterator> class bit_iterator;
+template <typename WordType, typename MaskType> class bit_reference;
+template <typename WordType> class bit_pointer;
+template <typename Iterator> class bit_iterator;
 // ========================================================================== //
 
 
@@ -58,7 +58,7 @@ template <typename UIntType>
 struct binary_digits : binary_digits_impl<std::remove_cv_t<UIntType>> {};
 
 // Binary digits value
-template <class T>
+template <typename T>
 constexpr std::size_t binary_digits_v = binary_digits<T>::value;
 /* ************************************************************************** */
 
@@ -66,7 +66,7 @@ constexpr std::size_t binary_digits_v = binary_digits<T>::value;
 
 /* *************** IMPLEMENTATION DETAILS: CV ITERATOR TRAITS *************** */
 // Cv iterator traits structure definition
-template <class Iterator>
+template <typename Iterator>
 struct _cv_iterator_traits
 {
     // Assertions
@@ -100,11 +100,11 @@ struct _cv_iterator_traits
 
 /* *********** IMPLEMENTATION DETAILS: NARROWEST AND WIDEST TYPES *********** */
 // Narrowest type structure declaration
-template <class... T>
+template <typename... T>
 struct _narrowest_type;
 
 // Narrowest type structure specialization: selects the only passed type
-template <class T>
+template <typename T>
 struct _narrowest_type<T>
 : std::common_type<T>
 {
@@ -112,7 +112,7 @@ struct _narrowest_type<T>
 };
 
 // Narrowest type structure specialization: selects the type with less bits
-template <class T, class U>
+template <typename T, typename U>
 struct _narrowest_type<T, U>
 : _narrowest_type<
     typename std::conditional<
@@ -129,22 +129,22 @@ struct _narrowest_type<T, U>
 };
 
 // Narrowest type structure specialization: recursively selects the right type
-template <class T, class... U>
+template <typename T, typename... U>
 struct _narrowest_type<T, U...>
 : _narrowest_type<T, typename _narrowest_type<U...>::type>
 {
 };
 
 // Narrowest type alias
-template <class... T>
+template <typename... T>
 using _narrowest_type_t = typename _narrowest_type<T...>::type;
 
 // Widest type structure declaration
-template <class... X>
+template <typename... X>
 struct _widest_type;
 
 // Widest type structure specialization: selects the only passed type
-template <class T>
+template <typename T>
 struct _widest_type<T>
 : std::common_type<T>
 {
@@ -152,7 +152,7 @@ struct _widest_type<T>
 };
 
 // Widest type structure specialization: selects the type with more bits
-template <class T, class U>
+template <typename T, typename U>
 struct _widest_type<T, U>
 : _widest_type<
     typename std::conditional<
@@ -169,14 +169,14 @@ struct _widest_type<T, U>
 };
 
 // Widest type structure specialization: recursively selects the right type
-template <class T, class... X>
+template <typename T, typename... X>
 struct _widest_type<T, X...>
 : _widest_type<T, typename _widest_type<X...>::type>
 {
 };
 
 // Widest type alias
-template <class... T>
+template <typename... T>
 using _widest_type_t = typename _widest_type<T...>::type;
 /* ************************************************************************** */
 
@@ -184,7 +184,7 @@ using _widest_type_t = typename _widest_type<T...>::type;
 
 /* ************ IMPLEMENTATION DETAILS: NARROWER AND WIDER TYPES ************ */
 // Narrower type structure definition
-template <class T, int I = 0>
+template <typename T, int I = 0>
 struct _narrower_type
 {
     using tuple = std::tuple<
@@ -211,18 +211,18 @@ struct _narrower_type
 };
 
 // Narrower type structure specialization: not found
-template <class T>
+template <typename T>
 struct _narrower_type<T, -1>
 {
     using type = T;
 };
 
 // Narrower type alias
-template <class T>
+template <typename T>
 using _narrower_type_t = typename _narrower_type<T>::type;
 
 // Wider type structure definition
-template <class T, int I = 0>
+template <typename T, int I = 0>
 struct _wider_type
 {
     using tuple = std::tuple<
@@ -249,14 +249,14 @@ struct _wider_type
 };
 
 // Wider type structure specialization: not found
-template <class T>
+template <typename T>
 struct _wider_type<T, -1>
 {
     using type = T;
 };
 
 // Wider type alias
-template <class T>
+template <typename T>
 using _wider_type_t = typename _wider_type<T>::type;
 /* ************************************************************************** */
 
@@ -264,7 +264,7 @@ using _wider_type_t = typename _wider_type<T>::type;
 
 /* ******************* IMPLEMENTATION DETAILS: UTILITIES ******************** */
 // Assertions
-template <class Iterator>
+template <typename Iterator>
 constexpr bool _assert_range_viability(Iterator first, Iterator last);
 /* ************************************************************************** */
 
@@ -272,105 +272,105 @@ constexpr bool _assert_range_viability(Iterator first, Iterator last);
 
 /* ****************** IMPLEMENTATION DETAILS: INSTRUCTIONS ****************** */
 // Population count
-template <class T, class = decltype(__builtin_popcountll(T()))>
+template <typename T, typename = decltype(__builtin_popcountll(T()))>
 constexpr T _popcnt(T src) noexcept;
-template <class T, class... X>
+template <typename T, typename... X>
 constexpr T _popcnt(T src, X...) noexcept;
 
 // Leading zeros count
-template <class T, class = decltype(__builtin_clzll(T()))>
+template <typename T, typename = decltype(__builtin_clzll(T()))>
 constexpr T _lzcnt(T src) noexcept;
-template <class T, class... X>
+template <typename T, typename... X>
 constexpr T _lzcnt(T src, X...) noexcept;
 
 // Trailing zeros count
-template <class T, class = decltype(__builtin_ctzll(T()))>
+template <typename T, typename = decltype(__builtin_ctzll(T()))>
 constexpr T _tzcnt(T src) noexcept;
-template <class T, class... X>
+template <typename T, typename... X>
 constexpr T _tzcnt(T src, X...) noexcept;
 
 // Bit field extraction
-template <class T, class = decltype(__builtin_ia32_bextr_u64(T(), T(), T()))>
+template <typename T, typename = decltype(__builtin_ia32_bextr_u64(T(), T(), T()))>
 constexpr T _bextr(T src, T start, T len) noexcept;
-template <class T, class... X>
+template <typename T, typename... X>
 constexpr T _bextr(T src, T start, T len, X...) noexcept;
 
 // Parallel bits deposit
-template <class T, class = decltype(_pdep_u64(T()))>
+template <typename T, typename = decltype(_pdep_u64(T()))>
 constexpr T _pdep(T src, T msk) noexcept;
-template <class T, class... X>
+template <typename T, typename... X>
 constexpr T _pdep(T src, T msk, X...) noexcept;
 
 // Parallel bits extract
-template <class T, class = decltype(_pext_u64(T()))>
+template <typename T, typename = decltype(_pext_u64(T()))>
 constexpr T _pext(T src, T msk) noexcept;
-template <class T, class... X>
+template <typename T, typename... X>
 constexpr T _pext(T src, T msk, X...) noexcept;
 
 // Byte swap
-template <class T, class T128 = decltype(__uint128_t(__builtin_bswap64(T())))>
+template <typename T, typename T128 = decltype(__uint128_t(__builtin_bswap64(T())))>
 constexpr T _byteswap(T src) noexcept;
-template <class T, class... X>
+template <typename T, typename... X>
 constexpr T _byteswap(T src, X...) noexcept;
 
 // Bit swap
-template <class T>
+template <typename T>
 constexpr T _bitswap(T src) noexcept;
-template <class T, std::size_t N>
+template <typename T, std::size_t N>
 constexpr T _bitswap(T src) noexcept;
-template <class T, std::size_t N>
+template <typename T, std::size_t N>
 constexpr T _bitswap() noexcept;
 
 // Bit blend
-template <class T>
+template <typename T>
 constexpr T _bitblend(T src0, T src1, T msk) noexcept;
-template <class T>
+template <typename T>
 constexpr T _bitblend(T src0, T src1, T start, T len) noexcept;
 
 // Bit exchange
-template <class T>
+template <typename T>
 constexpr void _bitexch(T& src0, T& src1, T msk) noexcept;
-template <class T, class S>
+template <typename T, typename S>
 constexpr void _bitexch(T& src0, T& src1, S start, S len) noexcept;
-template <class T, class S>
+template <typename T, typename S>
 constexpr void _bitexch(T& src0, T& src1, S start0, S start1, S len) noexcept;
 
 // Bit compare
-template <class T>
+template <typename T>
 constexpr T _bitcmp(T src0, T src1, T start0, T start1, T len) noexcept;
 
 // Double precision shift left
-template <class T>
+template <typename T>
 constexpr T _shld(T dst, T src, T cnt) noexcept;
 
 // Double precision shift right
-template <class T>
+template <typename T>
 constexpr T _shrd(T dst, T src, T cnt) noexcept;
 
 // Add carry
-template <class... T>
+template <typename... T>
 using _supports_adc = decltype(__builtin_ia32_addcarryx_u64(T()...));
-template <class C, class T, class = _supports_adc<C, T, T, std::nullptr_t>>
+template <typename C, typename T, typename = _supports_adc<C, T, T, std::nullptr_t>>
 constexpr C _addcarry(C carry, T src0, T src1, T* dst) noexcept;
-template <class C, class T, class... X>
+template <typename C, typename T, typename... X>
 constexpr C _addcarry(C carry, T src0, T src1, T* dst, X...) noexcept;
 
 // Sub borrow
-template <class... T>
+template <typename... T>
 using _supports_sbb = decltype(__builtin_ia32_sbb_u64(T()...));
-template <class... T>
+template <typename... T>
 using _supports_sbb_alt = decltype(__builtin_ia32_subborrow_u64(T()...));
-template <class B, class T, class = _supports_sbb<B, T, T, std::nullptr_t>>
+template <typename B, typename T, typename = _supports_sbb<B, T, T, std::nullptr_t>>
 constexpr B _subborrow(B borrow, T src0, T src1, T* dst) noexcept;
-template <class B, class T, class = _supports_sbb_alt<B, T, T, std::nullptr_t>>
+template <typename B, typename T, typename = _supports_sbb_alt<B, T, T, std::nullptr_t>>
 constexpr B _subborrow(const B& borrow, T src0, T src1, T* dst) noexcept;
-template <class B, class T, class... X>
+template <typename B, typename T, typename... X>
 constexpr B _subborrow(B borrow, T src0, T src1, T* dst, X...) noexcept;
 
 // Multiword multiply
-template <class T, class T128 = decltype(__uint128_t(T()))>
+template <typename T, typename T128 = decltype(__uint128_t(T()))>
 constexpr T _mulx(T src0, T src1, T* hi) noexcept;
-template <class T, class... X>
+template <typename T, typename... X>
 constexpr T _mulx(T src0, T src1, T* hi, X...) noexcept;
 /* ************************************************************************** */
 
@@ -378,7 +378,7 @@ constexpr T _mulx(T src0, T src1, T* hi, X...) noexcept;
 
 // ------------- IMPLEMENTATION DETAILS: UTILITIES: ASSERTIONS -------------- //
 // If the range allows multipass iteration, checks if last - first >= 0
-template <class Iterator>
+template <typename Iterator>
 constexpr bool _assert_range_viability(Iterator first, Iterator last)
 {
     using traits_t = std::iterator_traits<Iterator>;
@@ -395,7 +395,7 @@ constexpr bool _assert_range_viability(Iterator first, Iterator last)
 
 // --------- IMPLEMENTATION DETAILS: INSTRUCTIONS: POPULATION COUNT --------- //
 // Counts the number of bits set to 1 with compiler intrinsics
-template <class T, class>
+template <typename T, typename>
 constexpr T _popcnt(T src) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -413,7 +413,7 @@ constexpr T _popcnt(T src) noexcept
 }
 
 // Counts the number of bits set to 1 without compiler intrinsics
-template <class T, class... X>
+template <typename T, typename... X>
 constexpr T _popcnt(T src, X...) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -429,7 +429,7 @@ constexpr T _popcnt(T src, X...) noexcept
 
 // ------- IMPLEMENTATION DETAILS: INSTRUCTIONS: LEADING ZEROS COUNT -------- //
 // Counts the number of leading zeros with compiler intrinsics
-template <class T, class>
+template <typename T, typename>
 constexpr T _lzcnt(T src) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -463,7 +463,7 @@ constexpr T _lzcnt(T src) noexcept
 }
 
 // Counts the number of leading zeros without compiler intrinsics
-template <class T, class... X>
+template <typename T, typename... X>
 constexpr T _lzcnt(T src, X...) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -480,7 +480,7 @@ constexpr T _lzcnt(T src, X...) noexcept
 
 // ------- IMPLEMENTATION DETAILS: INSTRUCTIONS: TRAILING ZEROS COUNT ------- //
 // Counts the number of trailing zeros with compiler intrinsics
-template <class T, class>
+template <typename T, typename>
 constexpr T _tzcnt(T src) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -499,7 +499,7 @@ constexpr T _tzcnt(T src) noexcept
 }
 
 // Counts the number of trailing zeros without compiler intrinsics
-template <class T, class... X>
+template <typename T, typename... X>
 constexpr T _tzcnt(T src, X...) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -519,7 +519,7 @@ constexpr T _tzcnt(T src, X...) noexcept
 
 // ------- IMPLEMENTATION DETAILS: INSTRUCTIONS: BIT FIELD EXTRACTION ------- //
 // Extacts to lsbs a field of contiguous bits with compiler intrinsics
-template <class T, class>
+template <typename T, typename>
 constexpr T _bextr(T src, T start, T len) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -536,7 +536,7 @@ constexpr T _bextr(T src, T start, T len) noexcept
 }
 
 // Extacts to lsbs a field of contiguous bits without compiler intrinsics
-template <class T, class... X>
+template <typename T, typename... X>
 constexpr T _bextr(T src, T start, T len, X...) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -551,7 +551,7 @@ constexpr T _bextr(T src, T start, T len, X...) noexcept
 
 // ------- IMPLEMENTATION DETAILS: INSTRUCTIONS: PARALLEL BIT DEPOSIT ------- //
 // Deposits bits according to a mask with compiler instrinsics
-template <class T, class>
+template <typename T, typename>
 constexpr T _pdep(T src, T msk) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -568,7 +568,7 @@ constexpr T _pdep(T src, T msk) noexcept
 }
 
 // Deposits bits according to a mask without compiler instrinsics
-template <class T, class... X>
+template <typename T, typename... X>
 constexpr T _pdep(T src, T msk, X...) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -593,7 +593,7 @@ constexpr T _pdep(T src, T msk, X...) noexcept
 
 // ------- IMPLEMENTATION DETAILS: INSTRUCTIONS: PARALLEL BIT EXTRACT ------- //
 // Extracts bits according to a mask with compiler instrinsics
-template <class T, class>
+template <typename T, typename>
 constexpr T _pext(T src, T msk) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -610,7 +610,7 @@ constexpr T _pext(T src, T msk) noexcept
 }
 
 // Extracts bits according to a mask without compiler instrinsics
-template <class T, class... X>
+template <typename T, typename... X>
 constexpr T _pext(T src, T msk, X...) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -635,7 +635,7 @@ constexpr T _pext(T src, T msk, X...) noexcept
 
 // ------------ IMPLEMENTATION DETAILS: INSTRUCTIONS: BYTE SWAP ------------- //
 // Reverses the order of the underlying bytes with compiler intrinsics
-template <class T, class T128>
+template <typename T, typename T128>
 constexpr T _byteswap(T src) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -661,7 +661,7 @@ constexpr T _byteswap(T src) noexcept
 }
 
 // Reverses the order of the underlying bytes without compiler intrinsics
-template <class T, class... X>
+template <typename T, typename... X>
 constexpr T _byteswap(T src, X...) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -683,7 +683,7 @@ constexpr T _byteswap(T src, X...) noexcept
 
 // ------------- IMPLEMENTATION DETAILS: INSTRUCTIONS: BIT SWAP ------------- //
 // Reverses the order of the bits with or without of compiler intrinsics
-template <class T>
+template <typename T>
 constexpr T _bitswap(T src) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -716,7 +716,7 @@ constexpr T _bitswap(T src) noexcept
 }
 
 // Reverses the order of the bits: recursive metafunction
-template <class T, std::size_t N>
+template <typename T, std::size_t N>
 constexpr T _bitswap(T src) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -727,7 +727,7 @@ constexpr T _bitswap(T src) noexcept
 }
 
 // Reverses the order of the bits: mask for the recursive metafunction
-template <class T, std::size_t N>
+template <typename T, std::size_t N>
 constexpr T _bitswap() noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -746,7 +746,7 @@ constexpr T _bitswap() noexcept
 
 // ------------ IMPLEMENTATION DETAILS: INSTRUCTIONS: BIT BLEND ------------- //
 // Replaces bits of src0 by the ones of src1 where the mask is true
-template <class T>
+template <typename T>
 constexpr T _bitblend(T src0, T src1, T msk) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -754,7 +754,7 @@ constexpr T _bitblend(T src0, T src1, T msk) noexcept
 }
 
 // Replaces len bits of src0 by the ones of src1 starting at start
-template <class T>
+template <typename T>
 constexpr T _bitblend(T src0, T src1, T start, T len) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -769,7 +769,7 @@ constexpr T _bitblend(T src0, T src1, T start, T len) noexcept
 
 // ---------- IMPLEMENTATION DETAILS: INSTRUCTIONS: BIT EXCHANGE ------------ //
 // Exchanges/swaps bits of src0 by the ones of src1 where the mask is true
-template <class T>
+template <typename T>
 constexpr void _bitexch(T& src0, T& src1, T msk) noexcept
 {
     src0 = src0 ^ static_cast<T>(src1 & msk);
@@ -779,7 +779,7 @@ constexpr void _bitexch(T& src0, T& src1, T msk) noexcept
 }
 
 // Replaces len bits of src0 by the ones of src1 starting at start
-template <class T, class S>
+template <typename T, typename S>
 constexpr void _bitexch(T& src0, T& src1, S start, S len) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -796,7 +796,7 @@ constexpr void _bitexch(T& src0, T& src1, S start, S len) noexcept
 // Replaces len bits of src0 by the ones of src1 starting at start0
 // in src0 and start1 in src1.
 // len <= digits-max(start0, start1)
-template <class T, class S>
+template <typename T, typename S>
 constexpr void _bitexch(T& src0, T& src1, S start0, S start1, S len) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -845,7 +845,7 @@ constexpr void _bitexch(T& src0, T& src1, S start0, S start1, S len) noexcept
 
 // ----------- IMPLEMENTATION DETAILS: INSTRUCTIONS: BIT COMPARE ------------ //
 // Compares a subsequence of bits within src0 and src1 and returns 0 if equal
-template <class T>
+template <typename T>
 constexpr T _bitcmp(T src0, T src1, T start0, T start1, T len) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -857,7 +857,7 @@ constexpr T _bitcmp(T src0, T src1, T start0, T start1, T len) noexcept
 
 // --- IMPLEMENTATION DETAILS: INSTRUCTIONS: DOUBLE PRECISION SHIFT LEFT ---- //
 // Left shifts dst by cnt bits, filling the lsbs of dst by the msbs of src
-template <class T>
+template <typename T>
 constexpr T _shld(T dst, T src, T cnt) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -875,7 +875,7 @@ constexpr T _shld(T dst, T src, T cnt) noexcept
 
 // --- IMPLEMENTATION DETAILS: INSTRUCTIONS: DOUBLE PRECISION SHIFT RIGHT --- //
 // Right shifts dst by cnt bits, filling the msbs of dst by the lsbs of src
-template <class T>
+template <typename T>
 constexpr T _shrd(T dst, T src, T cnt) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -893,7 +893,7 @@ constexpr T _shrd(T dst, T src, T cnt) noexcept
 
 // ------------ IMPLEMENTATION DETAILS: INSTRUCTIONS: ADD CARRY ------------- //
 // Adds src0 and src1 and returns the new carry bit with intrinsics
-template <class C, class T, class>
+template <typename C, typename T, typename>
 constexpr C _addcarry(C carry, T src0, T src1, T* dst) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -920,7 +920,7 @@ constexpr C _addcarry(C carry, T src0, T src1, T* dst) noexcept
 }
 
 // Adds src0 and src1 and returns the new carry bit without intrinsics
-template <class C, class T, class... X>
+template <typename C, typename T, typename... X>
 constexpr C _addcarry(C carry, T src0, T src1, T* dst, X...) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -933,7 +933,7 @@ constexpr C _addcarry(C carry, T src0, T src1, T* dst, X...) noexcept
 
 // ------------ IMPLEMENTATION DETAILS: INSTRUCTIONS: SUB BORROW ------------ //
 // Subtracts src1 to src0 and returns the new borrow bit with intrinsics
-template <class B, class T, class>
+template <typename B, typename T, typename>
 constexpr B _subborrow(B borrow, T src0, T src1, T* dst) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -960,7 +960,7 @@ constexpr B _subborrow(B borrow, T src0, T src1, T* dst) noexcept
 }
 
 // Subtracts src1 to src0 and returns the new borrow bit with other intrinsics
-template <class B, class T, class>
+template <typename B, typename T, typename>
 constexpr B _subborrow(const B& borrow, T src0, T src1, T* dst) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -988,7 +988,7 @@ constexpr B _subborrow(const B& borrow, T src0, T src1, T* dst) noexcept
 }
 
 // Subtracts src1 to src0 and returns the new borrow bit without intrinsics
-template <class B, class T, class... X>
+template <typename B, typename T, typename... X>
 constexpr B _subborrow(B borrow, T src0, T src1, T* dst, X...) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -1001,7 +1001,7 @@ constexpr B _subborrow(B borrow, T src0, T src1, T* dst, X...) noexcept
 
 // -------- IMPLEMENTATION DETAILS: INSTRUCTIONS: MULTIWORD MULTIPLY -------- //
 // Multiplies src0 and src1 and gets the full result with compiler intrinsics
-template <class T, class T128>
+template <typename T, typename T128>
 constexpr T _mulx(T src0, T src1, T* hi) noexcept
 {
     static_assert(binary_digits<T>::value, "");
@@ -1025,7 +1025,7 @@ constexpr T _mulx(T src0, T src1, T* hi) noexcept
 }
 
 // Multiplies src0 and src1 and gets the full result without compiler intrinsics
-template <class T, class... X>
+template <typename T, typename... X>
 constexpr T _mulx(T src0, T src1, T* hi, X...) noexcept
 {
     static_assert(binary_digits<T>::value, "");

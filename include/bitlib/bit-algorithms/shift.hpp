@@ -43,7 +43,7 @@ namespace hn = hwy::HWY_NAMESPACE;
 
 // --------------------------- Shift Algorithms ----------------------------- //
 
-template <class RandomAccessIt>
+template <typename RandomAccessIt>
 bit_iterator<RandomAccessIt> shift_left(
         bit_iterator<RandomAccessIt> first,
         bit_iterator<RandomAccessIt> last,
@@ -237,7 +237,7 @@ bit_iterator<RandomAccessIt> shift_left(
     return first;
 }
 
-template <class RandomAccessIt>
+template <typename RandomAccessIt>
 bit_iterator<RandomAccessIt> shift_right(
         bit_iterator<RandomAccessIt> first,
         bit_iterator<RandomAccessIt> last,

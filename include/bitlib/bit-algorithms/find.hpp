@@ -30,7 +30,7 @@ namespace hn = hwy::HWY_NAMESPACE;
 // ========================================================================== //
 
 
-template <class RandomAccessIt>
+template <typename RandomAccessIt>
 constexpr bit_iterator<RandomAccessIt> find(
         bit_iterator<RandomAccessIt> first,
         bit_iterator<RandomAccessIt> last, bit::bit_value bv

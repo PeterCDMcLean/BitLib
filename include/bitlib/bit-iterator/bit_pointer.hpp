@@ -25,14 +25,14 @@ namespace bit {
 
 /* ****************************** BIT POINTER ******************************* */
 // Bit pointer class definition
-template <class WordType>
+template <typename WordType>
 class bit_pointer
 {
     // Assertions
     static_assert(binary_digits<WordType>::value, "");
 
     // Friendship
-    template <class> friend class bit_pointer;
+    template <typename> friend class bit_pointer;
 
     // Types
     public:
@@ -43,7 +43,7 @@ class bit_pointer
     // Lifecycle
     public:
     constexpr bit_pointer() noexcept;
-    template <class T>
+    template <typename T>
     constexpr bit_pointer(const bit_pointer<T>& other) noexcept;
     constexpr bit_pointer(std::nullptr_t) noexcept;
     explicit constexpr bit_pointer(word_type* ptr) noexcept;
@@ -53,7 +53,7 @@ class bit_pointer
     public:
     constexpr bit_pointer& operator=(std::nullptr_t) noexcept;
     constexpr bit_pointer& operator=(const bit_pointer& other) noexcept;
-    template <class T>
+    template <typename T>
     constexpr bit_pointer& operator=(const bit_pointer<T>& other) noexcept;
 
     // Conversion
@@ -82,12 +82,12 @@ class bit_pointer
     bit_reference<WordType> _ref;
 
     // Non-member arithmetic operators
-    template <class T>
+    template <typename T>
     friend constexpr bit_pointer<T> operator+(
         typename bit_pointer<T>::difference_type n,
         bit_pointer<T> x
     );
-    template <class T, class U>
+    template <typename T, typename U>
     friend constexpr typename std::common_type<
         typename bit_pointer<T>::difference_type,
         typename bit_pointer<U>::difference_type
@@ -97,32 +97,32 @@ class bit_pointer
     );
 
     // Comparison operators
-    template <class T, class U>
+    template <typename T, typename U>
     friend constexpr bool operator==(
         bit_pointer<T> lhs,
         bit_pointer<U> rhs
     ) noexcept;
-    template <class T, class U>
+    template <typename T, typename U>
     friend constexpr bool operator!=(
         bit_pointer<T> lhs,
         bit_pointer<U> rhs
     ) noexcept;
-    template <class T, class U>
+    template <typename T, typename U>
     friend constexpr bool operator<(
         bit_pointer<T> lhs,
         bit_pointer<U> rhs
     ) noexcept;
-    template <class T, class U>
+    template <typename T, typename U>
     friend constexpr bool operator<=(
         bit_pointer<T> lhs,
         bit_pointer<U> rhs
     ) noexcept;
-    template <class T, class U>
+    template <typename T, typename U>
     friend constexpr bool operator>(
         bit_pointer<T> lhs,
         bit_pointer<U> rhs
     ) noexcept;
-    template <class T, class U>
+    template <typename T, typename U>
     friend constexpr bool operator>=(
         bit_pointer<T> lhs,
         bit_pointer<U> rhs
@@ -134,7 +134,7 @@ class bit_pointer
 
 // ------------------------- BIT POINTER: LIFECYCLE ------------------------- //
 // Implicitly default constructs a null bit pointer
-template <class WordType>
+template <typename WordType>
 constexpr bit_pointer<WordType>::bit_pointer(
 ) noexcept
 : _ref(nullptr)
@@ -142,8 +142,8 @@ constexpr bit_pointer<WordType>::bit_pointer(
 }
 
 // Implicitly constructs a bit pointer from another bit pointer
-template <class WordType>
-template <class T>
+template <typename WordType>
+template <typename T>
 constexpr bit_pointer<WordType>::bit_pointer(
     const bit_pointer<T>& other
 ) noexcept
@@ -152,7 +152,7 @@ constexpr bit_pointer<WordType>::bit_pointer(
 }
 
 // Explicitly constructs a bit pointer from a null pointer
-template <class WordType>
+template <typename WordType>
 constexpr bit_pointer<WordType>::bit_pointer(
     std::nullptr_t
 ) noexcept
@@ -161,7 +161,7 @@ constexpr bit_pointer<WordType>::bit_pointer(
 }
 
 // Explicitly constructs an aligned bit pointer from a pointer
-template <class WordType>
+template <typename WordType>
 constexpr bit_pointer<WordType>::bit_pointer(
     word_type* ptr
 ) noexcept
@@ -170,7 +170,7 @@ constexpr bit_pointer<WordType>::bit_pointer(
 }
 
 // Explicitly constructs an unaligned bit pointer from a pointer
-template <class WordType>
+template <typename WordType>
 constexpr bit_pointer<WordType>::bit_pointer(
     word_type* ptr,
     size_type pos
@@ -184,7 +184,7 @@ constexpr bit_pointer<WordType>::bit_pointer(
 
 // ------------------------ BIT POINTER: ASSIGNMENT ------------------------- //
 // Assigns a null pointer to the bit pointer
-template <class WordType>
+template <typename WordType>
 constexpr bit_pointer<WordType>& bit_pointer<WordType>::operator=(
     std::nullptr_t
 ) noexcept
@@ -195,7 +195,7 @@ constexpr bit_pointer<WordType>& bit_pointer<WordType>::operator=(
 }
 
 // Copies a bit pointer to the bit pointer
-template <class WordType>
+template <typename WordType>
 constexpr bit_pointer<WordType>& bit_pointer<WordType>::operator=(
     const bit_pointer& other
 ) noexcept
@@ -206,8 +206,8 @@ constexpr bit_pointer<WordType>& bit_pointer<WordType>::operator=(
 }
 
 // Assigns a bit pointer to the bit pointer
-template <class WordType>
-template <class T>
+template <typename WordType>
+template <typename T>
 constexpr bit_pointer<WordType>& bit_pointer<WordType>::operator=(
     const bit_pointer<T>& other
 ) noexcept
@@ -222,7 +222,7 @@ constexpr bit_pointer<WordType>& bit_pointer<WordType>::operator=(
 
 // ------------------------ BIT POINTER: CONVERSION ------------------------- //
 // Returns true if the bit pointer is null, false otherwise
-template <class WordType>
+template <typename WordType>
 constexpr bit_pointer<WordType>::operator bool(
 ) const noexcept
 {
@@ -234,7 +234,7 @@ constexpr bit_pointer<WordType>::operator bool(
 
 // -------------------------- BIT POINTER: ACCESS --------------------------- //
 // Gets a bit reference from the bit pointer
-template <class WordType>
+template <typename WordType>
 constexpr bit_reference<WordType> bit_pointer<WordType>::operator*(
 ) const noexcept
 {
@@ -242,7 +242,7 @@ constexpr bit_reference<WordType> bit_pointer<WordType>::operator*(
 }
 
 // Gets a pointer to a bit reference
-template <class WordType>
+template <typename WordType>
 constexpr bit_reference<WordType>* bit_pointer<WordType>::operator->(
 ) const noexcept
 {
@@ -250,7 +250,7 @@ constexpr bit_reference<WordType>* bit_pointer<WordType>::operator->(
 }
 
 // Gets a bit reference, decrementing or incrementing the pointer
-template <class WordType>
+template <typename WordType>
 constexpr bit_reference<WordType> bit_pointer<WordType>::operator[](
     difference_type n
 ) const
@@ -269,7 +269,7 @@ constexpr bit_reference<WordType> bit_pointer<WordType>::operator[](
 
 // ------------- BIT POINTER: INCREMENT AND DECREMENT OPERATORS ------------- //
 // Increments the bit pointer and returns it
-template <class WordType>
+template <typename WordType>
 constexpr bit_pointer<WordType>& bit_pointer<WordType>::operator++(
 )
 {
@@ -288,7 +288,7 @@ constexpr bit_pointer<WordType>& bit_pointer<WordType>::operator++(
 }
 
 // Decrements the bit pointer and returns it
-template <class WordType>
+template <typename WordType>
 constexpr bit_pointer<WordType>& bit_pointer<WordType>::operator--(
 )
 {
@@ -307,7 +307,7 @@ constexpr bit_pointer<WordType>& bit_pointer<WordType>::operator--(
 }
 
 // Increments the bit pointer and returns the old one
-template <class WordType>
+template <typename WordType>
 constexpr bit_pointer<WordType> bit_pointer<WordType>::operator++(
     int
 )
@@ -318,7 +318,7 @@ constexpr bit_pointer<WordType> bit_pointer<WordType>::operator++(
 }
 
 // Decrements the bit pointer and returns the old one
-template <class WordType>
+template <typename WordType>
 constexpr bit_pointer<WordType> bit_pointer<WordType>::operator--(
     int
 )
@@ -329,7 +329,7 @@ constexpr bit_pointer<WordType> bit_pointer<WordType>::operator--(
 }
 
 // Looks forward several bits and gets a pointer at this position
-template <class WordType>
+template <typename WordType>
 constexpr bit_pointer<WordType> bit_pointer<WordType>::operator+(
     difference_type n
 ) const
@@ -344,7 +344,7 @@ constexpr bit_pointer<WordType> bit_pointer<WordType>::operator+(
 }
 
 // Looks backward several bits and gets a pointer at this position
-template <class WordType>
+template <typename WordType>
 constexpr bit_pointer<WordType> bit_pointer<WordType>::operator-(
     difference_type n
 ) const
@@ -359,7 +359,7 @@ constexpr bit_pointer<WordType> bit_pointer<WordType>::operator-(
 }
 
 // Increments the pointer by several bits and returns it
-template <class WordType>
+template <typename WordType>
 constexpr bit_pointer<WordType>& bit_pointer<WordType>::operator+=(
     difference_type n
 )
@@ -369,7 +369,7 @@ constexpr bit_pointer<WordType>& bit_pointer<WordType>::operator+=(
 }
 
 // Decrements the pointer by several bits and returns it
-template <class WordType>
+template <typename WordType>
 constexpr bit_pointer<WordType>& bit_pointer<WordType>::operator-=(
     difference_type n
 )
@@ -383,7 +383,7 @@ constexpr bit_pointer<WordType>& bit_pointer<WordType>::operator-=(
 
 // -------------- BIT POINTER: NON-MEMBER ARITHMETIC OPERATORS -------------- //
 // Advances the bit pointer several times
-template <class T>
+template <typename T>
 constexpr bit_pointer<T> operator+(
     typename bit_pointer<T>::difference_type n,
     bit_pointer<T> x
@@ -393,7 +393,7 @@ constexpr bit_pointer<T> operator+(
 }
 
 // Computes the distance in bits separating two bit pointers
-template <class T, class U>
+template <typename T, typename U>
 constexpr typename std::common_type<
     typename bit_pointer<T>::difference_type,
     typename bit_pointer<U>::difference_type
@@ -418,7 +418,7 @@ constexpr typename std::common_type<
 
 // ------------------- BIT POINTER: COMPARISON OPERATORS -------------------- //
 // Checks if the left hand side is equal to the right hand side
-template <class T, class U>
+template <typename T, typename U>
 constexpr bool operator==(
     bit_pointer<T> lhs,
     bit_pointer<U> rhs
@@ -429,7 +429,7 @@ constexpr bool operator==(
 }
 
 // Checks if the left hand side is non equal to the right hand side
-template <class T, class U>
+template <typename T, typename U>
 constexpr bool operator!=(
     bit_pointer<T> lhs,
     bit_pointer<U> rhs
@@ -440,7 +440,7 @@ constexpr bool operator!=(
 }
 
 // Checks if the left hand side is less than the right hand side
-template <class T, class U>
+template <typename T, typename U>
 constexpr bool operator<(
     bit_pointer<T> lhs,
     bit_pointer<U> rhs
@@ -452,7 +452,7 @@ constexpr bool operator<(
 }
 
 // Checks if the left hand side is less than or equal to the right hand side
-template <class T, class U>
+template <typename T, typename U>
 constexpr bool operator<=(
     bit_pointer<T> lhs,
     bit_pointer<U> rhs
@@ -464,7 +464,7 @@ constexpr bool operator<=(
 }
 
 // Checks if the left hand side is greater than the right hand side
-template <class T, class U>
+template <typename T, typename U>
 constexpr bool operator>(
     bit_pointer<T> lhs,
     bit_pointer<U> rhs
@@ -476,7 +476,7 @@ constexpr bool operator>(
 }
 
 // Checks if the left hand side is greater than or equal to the right hand side
-template <class T, class U>
+template <typename T, typename U>
 constexpr bool operator>=(
     bit_pointer<T> lhs,
     bit_pointer<U> rhs

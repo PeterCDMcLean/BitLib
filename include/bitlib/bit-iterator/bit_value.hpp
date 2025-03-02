@@ -28,7 +28,7 @@ namespace bit {
 class bit_value
 {
     // Friendship
-    template <class, typename> friend class bit_reference;
+    template <typename, typename> friend class bit_reference;
 
     // Types
     public:
@@ -37,21 +37,21 @@ class bit_value
     // Lifecycle
     public:
     constexpr bit_value() noexcept;
-    template <class T,typename M>
+    template <typename T,typename M>
     constexpr bit_value(bit_reference<T,M> ref) noexcept;
-    template <class WordType>
+    template <typename WordType>
     explicit constexpr bit_value(WordType val) noexcept;
     explicit constexpr bit_value(bool val) noexcept;
-    template <class WordType>
+    template <typename WordType>
     constexpr bit_value(WordType val, size_type pos);
 
     // Assignment
     public:
-    template <class T,typename M>
+    template <typename T,typename M>
     constexpr bit_value& operator=(bit_reference<T,M> ref) noexcept;
-    template <class WordType>
+    template <typename WordType>
     constexpr bit_value& assign(WordType val) noexcept;
-    template <class WordType>
+    template <typename WordType>
     constexpr bit_value& assign(WordType val, size_type pos);
 
     // Bitwise assignment operators
@@ -67,7 +67,7 @@ class bit_value
     // Swap members
     public:
     void swap(bit_value& other) noexcept;
-    template <class T,typename M>
+    template <typename T,typename M>
     void swap(bit_reference<T,M> other) noexcept;
 
     // Bit manipulation
@@ -128,12 +128,12 @@ class bit_value
 };
 
 // Stream functions
-template <class CharT, class Traits>
+template <typename CharT, typename Traits>
 std::basic_istream<CharT, Traits>& operator>>(
     std::basic_istream<CharT, Traits>& is,
     bit_value& x
 );
-template <class CharT, class Traits>
+template <typename CharT, typename Traits>
 std::basic_ostream<CharT, Traits>& operator<<(
     std::basic_ostream<CharT, Traits>& os,
     bit_value x
@@ -153,7 +153,7 @@ constexpr bit_value::bit_value(
 }
 
 // Implicitly constructs a bit value from a bit reference
-template <class T,typename M>
+template <typename T,typename M>
 constexpr bit_value::bit_value(
     bit_reference<T,M> ref
 ) noexcept
@@ -170,7 +170,7 @@ constexpr bit_value::bit_value(
 }
 
 // Explicitly constructs an aligned bit value
-template <class WordType>
+template <typename WordType>
 constexpr bit_value::bit_value(
     WordType val
 ) noexcept
@@ -180,7 +180,7 @@ constexpr bit_value::bit_value(
 }
 
 // Explicitly constructs an unaligned bit value
-template <class WordType>
+template <typename WordType>
 constexpr bit_value::bit_value(
     WordType val,
     size_type pos
@@ -195,7 +195,7 @@ constexpr bit_value::bit_value(
 
 // ------------------------- BIT VALUE: ASSIGNMENT -------------------------- //
 // Assigns a bit reference to the bit value
-template <class T, typename M>
+template <typename T, typename M>
 constexpr bit_value& bit_value::operator=(
     bit_reference<T,M> ref
 ) noexcept
@@ -205,7 +205,7 @@ constexpr bit_value& bit_value::operator=(
 }
 
 // Assigns the aligned bit of a value to the bit value
-template <class WordType>
+template <typename WordType>
 constexpr bit_value& bit_value::assign(
     WordType val
 ) noexcept
@@ -216,7 +216,7 @@ constexpr bit_value& bit_value::assign(
 }
 
 // Assigns an unaligned bit of a value to the bit value
-template <class WordType>
+template <typename WordType>
 constexpr bit_value& bit_value::assign(
     WordType val,
     size_type pos
@@ -282,7 +282,7 @@ inline void bit_value::swap(
 }
 
 // Swaps the bit value with the value of a bit reference
-template <class T,typename M>
+template <typename T,typename M>
 void bit_value::swap(
     bit_reference<T,M> other
 ) noexcept
@@ -436,7 +436,7 @@ constexpr bool operator>=(
 
 // ---------------------- BIT VALUE: STREAM FUNCTIONS ----------------------- //
 // Extracts a bit value from an input stream
-template <class CharT, class Traits>
+template <typename CharT, typename Traits>
 std::basic_istream<CharT, Traits>& operator>>(
     std::basic_istream<CharT, Traits>& is,
     bit_value& x
@@ -488,7 +488,7 @@ std::basic_istream<CharT, Traits>& operator>>(
 }
 
 // Inserts a bit value in an output stream
-template <class CharT, class Traits>
+template <typename CharT, typename Traits>
 std::basic_ostream<CharT, Traits>& operator<<(
     std::basic_ostream<CharT, Traits>& os,
     bit_value x

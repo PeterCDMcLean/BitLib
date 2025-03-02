@@ -54,12 +54,12 @@ std::string demangle(const char* name) {
 }
 
 
-template<class F> 
+template<typename F> 
 constexpr void register_types(F test_lambda_f, std::string_view func_name, unsigned int size) {
     return;
 }
 
-template <class F, class C, class... Args> 
+template <typename F, typename C, typename... Args> 
 void register_types(F test_lambda_f, std::string func_name, unsigned int size) {
     using word_type = typename C::value_type;
     std::string container_name = demangle(typeid(C).name());
@@ -71,23 +71,23 @@ void register_types(F test_lambda_f, std::string func_name, unsigned int size) {
     register_types<F, Args...>(test_lambda_f, func_name, size);
 }
 
-template <class F> 
+template <typename F> 
 void register_word_containers(F test_lambda_f, std::string func_name, unsigned int size) {
     return;
 }
 
-template <class F, template<typename...> class C, template<typename...> class... Args> 
+template <typename F, template<typename...> class C, template<typename...> class... Args> 
 void register_word_containers(F test_lambda_f, std::string func_name, unsigned int size) {
     register_types<F, C<uint64_t>>(test_lambda_f, func_name, size);
     register_word_containers<F, Args...>(test_lambda_f, func_name, size);
 }
 
-template <class F> 
+template <typename F> 
 void register_bool_containers(F test_lambda_f, std::string func_name, unsigned int size) {
     return;
 }
 
-template <class F, template<typename...> class C, template<typename...> class... Args> 
+template <typename F, template<typename...> class C, template<typename...> class... Args> 
 void register_bool_containers(F test_lambda_f, std::string func_name, unsigned int size) {
     //std::string container_name = demangle(typeid(C).name());
     register_types<F, C<bool>>(test_lambda_f, func_name, size);

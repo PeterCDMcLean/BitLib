@@ -27,7 +27,7 @@ struct is_bit_array<bit_array<N>> : std::true_type {};
 template <typename T>
 struct is_bit_vector : std::false_type {};
 
-template <class WordType, class Allocator>
+template <typename WordType, typename Allocator>
 struct is_bit_vector<bit_vector<WordType, Allocator>> : std::true_type {};
 
 // General case: for types that are not bit_array, bit_vector, or bit_value.

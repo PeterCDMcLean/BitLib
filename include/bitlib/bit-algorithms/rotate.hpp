@@ -25,7 +25,7 @@ namespace bit {
 // the range to the left and appending the copied section to the end.
 //
 // Note: distance(first, n_first) <= 3*digits
-template <class ForwardIt, int BufferSize>
+template <typename ForwardIt, int BufferSize>
 bit_iterator<ForwardIt> _rotate_via_copy_begin(
    bit_iterator<ForwardIt> first,
    bit_iterator<ForwardIt> n_first,
@@ -63,7 +63,7 @@ bit_iterator<ForwardIt> _rotate_via_copy_begin(
 // the range to the right and prepending the copied section to the beginning.
 //
 // Note: distance(n_first, last) <= 3*digits
-template <class ForwardIt, int BufferSize>
+template <typename ForwardIt, int BufferSize>
 bit_iterator<ForwardIt> _rotate_via_copy_end(
    bit_iterator<ForwardIt> first,
    bit_iterator<ForwardIt> n_first,
@@ -99,7 +99,7 @@ bit_iterator<ForwardIt> _rotate_via_copy_end(
 
 // Rotates a range using random-access iterators. Algorithm logic from the GCC
 // implementation
-template <class RandomAccessIt>
+template <typename RandomAccessIt>
 bit_iterator<RandomAccessIt> _rotate_via_raw(
    bit_iterator<RandomAccessIt> first,
    bit_iterator<RandomAccessIt> n_first,
@@ -181,7 +181,7 @@ bit_iterator<RandomAccessIt> _rotate_via_raw(
 }
 
 // Main function for implementing the bit overload of std::rotate.
-template <class ForwardIt>
+template <typename ForwardIt>
 bit_iterator<ForwardIt> rotate(
    bit_iterator<ForwardIt> first,
    bit_iterator<ForwardIt> n_first,

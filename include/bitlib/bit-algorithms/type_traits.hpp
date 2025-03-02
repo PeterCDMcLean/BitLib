@@ -33,7 +33,7 @@ struct bit
 
 /* ********************************* IS BIT ********************************* */
 // Is bit structure definition
-template <class T>
+template <typename T>
 struct is_bit
 : std::false_type
 {
@@ -54,14 +54,14 @@ struct is_bit<bit_value>
 };
 
 // Is bit structure specialization: bit reference
-template <class WordType>
+template <typename WordType>
 struct is_bit<bit_reference<WordType>>
 : std::true_type
 {
 };
 
 // Is bit value template definition
-template <class T>
+template <typename T>
 inline constexpr bool is_bit_v = is_bit<T>::value;
 /* ************************************************************************** */
 
@@ -77,7 +77,7 @@ struct is_iterator<
     std::void_t<typename std::iterator_traits<T>::value_type>
 > : std::true_type {};
 
-template <class T>
+template <typename T>
 inline constexpr bool is_iterator_v = is_iterator<T>::value;
 /* ************************************************************************** */
 
@@ -98,7 +98,7 @@ struct is_forward_iterator<
     >
 > : std::true_type {};
 
-template <class T>
+template <typename T>
 inline constexpr bool is_forward_iterator_v = is_forward_iterator<T>::value;
 /* ************************************************************************** */
 
@@ -119,7 +119,7 @@ struct is_bidirectional_iterator<
     >
 > : std::true_type {};
 
-template <class T>
+template <typename T>
 inline constexpr bool is_bidirectional_iterator_v
     = is_bidirectional_iterator<T>::value;
 /* ************************************************************************** */
@@ -141,7 +141,7 @@ struct is_random_access_iterator<
     >
 > : std::true_type {};
 
-template <class T>
+template <typename T>
 inline constexpr bool is_random_access_iterator_v =
     is_random_access_iterator<T>::value;
 /* ************************************************************************** */
@@ -163,7 +163,7 @@ struct is_input_iterator<
     >
 > : std::true_type {};
 
-template <class T>
+template <typename T>
 inline constexpr bool is_input_iterator_v = is_input_iterator<T>::value;
 /* ************************************************************************** */
 
@@ -184,7 +184,7 @@ struct is_output_iterator<
     >
 > : std::true_type {};
 
-template <class T>
+template <typename T>
 inline constexpr bool is_output_iterator_v = is_output_iterator<T>::value;
 /* ************************************************************************** */
 

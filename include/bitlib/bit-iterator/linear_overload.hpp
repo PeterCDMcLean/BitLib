@@ -27,7 +27,7 @@ namespace bit {
 
 /* **************************** LINEAR OVERLOAD ***************************** */
 // Linear overload class definition
-template <class... F>
+template <typename... F>
 class linear_overload
 {
     // Types
@@ -36,7 +36,7 @@ class linear_overload
 
     // Lifecycle
     public:
-    template <class... G>
+    template <typename... G>
     explicit constexpr linear_overload(G&&... g);
 
     // Access
@@ -45,9 +45,9 @@ class linear_overload
     decltype(auto) get() noexcept;
     template <std::size_t I>
     constexpr decltype(auto) get() const noexcept;
-    template <class G>
+    template <typename G>
     decltype(auto) get() noexcept;
-    template <class G>
+    template <typename G>
     constexpr decltype(auto) get() const noexcept;
 
     // Capacity
@@ -94,7 +94,7 @@ class linear_overload
 
     // Maker
     public:
-    template <class... G>
+    template <typename... G>
     friend constexpr linear_overload<G...> overload_linearly(G&&... g);
 };
 /* ************************************************************************** */
@@ -103,8 +103,8 @@ class linear_overload
 
 // ----------------------- LINEAR OVERLOAD: LIFECYCLE ----------------------- //
 // Explicitly constructs a linear overload from a list of functions
-template <class... F>
-template <class... G>
+template <typename... F>
+template <typename... G>
 constexpr linear_overload<F...>::linear_overload(
     G&&... g
 )
@@ -117,7 +117,7 @@ constexpr linear_overload<F...>::linear_overload(
 
 // ------------------------ LINEAR OVERLOAD: ACCESS ------------------------- //
 // Gets the i-th function of the linear overload
-template <class... F>
+template <typename... F>
 template <std::size_t I>
 decltype(auto) linear_overload<F...>::get(
 ) noexcept
@@ -126,7 +126,7 @@ decltype(auto) linear_overload<F...>::get(
 }
 
 // Gets the i-th function of the immutable linear overload
-template <class... F>
+template <typename... F>
 template <std::size_t I>
 constexpr decltype(auto) linear_overload<F...>::get(
 ) const noexcept
@@ -135,16 +135,16 @@ constexpr decltype(auto) linear_overload<F...>::get(
 }
 
 // Gets the function of the given type from the linear overload
-template <class... F>
-template <class G>
+template <typename... F>
+template <typename G>
 decltype(auto) linear_overload<F...>::get() noexcept
 {
     return std::get<G>(_f);
 }
 
 // Gets the function of the given type from the immutable linear overload
-template <class... F>
-template <class G>
+template <typename... F>
+template <typename G>
 constexpr decltype(auto) linear_overload<F...>::get(
 ) const noexcept
 {
@@ -156,7 +156,7 @@ constexpr decltype(auto) linear_overload<F...>::get(
 
 // ----------------------- LINEAR OVERLOAD: CAPACITY ------------------------ //
 // Checks whether the linear overload is empty
-template <class... F>
+template <typename... F>
 constexpr bool linear_overload<F...>::empty(
 ) noexcept
 {
@@ -164,7 +164,7 @@ constexpr bool linear_overload<F...>::empty(
 }
 
 // Returns the number of functions in the linear overload
-template <class... F>
+template <typename... F>
 constexpr std::size_t linear_overload<F...>::size(
 ) noexcept
 {
@@ -172,7 +172,7 @@ constexpr std::size_t linear_overload<F...>::size(
 }
 
 // Returns the maximum possible number of functions in the linear overload
-template <class... F>
+template <typename... F>
 constexpr std::size_t linear_overload<F...>::max_size(
 ) noexcept
 {
@@ -184,8 +184,8 @@ constexpr std::size_t linear_overload<F...>::max_size(
 
 // ------------------------- LINEAR OVERLOAD: CALL -------------------------- //
 // Calls the linear overload with the provided arguments: no valid overload
-template <class... F>
-template <std::size_t N, class... Args, class>
+template <typename... F>
+template <std::size_t N, typename... Args, typename>
 void linear_overload<F...>::operator()(
     Args&&...
 )
@@ -193,8 +193,8 @@ void linear_overload<F...>::operator()(
 }
 
 // Calls the linear overload with the provided arguments: no argument
-template <class... F>
-template <std::size_t N, class, class>
+template <typename... F>
+template <std::size_t N, typename, typename>
 decltype(auto) linear_overload<F...>::operator()(
 )
 {
@@ -202,8 +202,8 @@ decltype(auto) linear_overload<F...>::operator()(
 }
 
 // Calls the linear overload with the provided arguments: valid call
-template <class... F>
-template <std::size_t N, class Arg, class... Args, class, class>
+template <typename... F>
+template <std::size_t N, typename Arg, class... Args, class, typename>
 decltype(auto) linear_overload<F...>::operator()(
     Arg&& arg,
     Args&&... args
@@ -213,8 +213,8 @@ decltype(auto) linear_overload<F...>::operator()(
 }
 
 // Calls the linear overload with the provided arguments: invalid call
-template <class... F>
-template <std::size_t N, class... Args, class>
+template <typename... F>
+template <std::size_t N, typename... Args, typename>
 decltype(auto) linear_overload<F...>::operator()(
     Args&&... args
 )
@@ -227,7 +227,7 @@ decltype(auto) linear_overload<F...>::operator()(
 
 // ------------------------- LINEAR OVERLOAD: MAKER ------------------------- //
 // Builds a linear overload from a list of functions
-template <class... G>
+template <typename... G>
 constexpr linear_overload<G...> overload_linearly(G&&... g)
 {
     return linear_overload<G...>(std::forward<G>(g)...);

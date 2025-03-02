@@ -26,7 +26,7 @@ namespace bit {
 // ---------------------------- Equal Algorithms ----------------------------- //
 
 // Status: Does not work for Input/Output iterators due to distance call
-template <class RandomAccessIt1, class RandomAccessIt2>
+template <typename RandomAccessIt1, typename RandomAccessIt2>
 constexpr bool equal(
         bit_iterator<RandomAccessIt1> first,
         bit_iterator<RandomAccessIt1> last,

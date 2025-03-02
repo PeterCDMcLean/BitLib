@@ -36,12 +36,12 @@ constexpr auto comparator = [](auto b1, auto b2){
 };
 
 // Helper struct for rebind_container
-template <class Container, class NewType> struct rebind_container;
+template <typename Container, typename NewType> struct rebind_container;
 
 // Helper struct for rebind_container
-template <class T,
+template <typename T,
           class Alloc,
-          template <class, class, class...> class Container,
+          template <typename, typename, typename...> class Container,
           class NewType,
           class... Parameters
          >
@@ -52,7 +52,7 @@ struct rebind_container<Container<T, Alloc, Parameters...>, NewType>
 
 
 // Takes in Container<T> and returns Container<bool> of the same underlying bits
-template <class Container, typename T = typename Container::value_type>
+template <typename Container, typename T = typename Container::value_type>
 auto bitcont_to_boolcont(const Container bitcont){
     auto bfirst = bit::bit_iterator<decltype(std::begin(bitcont))>(std::begin(bitcont));
     auto blast = bit::bit_iterator<decltype(std::end(bitcont))>(std::end(bitcont));
@@ -68,7 +68,7 @@ auto bitcont_to_boolcont(const Container bitcont){
 }
 
 // Produces container of random numbers from min to max
-template <class Container, typename T = typename Container::value_type>
+template <typename Container, typename T = typename Container::value_type>
 Container make_random_container(
     std::size_t size,
     T min = std::numeric_limits<T>::min(),

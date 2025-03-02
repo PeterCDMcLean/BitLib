@@ -35,7 +35,7 @@ namespace hn = hwy::HWY_NAMESPACE;
 
 
 // Status: needs revisions
-template <class RandomAccessIt>
+template <typename RandomAccessIt>
 void fill(bit_iterator<RandomAccessIt> first, bit_iterator<RandomAccessIt> last,
     bit::bit_value bv) {
     // Assertions

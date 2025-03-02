@@ -20,7 +20,7 @@
 namespace bit {
 // ========================================================================== //
 
-template< class RandomAccessIt1, class RandomAccessIt2 >
+template< typename RandomAccessIt1, typename RandomAccessIt2 >
 constexpr bit_iterator<RandomAccessIt2> swap_ranges(
         bit_iterator<RandomAccessIt1> first1,
         bit_iterator<RandomAccessIt1> last1,

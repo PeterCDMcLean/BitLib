@@ -32,7 +32,7 @@ namespace bit {
 
 /* ****************************** BIT VECTOR ****************************** */
 //! A bit-vector with a similar interface to std::vector<bool>
-template<class WordType, class Allocator = std::allocator<WordType>>
+template<typename WordType, typename Allocator = std::allocator<WordType>>
 class bit_vector {
     private:
         static constexpr size_t digits = binary_digits<WordType>::value;
@@ -47,7 +47,7 @@ class bit_vector {
 
         // Iterator pair constructor specializations
         // Passing in iterator over bool
-        template<class RandomAccessIt>
+        template<typename RandomAccessIt>
         typename std::enable_if<
             std::is_same<
                 typename std::iterator_traits<RandomAccessIt>::value_type,
@@ -60,7 +60,7 @@ class bit_vector {
                 const Allocator& alloc);
 
         // Passing in iterator over WordType constructs via whole words
-        template<class RandomAccessIt>
+        template<typename RandomAccessIt>
         typename std::enable_if<
             std::is_same<
                 typename std::iterator_traits<RandomAccessIt>::value_type,
@@ -100,12 +100,12 @@ class bit_vector {
         constexpr explicit bit_vector(
                 size_type count,
                 const Allocator& alloc=Allocator());
-        template<class RandomAccessIt>
+        template<typename RandomAccessIt>
         constexpr bit_vector(
                 bit_iterator<RandomAccessIt> first,
                 bit_iterator<RandomAccessIt> last,
                 const Allocator& alloc=Allocator());
-        template<class RandomAccessIt>
+        template<typename RandomAccessIt>
         constexpr bit_vector(
                 RandomAccessIt first,
                 RandomAccessIt last,
@@ -200,25 +200,25 @@ class bit_vector {
 
 
 // ------------------------ BIT VECTOR: LIFECYCLE ------------------------- //
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr bit_vector<WordType, Allocator>::bit_vector() noexcept(noexcept(Allocator())) : word_vector{}, length_(0) {}
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr bit_vector<WordType, Allocator>::bit_vector(const Allocator& alloc) noexcept : word_vector(alloc), length_(0) {}
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr bit_vector<WordType, Allocator>::bit_vector(size_type count, value_type bit_val, const Allocator& alloc)
     : word_vector(word_count(count), static_cast<WordType>(bit_val == bit1 ? -1 : 0), alloc),
       length_(count)
       {}
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr bit_vector<WordType, Allocator>::bit_vector(size_type count, const Allocator& alloc)
     : word_vector(word_count(count), alloc), length_(count) {}
 
 //TODO needs to work for input iterators
-template<class WordType, class Allocator>
-template<class RandomAccessIt>
+template<typename WordType, typename Allocator>
+template<typename RandomAccessIt>
 constexpr bit_vector<WordType, Allocator>::bit_vector(
         bit_iterator<RandomAccessIt> first,
         bit_iterator<RandomAccessIt> last,
@@ -228,8 +228,8 @@ constexpr bit_vector<WordType, Allocator>::bit_vector(
 }
 
 
-template<class WordType, class Allocator>
-template<class RandomAccessIt>
+template<typename WordType, typename Allocator>
+template<typename RandomAccessIt>
 constexpr bit_vector<WordType, Allocator>::bit_vector(
         RandomAccessIt first,
         RandomAccessIt last,
@@ -241,15 +241,15 @@ constexpr bit_vector<WordType, Allocator>::bit_vector(
     );
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr bit_vector<WordType, Allocator>::bit_vector(const bit_vector<WordType, Allocator>&& other) noexcept
     : word_vector(std::move(other.word_vector)), length_(other.length_) {}
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr bit_vector<WordType, Allocator>::bit_vector(const bit_vector<WordType, Allocator>&& other, const Allocator& alloc)
     : word_vector(std::move(other.word_vector), alloc), length_(other.length_) {}
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr bit_vector<WordType, Allocator>::bit_vector(std::initializer_list<bit_value> init, const Allocator& alloc)
     : word_vector(alloc), length_(0) {
     for (const_reference b : init) {
@@ -257,7 +257,7 @@ constexpr bit_vector<WordType, Allocator>::bit_vector(std::initializer_list<bit_
     }
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr bit_vector<WordType, Allocator>::bit_vector(std::initializer_list<bool> init, const Allocator& alloc)
     : word_vector(alloc), length_(0) {
     for (const bool& b : init) {
@@ -265,14 +265,14 @@ constexpr bit_vector<WordType, Allocator>::bit_vector(std::initializer_list<bool
     }
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr bit_vector<WordType, Allocator>::bit_vector(
         std::initializer_list<WordType> init,
         const Allocator& alloc)
     : word_vector(init, alloc), length_(this->word_vector.size() * digits) {}
 
 // Skip all characters that are not 0/1. This allows punctuation/spacing for byte/word boundaries
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr bit_vector<WordType, Allocator>::bit_vector(std::string_view s) {
     this->length_ = std::count(s.begin(), s.end(), '0') + std::count(s.begin(), s.end(), '1');
     this->word_vector = std::vector<WordType, Allocator>(this->length_);
@@ -288,8 +288,8 @@ constexpr bit_vector<WordType, Allocator>::bit_vector(std::string_view s) {
 
 // Iterator pair constructor specializations
 // Passing in iterator over bool
-template<class WordType, class Allocator>
-template<class RandomAccessIt>
+template<typename WordType, typename Allocator>
+template<typename RandomAccessIt>
 typename std::enable_if<
     std::is_same<
         typename std::iterator_traits<RandomAccessIt>::value_type,
@@ -311,8 +311,8 @@ constexpr bit_vector<WordType, Allocator>::range_constructor(
 }
 
 // Passing in iterator over WordType constructs via whole words
-template<class WordType, class Allocator>
-template<class RandomAccessIt>
+template<typename WordType, typename Allocator>
+template<typename RandomAccessIt>
 typename std::enable_if<
     std::is_same<
         typename std::iterator_traits<RandomAccessIt>::value_type,
@@ -327,7 +327,7 @@ constexpr bit_vector<WordType, Allocator>::range_constructor(
     length_ = digits * std::distance(first, last);
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 #if __cplusplus == 201703L
 bit_vector<WordType, Allocator>::~bit_vector() {
 #else
@@ -340,7 +340,7 @@ constexpr bit_vector<WordType, Allocator>::~bit_vector() {
 
 
 // ------------------------ BIT VECTOR: ASSIGNMENT ------------------------ //
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr bit_vector<WordType, Allocator>&
 bit_vector<WordType, Allocator>::operator=(bit_vector<WordType, Allocator>&& other) noexcept {
     length_ = other.length_;
@@ -353,15 +353,15 @@ bit_vector<WordType, Allocator>::operator=(bit_vector<WordType, Allocator>&& oth
 
 
 // -------------------------- BIT VECTOR: ACCESS -------------------------- //
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr typename bit_vector<WordType, Allocator>::reference
 bit_vector<WordType, Allocator>::operator[](size_type pos) {return begin()[pos];}
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr typename bit_vector<WordType, Allocator>::reference
 bit_vector<WordType, Allocator>::operator[](size_type pos) const {return begin()[pos];}
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr typename bit_vector<WordType, Allocator>::reference
 bit_vector<WordType, Allocator>::at(size_type pos) {
     if (pos < length_) {
@@ -371,7 +371,7 @@ bit_vector<WordType, Allocator>::at(size_type pos) {
     }
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr typename bit_vector<WordType, Allocator>::const_reference
 bit_vector<WordType, Allocator>::at(size_type pos) const {
     if (pos < length_) {
@@ -381,37 +381,37 @@ bit_vector<WordType, Allocator>::at(size_type pos) const {
     }
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr typename bit_vector<WordType, Allocator>::reference
 bit_vector<WordType, Allocator>::front() {
     return begin()[0];
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr typename bit_vector<WordType, Allocator>::const_reference
 bit_vector<WordType, Allocator>::front() const {
     return begin()[0];
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr typename bit_vector<WordType, Allocator>::reference
 bit_vector<WordType, Allocator>::back() {
     return begin()[length_ - 1];
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr typename bit_vector<WordType, Allocator>::const_reference
 bit_vector<WordType, Allocator>::back() const {
     return begin()[length_ - 1];
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr WordType*
 bit_vector<WordType, Allocator>::data() noexcept {
     return length_ ? &(word_vector[0]) : 0;
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr const WordType*
 bit_vector<WordType, Allocator>::data() const noexcept {
     return word_vector.size() ? &(word_vector[0]) : 0;
@@ -421,37 +421,37 @@ bit_vector<WordType, Allocator>::data() const noexcept {
 
 
 // ------------------------ BIT VECTOR: ITERATORS --------------------------- //
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr typename bit_vector<WordType, Allocator>::iterator
 bit_vector<WordType, Allocator>::begin() noexcept {
     return iterator(word_vector.begin());
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr typename bit_vector<WordType, Allocator>::iterator
 bit_vector<WordType, Allocator>::end() noexcept {
     return begin() + length_;
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr typename bit_vector<WordType, Allocator>::const_iterator
 bit_vector<WordType, Allocator>::begin() const noexcept {
     return const_iterator(word_vector.begin());
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr typename bit_vector<WordType, Allocator>::const_iterator
 bit_vector<WordType, Allocator>::end() const noexcept {
     return const_iterator(word_vector.cbegin()) + length_;
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr typename bit_vector<WordType, Allocator>::const_iterator
 bit_vector<WordType, Allocator>::cbegin() const noexcept {
     return const_iterator(word_vector.begin());
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr typename bit_vector<WordType, Allocator>::const_iterator
 bit_vector<WordType, Allocator>::cend() const noexcept {
     return const_iterator(word_vector.cbegin()) + length_;
@@ -461,35 +461,35 @@ bit_vector<WordType, Allocator>::cend() const noexcept {
 
 
 // ------------------------ BIT VECTOR: CAPACITY ---------------------------- //
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr bool bit_vector<WordType, Allocator>::empty() const noexcept {
     return length_ == 0;
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr typename bit_vector<WordType, Allocator>::size_type
 bit_vector<WordType, Allocator>::size() const noexcept {
     return length_;
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr typename bit_vector<WordType, Allocator>::size_type
 bit_vector<WordType, Allocator>::max_size() const noexcept {
     return word_vector.max_size() * digits;
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr void bit_vector<WordType, Allocator>::reserve(size_type new_cap) {
     word_vector.reserve(word_count(new_cap));
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr typename bit_vector<WordType, Allocator>::size_type
 bit_vector<WordType, Allocator>::capacity() const noexcept {
     return word_vector.capacity() * digits;
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr void bit_vector<WordType, Allocator>::shrink_to_fit() {
     word_vector.shrink_to_fit();
 }
@@ -498,12 +498,12 @@ constexpr void bit_vector<WordType, Allocator>::shrink_to_fit() {
 
 
 // ------------------------ BIT VECTOR: MODIFYING -------------------------- //
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr void bit_vector<WordType, Allocator>::clear() noexcept {
     word_vector.clear(); length_ = 0;
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr typename bit_vector<WordType, Allocator>::iterator
 bit_vector<WordType, Allocator>::insert(
         const_iterator pos,
@@ -519,7 +519,7 @@ bit_vector<WordType, Allocator>::insert(
 }
 
 // TODO should use std::insert to maintain the constant amortized time.
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr typename bit_vector<WordType, Allocator>::iterator
 bit_vector<WordType, Allocator>::insert(
         const_iterator pos,
@@ -541,7 +541,7 @@ bit_vector<WordType, Allocator>::insert(
     return begin() + d;
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr typename bit_vector<WordType, Allocator>::iterator
 bit_vector<WordType, Allocator>::insert(
         const_iterator pos,
@@ -564,7 +564,7 @@ bit_vector<WordType, Allocator>::insert(
     return begin() + d;
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr typename bit_vector<WordType, Allocator>::iterator
 bit_vector<WordType, Allocator>::erase(iterator pos) {
     shift_left(pos, begin() + length_, 1);
@@ -575,7 +575,7 @@ bit_vector<WordType, Allocator>::erase(iterator pos) {
     return pos;
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr typename bit_vector<WordType, Allocator>::iterator
 bit_vector<WordType, Allocator>::erase(iterator first, iterator last) {
     const auto d = distance(begin(), first);
@@ -589,7 +589,7 @@ bit_vector<WordType, Allocator>::erase(iterator first, iterator last) {
     return begin() + d;
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr void bit_vector<WordType, Allocator>::push_back(const value_type& value) {
     if (this->word_vector.size()*digits == length_) {
         word_vector.push_back(0U);
@@ -599,7 +599,7 @@ constexpr void bit_vector<WordType, Allocator>::push_back(const value_type& valu
     return;
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr void bit_vector<WordType, Allocator>::pop_back() {
     length_ -= 1;
     if (length_ % digits == 0) {
@@ -608,14 +608,14 @@ constexpr void bit_vector<WordType, Allocator>::pop_back() {
     return;
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr void bit_vector<WordType, Allocator>::resize(size_type count) {
     word_vector.resize(word_count(count));
     length_ = count;
     return;
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr void bit_vector<WordType, Allocator>::resize(size_type count, const value_type& value) {
     auto old_length = length_;
     word_vector.resize(word_count(count));
@@ -630,7 +630,7 @@ constexpr void bit_vector<WordType, Allocator>::resize(size_type count, const va
 
 
 // ------------------------ BIT VECTOR: DEBUGGING -------------------------- //
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr std::string bit_vector<WordType, Allocator>::debug_string(const_iterator first, const_iterator last) {
     std::string ret = "";
     iterator mem = first;
@@ -648,7 +648,7 @@ constexpr std::string bit_vector<WordType, Allocator>::debug_string(const_iterat
     return ret;
 }
 
-template<class WordType, class Allocator>
+template<typename WordType, typename Allocator>
 constexpr std::string bit_vector<WordType, Allocator>::debug_string() {
     auto first = begin();
     auto last = end();

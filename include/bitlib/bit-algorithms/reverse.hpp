@@ -24,7 +24,7 @@ namespace bit {
 
 // --------------------------- Reverse Algorithms --------------------------- //
 // Status: complete
-template <class RandomAccessIt>
+template <typename RandomAccessIt>
 constexpr void reverse(
     bit_iterator<RandomAccessIt> first,
     bit_iterator<RandomAccessIt> last

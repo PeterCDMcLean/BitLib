@@ -25,7 +25,7 @@ namespace bit {
 
 /* ****************************** BIT ITERATOR ****************************** */
 // Bit iterator class definition
-template <class Iterator>
+template <typename Iterator>
 class bit_iterator
 {
     // Assertions
@@ -47,7 +47,7 @@ class bit_iterator
     // Lifecycle
     public:
     constexpr bit_iterator();
-    template <class T>
+    template <typename T>
     constexpr bit_iterator(const bit_iterator<T>& other);
     explicit constexpr bit_iterator(iterator_type i);
     constexpr bit_iterator(iterator_type i, size_type pos);
@@ -55,7 +55,7 @@ class bit_iterator
 
     // Assignment
     public:
-    template <class T>
+    template <typename T>
     constexpr bit_iterator& operator=(const bit_iterator<T>& other);
 
     // Access
@@ -87,12 +87,12 @@ class bit_iterator
     size_type _position;
 
     // Non-member arithmetic operators
-    template <class T>
+    template <typename T>
     friend constexpr bit_iterator<T> operator+(
         typename bit_iterator<T>::difference_type n,
         const bit_iterator<T>& i
     );
-    template <class T, class U>
+    template <typename T, typename U>
     friend constexpr typename std::common_type<
         typename bit_iterator<T>::difference_type,
         typename bit_iterator<U>::difference_type
@@ -103,32 +103,32 @@ class bit_iterator
 
     // Comparison operators
     public:
-    template <class T, class U>
+    template <typename T, typename U>
     friend constexpr bool operator==(
         const bit_iterator<T>& lhs,
         const bit_iterator<U>& rhs
     );
-    template <class T, class U>
+    template <typename T, typename U>
     friend constexpr bool operator!=(
         const bit_iterator<T>& lhs,
         const bit_iterator<U>& rhs
     );
-    template <class T, class U>
+    template <typename T, typename U>
     friend constexpr bool operator<(
         const bit_iterator<T>& lhs,
         const bit_iterator<U>& rhs
     );
-    template <class T, class U>
+    template <typename T, typename U>
     friend constexpr bool operator<=(
         const bit_iterator<T>& lhs,
         const bit_iterator<U>& rhs
     );
-    template <class T, class U>
+    template <typename T, typename U>
     friend constexpr bool operator>(
         const bit_iterator<T>& lhs,
         const bit_iterator<U>& rhs
     );
-    template <class T, class U>
+    template <typename T, typename U>
     friend constexpr bool operator>=(
         const bit_iterator<T>& lhs,
         const bit_iterator<U>& rhs
@@ -140,7 +140,7 @@ class bit_iterator
 
 // ------------------------ BIT ITERATOR: LIFECYCLE ------------------------- //
 // Implicitly default constructs a bit iterator
-template <class Iterator>
+template <typename Iterator>
 constexpr bit_iterator<Iterator>::bit_iterator(
 )
 : _current()
@@ -149,8 +149,8 @@ constexpr bit_iterator<Iterator>::bit_iterator(
 }
 
 // Implicitly constructs a bit iterator from another bit iterator
-template <class Iterator>
-template <class T>
+template <typename Iterator>
+template <typename T>
 constexpr bit_iterator<Iterator>::bit_iterator(
     const bit_iterator<T>& other
 )
@@ -160,7 +160,7 @@ constexpr bit_iterator<Iterator>::bit_iterator(
 }
 
 // Explicitly constructs an aligned bit iterator from an iterator
-template <class Iterator>
+template <typename Iterator>
 constexpr bit_iterator<Iterator>::bit_iterator(
     const iterator_type i
 )
@@ -170,7 +170,7 @@ constexpr bit_iterator<Iterator>::bit_iterator(
 }
 
 // Explicitly constructs an unaligned bit iterator from an iterator
-template <class Iterator>
+template <typename Iterator>
 constexpr bit_iterator<Iterator>::bit_iterator(
     const iterator_type i,
     size_type pos
@@ -182,7 +182,7 @@ constexpr bit_iterator<Iterator>::bit_iterator(
 
 
 // Explicitly constructs an unaligned bit iterator from a pointer
-template <class Iterator>
+template <typename Iterator>
 constexpr bit_iterator<Iterator>::bit_iterator(const pointer& ptr)
 : _current(ptr->address())
 , _position(ptr->position())
@@ -194,8 +194,8 @@ constexpr bit_iterator<Iterator>::bit_iterator(const pointer& ptr)
 
 // ------------------------ BIT ITERATOR: ASSIGNMENT ------------------------ //
 // Assigns a bit iterator to the bit iterator
-template <class Iterator>
-template <class T>
+template <typename Iterator>
+template <typename T>
 constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator=(
     const bit_iterator<T>& other
 )
@@ -210,7 +210,7 @@ constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator=(
 
 // -------------------------- BIT ITERATOR: ACCESS -------------------------- //
 // Gets a bit reference from the bit iterator
-template <class Iterator>
+template <typename Iterator>
 constexpr typename bit_iterator<Iterator>::reference
 bit_iterator<Iterator>::operator*(
 ) const noexcept
@@ -219,7 +219,7 @@ bit_iterator<Iterator>::operator*(
 }
 
 // Gets a pointer to a bit
-template <class Iterator>
+template <typename Iterator>
 constexpr typename bit_iterator<Iterator>::pointer
 bit_iterator<Iterator>::operator->(
 ) const noexcept
@@ -228,7 +228,7 @@ bit_iterator<Iterator>::operator->(
 }
 
 // Gets a bit reference, decrementing or incrementing the iterator
-template <class Iterator>
+template <typename Iterator>
 constexpr typename bit_iterator<Iterator>::reference
 bit_iterator<Iterator>::operator[](
     difference_type n
@@ -248,7 +248,7 @@ bit_iterator<Iterator>::operator[](
 
 // ------------- BIT ITERATOR: INCREMENT AND DECREMENT OPERATORS ------------ //
 // Increments the bit iterator and returns it
-template <class Iterator>
+template <typename Iterator>
 constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator++(
 )
 {
@@ -263,7 +263,7 @@ constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator++(
 }
 
 // Decrements the bit iterator and returns it
-template <class Iterator>
+template <typename Iterator>
 constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator--(
 )
 {
@@ -278,7 +278,7 @@ constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator--(
 }
 
 // Increments the bit iterator and returns the old one
-template <class Iterator>
+template <typename Iterator>
 constexpr bit_iterator<Iterator> bit_iterator<Iterator>::operator++(
     int
 )
@@ -289,7 +289,7 @@ constexpr bit_iterator<Iterator> bit_iterator<Iterator>::operator++(
 }
 
 // Decrements the bit iterator and returns the old one
-template <class Iterator>
+template <typename Iterator>
 constexpr bit_iterator<Iterator> bit_iterator<Iterator>::operator--(
     int
 )
@@ -300,7 +300,7 @@ constexpr bit_iterator<Iterator> bit_iterator<Iterator>::operator--(
 }
 
 // Looks forward several bits and gets an iterator at this position
-template <class Iterator>
+template <typename Iterator>
 constexpr bit_iterator<Iterator> bit_iterator<Iterator>::operator+(
     difference_type n
 ) const
@@ -315,7 +315,7 @@ constexpr bit_iterator<Iterator> bit_iterator<Iterator>::operator+(
 }
 
 // Looks backward several bits and gets an iterator at this position
-template <class Iterator>
+template <typename Iterator>
 constexpr bit_iterator<Iterator> bit_iterator<Iterator>::operator-(
     difference_type n
 ) const
@@ -330,7 +330,7 @@ constexpr bit_iterator<Iterator> bit_iterator<Iterator>::operator-(
 }
 
 // Increments the iterator by several bits and returns it
-template <class Iterator>
+template <typename Iterator>
 constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator+=(
     difference_type n
 )
@@ -340,7 +340,7 @@ constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator+=(
 }
 
 // Decrements the iterator by several bits and returns it
-template <class Iterator>
+template <typename Iterator>
 constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator-=(
     difference_type n
 )
@@ -354,7 +354,7 @@ constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator-=(
 
 // -------------------- BIT ITERATOR: UNDERLYING DETAILS -------------------- //
 // Returns a copy of the underlying iterator
-template <class Iterator>
+template <typename Iterator>
 constexpr typename bit_iterator<Iterator>::iterator_type
 bit_iterator<Iterator>::base(
 ) const
@@ -363,7 +363,7 @@ bit_iterator<Iterator>::base(
 }
 
 // Returns the position of the bit within the underlying word
-template <class Iterator>
+template <typename Iterator>
 constexpr typename bit_iterator<Iterator>::size_type
 bit_iterator<Iterator>::position(
 ) const noexcept
@@ -372,7 +372,7 @@ bit_iterator<Iterator>::position(
 }
 
 // Returns a mask corresponding to the bit associated with the iterator
-template <class Iterator>
+template <typename Iterator>
 constexpr typename std::remove_cv<
     typename bit_iterator<Iterator>::word_type
 >::type bit_iterator<Iterator>::mask(
@@ -386,7 +386,7 @@ constexpr typename std::remove_cv<
 
 // -------------- BIT ITERATOR: NON-MEMBER ARITHMETIC OPERATORS ------------- //
 // Advances the bit iterator several times
-template <class T>
+template <typename T>
 constexpr bit_iterator<T> operator+(
     typename bit_iterator<T>::difference_type n,
     const bit_iterator<T>& i
@@ -396,7 +396,7 @@ constexpr bit_iterator<T> operator+(
 }
 
 // Computes the distance in bits separating two bit iterators
-template <class T, class U>
+template <typename T, typename U>
 constexpr typename std::common_type<
     typename bit_iterator<T>::difference_type,
     typename bit_iterator<U>::difference_type
@@ -423,7 +423,7 @@ constexpr typename std::common_type<
 
 // ------------------- BIT ITERATOR: COMPARISON OPERATORS ------------------- //
 // Checks if the left hand side is equal to the right hand side
-template <class T, class U>
+template <typename T, typename U>
 constexpr bool operator==(
     const bit_iterator<T>& lhs,
     const bit_iterator<U>& rhs
@@ -433,7 +433,7 @@ constexpr bool operator==(
 }
 
 // Checks if the left hand side is non equal to the right hand side
-template <class T, class U>
+template <typename T, typename U>
 constexpr bool operator!=(
     const bit_iterator<T>& lhs,
     const bit_iterator<U>& rhs
@@ -443,7 +443,7 @@ constexpr bool operator!=(
 }
 
 // Checks if the left hand side is less than the right hand side
-template <class T, class U>
+template <typename T, typename U>
 constexpr bool operator<(
     const bit_iterator<T>& lhs,
     const bit_iterator<U>& rhs
@@ -454,7 +454,7 @@ constexpr bool operator<(
 }
 
 // Checks if the left hand side is less than or equal to the right hand side
-template <class T, class U>
+template <typename T, typename U>
 constexpr bool operator<=(
     const bit_iterator<T>& lhs,
     const bit_iterator<U>& rhs
@@ -465,7 +465,7 @@ constexpr bool operator<=(
 }
 
 // Checks if the left hand side is greater than the right hand side
-template <class T, class U>
+template <typename T, typename U>
 constexpr bool operator>(
     const bit_iterator<T>& lhs,
     const bit_iterator<U>& rhs
@@ -476,7 +476,7 @@ constexpr bool operator>(
 }
 
 // Checks if the left hand side is greater than or equal to the right hand side
-template <class T, class U>
+template <typename T, typename U>
 constexpr bool operator>=(
     const bit_iterator<T>& lhs,
     const bit_iterator<U>& rhs

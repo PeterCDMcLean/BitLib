@@ -31,7 +31,7 @@ namespace hn = hwy::HWY_NAMESPACE;
 #endif
 // ========================================================================== //
 
-template<class RandomAccessIt>
+template<typename RandomAccessIt>
 constexpr typename bit_iterator<RandomAccessIt>::difference_type
 count(
     bit_iterator <RandomAccessIt> first,

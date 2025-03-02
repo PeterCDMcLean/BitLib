@@ -22,7 +22,7 @@ namespace bit {
 
 
 
-//template <class RandomAccessIt, class WordType>
+//template <typename RandomAccessIt, typename WordType>
 //constexpr bit_iterator<RandomAccessIt> transform(
         //bit_iterator<RandomAccessIt> first,
         //bit_iterator<RandomAccessIt> last,
@@ -31,7 +31,7 @@ namespace bit {
 
     //return d_first;
 //}
-template <class RandomAccessIt, class UnaryOperation>
+template <typename RandomAccessIt, typename UnaryOperation>
 constexpr bit_iterator<RandomAccessIt> transform(
         bit_iterator<RandomAccessIt> first,
         bit_iterator<RandomAccessIt> last,
@@ -127,7 +127,7 @@ constexpr bit_iterator<RandomAccessIt> transform(
     return d_first + total_bits_to_op;
 }
 
-template <class RandomAccessIt, class BinaryOperation>
+template <typename RandomAccessIt, typename BinaryOperation>
 constexpr bit_iterator<RandomAccessIt> transform(
         bit_iterator<RandomAccessIt> first1,
         bit_iterator<RandomAccessIt> last1,
@@ -211,7 +211,7 @@ constexpr bit_iterator<RandomAccessIt> transform(
     return d_first + total_bits_to_op;
 }
 
-//template <class RandomAccessIt1, class RandomAccessIt2, class RandomAccessIt3, class BinaryOperation>
+//template <typename RandomAccessIt1, typename RandomAccessIt2, class RandomAccessIt3, typename BinaryOperation>
 //constexpr bit_iterator<RandomAccessIt> transform_word(bit_iterator<RandomAccessIt1> first,
     //bit_iterator<RandomAccessIt1> last, bit_iterator<RandomAccessIt2> first2,
     //bit_iterator<RandomAccessIt> d_first, BinaryOperation binary_op) {

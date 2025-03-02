@@ -26,7 +26,7 @@ namespace bit {
 // -------------------------- Iterator Algorithms --------------------------- //
 // Returns the number of increments needed to get to last from first.
 // May be negative if last comes before first (Only when input is RAI)
-template <class InputIt>
+template <typename InputIt>
 typename bit_iterator<InputIt>::difference_type
     distance(bit_iterator<InputIt> first,
              bit_iterator<InputIt> last
@@ -41,13 +41,13 @@ typename bit_iterator<InputIt>::difference_type
 }
 
 // Increments the iterator n times. (If n is negative, the iterator is decremented n times)
-template <class InputIt, class Distance>
+template <typename InputIt, typename Distance>
 void advance(bit_iterator<InputIt>& first, Distance n)
 {
     first += n;
 }
 
-template<class ForwardIt>
+template<typename ForwardIt>
 bit_iterator<ForwardIt> next(
         bit_iterator<ForwardIt> bit_it,
         typename bit_iterator<ForwardIt>::difference_type n = 1
@@ -62,7 +62,7 @@ bit_iterator<ForwardIt> next(
 // --------------------------- Utility Functions ---------------------------- //
 
 // Returns distance(first, last) <= n
-template <class InputIt>
+template <typename InputIt>
 bool is_within(
         bit_iterator<InputIt> first,
         bit_iterator<InputIt> last,
@@ -75,7 +75,7 @@ bool is_within(
     return distance(first, last) <= n;
 }
 
-template <int N, class InputIt>
+template <int N, typename InputIt>
 constexpr bool is_within(
         bit_iterator<InputIt> first,
         bit_iterator<InputIt> last
@@ -102,7 +102,7 @@ constexpr bool is_within(
 }
 
 // Get next len bits beginning at start and store them in a word of type T
-template <class T, class InputIt>
+template <typename T, typename InputIt>
 T get_word(bit_iterator<InputIt> first, size_t len=binary_digits<T>::value)
 {
     using native_word_type = typename bit_iterator<InputIt>::word_type;
@@ -145,7 +145,7 @@ T get_word(bit_iterator<InputIt> first, size_t len=binary_digits<T>::value)
 // Get next len bits beginning at start and store them in a word of type T
 // If we reach `last` before we get len bits, break and return the current word
 // bits_read will store the number of bits that we read.
-//template <class T, class InputIt>
+//template <typename T, typename InputIt>
 //T get_word(bit_iterator<InputIt> first, bit_iterator<InputIt> last,
         //T& bits_read, T len=binary_digits<T>::value
         //)
@@ -209,7 +209,7 @@ T get_word(bit_iterator<InputIt> first, size_t len=binary_digits<T>::value)
 
 
 // Writes len bits from src beginning at dstIt
-template <class src_type, class OutputIt>
+template <typename src_type, typename OutputIt>
 void write_word(src_type src, bit_iterator<OutputIt> dst_bit_it,
         src_type len=binary_digits<src_type>::value
         )
@@ -277,7 +277,7 @@ void write_word(src_type src, bit_iterator<OutputIt> dst_bit_it,
 
 // Shifts the range [first, last) to the left by n, filling the empty
 // bits with 0
-template <class RandomAccessIt>
+template <typename RandomAccessIt>
 RandomAccessIt word_shift_left(RandomAccessIt first,
                           RandomAccessIt last,
                           typename RandomAccessIt::difference_type n
@@ -294,7 +294,7 @@ RandomAccessIt word_shift_left(RandomAccessIt first,
 // Shifts the range [first, right) to the left by n, filling the empty
 // bits with 0
 // NOT OPTIMIZED. Will be replaced with std::shift eventually.
-template <class RandomAccessIt>
+template <typename RandomAccessIt>
 RandomAccessIt word_shift_right(RandomAccessIt first,
                           RandomAccessIt last,
                           typename RandomAccessIt::difference_type n
@@ -318,32 +318,32 @@ constexpr auto _all_zeros() {
 }
 
 // checks that the passed iterator points to the first bit of a word
-template <class It>
+template <typename It>
 bool _is_aligned_lsb(bit_iterator<It> iter) {
     return iter.position() == 0;
 }
 
 // checks that maybe_end is one position past the last bit of base
-template <class ForwardIt>
+template <typename ForwardIt>
 bool _is_one_past_last_bit(bit_iterator<ForwardIt> maybe_end,
     ForwardIt base) {
     return maybe_end.position() == 0 && std::next(base) == maybe_end.base();
 }
 
 // checks that two bit iterators point to the same word
-template <class It>
+template <typename It>
 constexpr bool _in_same_word(bit_iterator<It> lhs, bit_iterator<It> rhs) {
     return lhs.base() == rhs.base();
 }
 
 // simple alias for right shift
-template <class WordType>
+template <typename WordType>
 WordType _shift_towards_lsb(WordType word, std::size_t n) {
     return word >> n;
 }
 
 // simple alias for left shift
-template <class WordType>
+template <typename WordType>
 WordType _shift_towards_msb(WordType word, std::size_t n) {
     return word << n;
 }
@@ -366,7 +366,7 @@ WordType _shift_towards_msb(WordType word, std::size_t n) {
  * to by last is not included in the read. if first == last, behavior
  * is undefined
  */
-template <class It>
+template <typename It>
 typename bit_iterator<It>::word_type _padded_read(bit_iterator<It> first,
     bit_iterator<It> last, const bit::bit_value bv) {
 

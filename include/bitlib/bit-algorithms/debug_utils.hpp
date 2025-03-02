@@ -23,7 +23,7 @@ namespace bit {
 
 
 // --------------------------- Utility Functions ---------------------------- //
-//template <class T1>
+//template <typename T1>
 //std::string word_to_vec(T1 word) {
     //std::bitset<binary_digits<T1>::value> word_c(word);
     //std::string out = word_c.to_string();
