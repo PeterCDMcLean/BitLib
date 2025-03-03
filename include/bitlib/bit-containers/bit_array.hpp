@@ -65,56 +65,51 @@ constexpr bit_array(const std::initializer_list<WordType> init);
 constexpr bit_array(const std::string_view s);
 
 ~bit_array() = default;
-
-private:
-
-public:
-
-  /*
+/*
     * Assignment
     */
-  constexpr bit_array& operator=(const bit_array<N>& other) = default;
-  constexpr bit_array& operator=(bit_array<N>&& other) noexcept;
+constexpr bit_array& operator=(const bit_array<N>& other) = default;
+constexpr bit_array& operator=(bit_array<N>&& other) noexcept;
 
-  constexpr bool operator==(const bit_array<N>& other) const noexcept;
+constexpr bool operator==(const bit_array<N>& other) const noexcept;
 
-  /*
+/*
     * Element Access
     */
-  constexpr reference operator[](size_type pos);
-  constexpr const_reference operator[](size_type pos) const;
-  constexpr reference at(size_type pos);
-  constexpr const_reference at(size_type pos) const;
-  constexpr reference front();
-  constexpr const_reference front() const;
-  constexpr reference back();
-  constexpr const_reference back() const;
-  constexpr WordType* data() noexcept;
-  constexpr const WordType* data() const noexcept;
+constexpr reference operator[](size_type pos);
+constexpr const_reference operator[](size_type pos) const;
+constexpr reference at(size_type pos);
+constexpr const_reference at(size_type pos) const;
+constexpr reference front();
+constexpr const_reference front() const;
+constexpr reference back();
+constexpr const_reference back() const;
+constexpr WordType* data() noexcept;
+constexpr const WordType* data() const noexcept;
 
-  /*
+/*
     * Iterators
     */
-  constexpr iterator begin() noexcept;
-  constexpr iterator end() noexcept;
-  constexpr const_iterator begin() const noexcept;
-  constexpr const_iterator end() const noexcept;
-  constexpr const_iterator cbegin() const noexcept;
-  constexpr const_iterator cend() const noexcept;
+constexpr iterator begin() noexcept;
+constexpr iterator end() noexcept;
+constexpr const_iterator begin() const noexcept;
+constexpr const_iterator end() const noexcept;
+constexpr const_iterator cbegin() const noexcept;
+constexpr const_iterator cend() const noexcept;
 
-  /*
+/*
     * Capacity
     */
-  constexpr bool empty() const noexcept;
-  constexpr size_type size() const noexcept;
-  constexpr size_type max_size() const noexcept;
+constexpr bool empty() const noexcept;
+constexpr size_type size() const noexcept;
+constexpr size_type max_size() const noexcept;
 
-  /*
+/*
     * Operations
     */
-  constexpr void fill(value_type bit_val) noexcept;
-  constexpr void swap(bit_array<N>& other) noexcept;
-  //constexpr std::synth-three-way-result<bit_array> operator<=>() const noexcept;
+constexpr void fill(value_type bit_val) noexcept;
+constexpr void swap(bit_array<N>& other) noexcept;
+//constexpr std::synth-three-way-result<bit_array> operator<=>() const noexcept;
 };
 
 template<std::size_t N>

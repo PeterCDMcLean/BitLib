@@ -1,0 +1,216 @@
+// ================================= BIT_ARRAY =================================== //
+// Project:     The Experimental Bit Algorithms Library
+// \file        bit_array.hpp
+// Description: Implementation of bit_array
+// Creator:     Vincent Reverdy
+// Contributor: Peter McLean [2025]
+// License:     BSD 3-Clause License
+// ========================================================================== //
+#ifndef _BIT_ARRAY_DYNAMIC_EXTENT_HPP_INCLUDED
+#define _BIT_ARRAY_DYNAMIC_EXTENT_HPP_INCLUDED
+
+#include <algorithm>
+#include <cstddef>
+#include <initializer_list>
+#include <memory>
+#include <span>  // std::dynamic_extent
+#include <stdexcept>
+
+#include "bitlib/bit-algorithms/bit_algorithm.hpp"
+#include "bitlib/bit-containers/bit_bitsof.hpp"
+#include "bitlib/bit-iterator/bit.hpp"
+
+namespace bit {
+
+template <>
+class bit_array<std::dynamic_extent>;
+using dynarray = bit_array<std::dynamic_extent>;
+
+template <>
+class bit_array<std::dynamic_extent> {
+ public:
+  using T = bit_value;
+  using WordType = std::uint8_t;
+  using value_type = T;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
+  using reference = bit_reference<WordType>;
+  using const_reference = const reference;
+  using pointer = bit_pointer<WordType>;
+  using const_pointer = const pointer;
+  using iterator = bit_iterator<T*>::iterator;
+  using const_iterator = bit_iterator<const T*>::const_iterator;
+
+ private:
+  size_type m_words;
+  size_type m_size;
+  std::unique_ptr<WordType[]> storage;
+
+ public:
+  /*
+  * Constructors, copies and moves...
+  */
+  constexpr bit_array<std::dynamic_extent>() noexcept;
+  constexpr bit_array<std::dynamic_extent>(value_type bit_val);
+  constexpr bit_array<std::dynamic_extent>const bit_array<N>& other) = default;
+  constexpr bit_array<std::dynamic_extent>const bit_array<N>&& other) noexcept;
+  constexpr bit_array<std::dynamic_extent>const std::initializer_list<bit_value> init);
+  constexpr bit_array<std::dynamic_extent>const std::initializer_list<bool> init);
+  constexpr bit_array<std::dynamic_extent>const std::initializer_list<WordType> init);
+  constexpr bit_array<std::dynamic_extent>const std::string_view s);
+
+  ~bit_array<std::dynamic_extent>() = default;
+  /*
+     * Assignment
+     */
+  constexpr bit_array<std::dynamic_extent>& operator=(const bit_array<std::dynamic_extent>& other) = default;
+  constexpr bit_array<std::dynamic_extent>& operator=(bit_array<std::dynamic_extent>&& other) noexcept;
+
+  constexpr bool operator==(const bit_array<N>& other) const noexcept;
+
+  /*
+     * Element Access
+     */
+  constexpr reference operator[](size_type pos);
+  constexpr const_reference operator[](size_type pos) const;
+  constexpr reference at(size_type pos);
+  constexpr const_reference at(size_type pos) const;
+  constexpr reference front();
+  constexpr const_reference front() const;
+  constexpr reference back();
+  constexpr const_reference back() const;
+  constexpr WordType* data() noexcept;
+  constexpr const WordType* data() const noexcept;
+
+  /*
+     * Iterators
+     */
+  constexpr iterator begin() noexcept;
+  constexpr iterator end() noexcept;
+  constexpr const_iterator begin() const noexcept;
+  constexpr const_iterator end() const noexcept;
+  constexpr const_iterator cbegin() const noexcept;
+  constexpr const_iterator cend() const noexcept;
+
+  /*
+     * Capacity
+     */
+  constexpr bool empty() const noexcept;
+  constexpr size_type size() const noexcept;
+  constexpr size_type max_size() const noexcept;
+
+  /*
+     * Operations
+     */
+  constexpr void fill(value_type bit_val) noexcept;
+  constexpr void swap(bit_array<N>& other) noexcept;
+  //constexpr std::synth-three-way-result<bit_array> operator<=>() const noexcept;
+};
+
+// Non-member swap to allow ADL.
+template <typename T>
+void swap(dynarray<T>& a, dynarray<T>& b) noexcept {
+  a.swap(b);
+}
+
+constexpr bool bit_array<std::dynamic_extent>::operator==(const bit_array<std::dynamic_extent>& other) const noexcept {
+  return equal(begin(), end(), other.begin());
+}
+
+constexpr void bit_array<std::dynamic_extent>::swap(bit_array<std::dynamic_extent>& other) noexcept {
+  std::swap(this->storage, other.storage);
+}
+
+// -------------------------------------------------------------------------- //
+/*
+    * Element Access
+    */
+constexpr typename bit_array<std::dynamic_extent>::reference bit_array<std::dynamic_extent>::operator[](size_type pos) {
+  return begin()[pos];
+}
+
+constexpr typename bit_array<std::dynamic_extent>::const_reference bit_array<std::dynamic_extent>::operator[](size_type pos) const {
+  return begin()[pos];
+}
+
+constexpr typename bit_array<std::dynamic_extent>::reference bit_array<std::dynamic_extent>::at(size_type pos) {
+  if (pos < size()) {
+    return begin()[pos];
+  } else {
+    throw std::out_of_range("Position is out of range");
+  }
+}
+
+constexpr typename bit_array<std::dynamic_extent>::const_reference bit_array<std::dynamic_extent>::at(size_type pos) const {
+  if (pos < size()) {
+    return begin()[pos];
+  } else {
+    throw std::out_of_range("Position is out of range");
+  }
+}
+
+constexpr typename bit_array<std::dynamic_extent>::reference bit_array<std::dynamic_extent>::front() {
+  return begin()[0];
+}
+
+constexpr typename bit_array<std::dynamic_extent>::const_reference bit_array<std::dynamic_extent>::front() const {
+  return begin()[0];
+}
+
+constexpr typename bit_array<std::dynamic_extent>::reference bit_array<std::dynamic_extent>::back() {
+  return begin()[size() - 1];
+}
+
+constexpr typename bit_array<std::dynamic_extent>::const_reference bit_array<std::dynamic_extent>::back() const {
+  return begin()[size() - 1];
+}
+
+constexpr typename bit_array<std::dynamic_extent>::WordType* bit_array<std::dynamic_extent>::data() noexcept {
+  return size() ? storage.get() : nullptr;
+}
+
+constexpr const typename bit_array<std::dynamic_extent>::WordType* bit_array<std::dynamic_extent>::data() const noexcept {
+  return size() ? storage.get() : nullptr;
+}
+
+// -------------------------------------------------------------------------- //
+
+constexpr typename bit_array<std::dynamic_extent>::size_type bit_array<std::dynamic_extent>::size() const noexcept { return m_size; }
+
+constexpr typename bit_array<std::dynamic_extent>::size_type bit_array<std::dynamic_extent>::max_size() const noexcept { return size(); }
+
+constexpr bool bit_array<std::dynamic_extent>::empty() const noexcept { return 0 == size(); }
+
+// Iterators
+// -------------------------------------------------------------------------- //
+
+constexpr typename bit_array<std::dynamic_extent>::iterator bit_array<std::dynamic_extent>::begin() noexcept {
+  return iterator(storage.get());
+}
+
+constexpr typename bit_array<std::dynamic_extent>::iterator bit_array<std::dynamic_extent>::end() noexcept {
+  return begin() + size();
+}
+
+constexpr typename bit_array<std::dynamic_extent>::const_iterator bit_array<std::dynamic_extent>::begin() const noexcept {
+  return const_iterator(storage.get());
+}
+
+constexpr typename bit_array<std::dynamic_extent>::const_iterator bit_array<std::dynamic_extent>::end() const noexcept {
+  return const_iterator(storage.get()) + size();
+}
+
+constexpr typename bit_array<std::dynamic_extent>::const_iterator bit_array<std::dynamic_extent>::cbegin() const noexcept {
+  return const_iterator(storage.get());
+}
+
+constexpr typename bit_array<std::dynamic_extent>::const_iterator bit_array<std::dynamic_extent>::cend() const noexcept {
+  return const_iterator(storage.get()) + size();
+}
+
+// -------------------------------------------------------------------------- //
+
+// ========================================================================== //
+}  // namespace bit
+#endif  // _BIT_ARRAY_DYNAMIC_EXTENT_HPP_INCLUDED
+// ========================================================================== //
