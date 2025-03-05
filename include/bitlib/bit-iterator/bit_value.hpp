@@ -32,6 +32,7 @@ class bit_value
 
     // Types
     public:
+    static constexpr std::size_t bits = 1;
     using size_type = std::size_t;
 
     // Lifecycle
