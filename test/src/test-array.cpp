@@ -209,3 +209,200 @@ TEST(ArrayTest, MoveSemantics) {
     EXPECT_FALSE(ba2[3]);
     EXPECT_TRUE(ba2[4]);
 }
+
+//
+// Test Suite for bit::bit_array<>
+//
+
+// As bit_array<> is dynamic, bitsof will not return the number stored bits
+// the class contains a size_t and a pointer
+TEST(BitArrayDynamicTest, Bitsof) {
+  bit::bit_array<> arr(23, bit::bit1);
+  EXPECT_EQ(bitsof(arr), 8 * sizeof(arr));
+  EXPECT_EQ(arr.size(), 23);
+}
+
+TEST(BitArrayDynamicTest, DefaultConstructorCreatesEmptyArray) {
+  bit::bit_array<> arr;
+  EXPECT_TRUE(arr.empty());
+  EXPECT_EQ(arr.size(), 0u);
+  EXPECT_EQ(arr.begin(), arr.end());
+}
+
+TEST(BitArrayDynamicTest, SizeConstructorCreatesArrayOfGivenSize) {
+  const std::size_t size = 10;
+  bit::bit_array<> arr(size);
+  EXPECT_EQ(arr.size(), size);
+  EXPECT_FALSE(arr.empty());
+}
+
+TEST(BitArrayDynamicTest, SizeAndValueConstructorInitializesCorrectly) {
+  const std::size_t size = 16;
+  // Initialize all bits to true.
+  bit::bit_array<> arr(size, bit::bit_value(true));
+  for (std::size_t i = 0; i < size; ++i) {
+    EXPECT_EQ(arr[i], bit::bit_value(true));
+  }
+}
+
+TEST(BitArrayDynamicTest, CopyConstructorCopiesContent) {
+  const std::size_t size = 8;
+  bit::bit_array<> original(size, bit::bit_value(true));
+  bit::bit_array<> copy(original);
+  EXPECT_TRUE(copy == original);
+}
+
+TEST(BitArrayDynamicTest, MoveConstructorMovesContent) {
+  const std::size_t size = 8;
+  bit::bit_array<> original(size, bit::bit_value(true));
+  bit::bit_array<> moved(std::move(original));
+  // Check that moved now contains the expected content.
+  EXPECT_EQ(moved.size(), size);
+  for (std::size_t i = 0; i < size; ++i) {
+    EXPECT_EQ(moved[i], bit::bit_value(true));
+  }
+  // The state of original is valid but unspecified.
+}
+
+TEST(BitArrayDynamicTest, InitializerListBitValueConstructorWorks) {
+  std::initializer_list<bit::bit_value> init = {bit::bit0, bit::bit1, bit::bit0};
+  bit::bit_array<> arr(init);
+  EXPECT_EQ(arr.size(), init.size());
+  auto it = arr.begin();
+  for (bit::bit_value expected : init) {
+    EXPECT_EQ(*it, expected);
+    ++it;
+  }
+}
+
+TEST(BitArrayDynamicTest, InitializerListWordTypeConstructorWorks) {
+  // For this test, we assume that the initializer list for WordType initializes the underlying storage.
+  // Here we use two bytes as an example.
+  std::initializer_list<std::uint8_t> init = {0b10101010, 0b01010101};
+  bit::bit_array<> arr(init);
+  // Assuming each std::uint8_t provides 8 bits, we expect the size to be the number of initializer elements * 8.
+  EXPECT_EQ(arr.size(), init.size() * 8u);
+  // Check that the underlying storage matches the initializer values.
+  const std::uint8_t* data = arr.data();
+  auto wordIt = init.begin();
+  for (std::size_t i = 0; i < init.size(); ++i) {
+    EXPECT_EQ(data[i], *(wordIt++));
+  }
+}
+
+TEST(BitArrayDynamicTest, StringViewConstructorWorks) {
+  // Assuming the string_view constructor interprets a string of '0' and '1' characters.
+  std::string_view s = "1011001";
+  bit::bit_array<> arr(s);
+  EXPECT_EQ(arr.size(), s.size());
+  for (std::size_t i = 0; i < s.size(); ++i) {
+    // Interpret '1' as true and '0' as false.
+    bool expected = (s[i] == '1');
+    EXPECT_EQ(arr[i], bit::bit_value(expected));
+  }
+}
+
+TEST(BitArrayDynamicTest, ElementAccessAtAndBracketConsistency) {
+  const std::size_t size = 5;
+  bit::bit_array<> arr(size, bit::bit_value(false));
+  // Set a value using operator[] and check with at().
+  arr[2] = bit::bit_value(true);
+  EXPECT_EQ(arr.at(2), bit::bit_value(true));
+  EXPECT_EQ(arr[2], bit::bit_value(true));
+
+  // Test front() and back().
+  arr[0] = bit::bit_value(true);
+  arr[size - 1] = bit::bit_value(true);
+  EXPECT_EQ(arr.front(), bit::bit_value(true));
+  EXPECT_EQ(arr.back(), bit::bit_value(true));
+}
+
+TEST(BitArrayDynamicTest, IteratorTraversal) {
+  const std::size_t size = 10;
+  bit::bit_array<> arr(size, bit::bit_value(false));
+  // Set alternate bits to true.
+  for (std::size_t i = 0; i < size; ++i) {
+    arr[i] = bit::bit_value(i % 2 == 0);
+  }
+  std::size_t index = 0;
+  for (auto it = arr.begin(); it != arr.end(); ++it, ++index) {
+    bool expected = (index % 2 == 0);
+    EXPECT_EQ(*it, bit::bit_value(expected));
+  }
+}
+
+TEST(BitArrayDynamicTest, CapacityFunctions) {
+  bit::bit_array<> arr;
+  EXPECT_TRUE(arr.empty());
+  EXPECT_EQ(arr.size(), 0u);
+  // max_size() is expected to be >= size.
+  EXPECT_GE(arr.max_size(), arr.size());
+}
+
+TEST(BitArrayDynamicTest, FillOperationSetsAllBits) {
+  const std::size_t size = 20;
+  bit::bit_array<> arr(size, bit::bit_value(false));
+  arr.fill(bit::bit_value(true));
+  for (std::size_t i = 0; i < size; ++i) {
+    EXPECT_EQ(arr[i], bit::bit_value(true));
+  }
+}
+
+TEST(BitArrayDynamicTest, SwapOperationSwapsContents) {
+  const std::size_t size1 = 5;
+  const std::size_t size2 = 8;
+  bit::bit_array<> arr1(size1, bit::bit_value(true));
+  bit::bit_array<> arr2(size2, bit::bit_value(false));
+
+  arr1.swap(arr2);
+
+  EXPECT_EQ(arr1.size(), size2);
+  EXPECT_EQ(arr2.size(), size1);
+
+  for (std::size_t i = 0; i < arr1.size(); ++i) {
+    EXPECT_EQ(arr1[i], bit::bit_value(false));
+  }
+  for (std::size_t i = 0; i < arr2.size(); ++i) {
+    EXPECT_EQ(arr2[i], bit::bit_value(true));
+  }
+}
+
+TEST(BitArrayDynamicTest, AssignmentOperatorCopiesContent) {
+  const std::size_t size = 10;
+  bit::bit_array<> arr1(size, bit::bit_value(true));
+  bit::bit_array<> arr2(size);
+  arr2 = arr1;
+  EXPECT_TRUE(arr2 == arr1);
+}
+
+TEST(BitArrayDynamicTest, MoveAssignmentOperatorMovesContent) {
+  const std::size_t size = 10;
+  bit::bit_array<> arr1(size, bit::bit_value(true));
+  bit::bit_array<> arr2(size);
+  arr2 = std::move(arr1);
+  EXPECT_EQ(arr2.size(), size);
+  for (std::size_t i = 0; i < size; ++i) {
+    EXPECT_EQ(arr2[i], bit::bit_value(true));
+  }
+  // The state of arr1 is valid but unspecified.
+}
+
+struct StructOfBitArrays {
+  bit::bit_array<> arr1;
+  bit::bit_array<> arr2;
+  bit::bit_array<> arr3;
+  StructOfBitArrays() = delete;
+  StructOfBitArrays(size_t s1, size_t s2, size_t s3)
+      : arr1(s1), arr2(s2), arr3(s3) {
+  }
+};
+
+TEST(BitArrayDynamicTest, StructOfBitArray) {
+  size_t s1 = rand();
+  size_t s2 = rand();
+  size_t s3 = rand();
+  StructOfBitArrays s(s1, s2, s3);
+  EXPECT_EQ(s.arr1.size(), s1);
+  EXPECT_EQ(s.arr2.size(), s2);
+  EXPECT_EQ(s.arr3.size(), s3);
+}
