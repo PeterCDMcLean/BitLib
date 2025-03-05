@@ -39,7 +39,7 @@ TEST(ArrayTest, BasicIteration) {
                         //  <-- LSB, apparently 🙄
   bit::bit_array<11> barr("0110_0101_110");
   int i=0;
-  for(auto bbit : barr) {
+  for(const auto& bbit : barr) {
     switch(10 - i++) {
       case  0: EXPECT_EQ(bit::bit0, bbit); break;
       case  1: EXPECT_EQ(bit::bit1, bbit); break;

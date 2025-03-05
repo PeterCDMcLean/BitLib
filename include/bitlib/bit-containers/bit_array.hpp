@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <vector>
 #include <type_traits>
+#include <span>
 // Project sources
 #include "bitlib/bit-iterator/bit.hpp"
 #include "bitlib/bit-algorithms/bit_algorithm.hpp"
@@ -29,7 +30,7 @@
 namespace bit {
 // ========================================================================== //
 
-template<std::size_t N>
+template<std::size_t N=std::dynamic_extent>
 class bit_array {
 public:
 static constexpr std::size_t bits = N;
