@@ -2,7 +2,7 @@
 #include <utility>
 
 #include "bitlib/bit-containers/bit_array.hpp"
-
+#include "bitlib/bit-containers/bit_array_dynamic_extent.hpp"
 #include "fixtures.hpp"
 
 // Third-party libraries

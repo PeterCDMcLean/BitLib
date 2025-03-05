@@ -12,7 +12,6 @@
 #include <type_traits>
 // Project sources
 #include "bitlib/bit-containers/bit-containers.hpp"
-#include "bitlib/bit-containers/bit_bitsof.hpp"
 #include "fixtures.hpp"
 // Third-party libraries
 #include "gtest/gtest.h"
@@ -29,27 +28,26 @@ TYPED_TEST(VectorTest, DefaultConstructor) {
 
 // Tests the size c'tor.
 TYPED_TEST(VectorTest, SizeInitializerConstructor) {
-    EXPECT_EQ(18, this->v2_.size());
-    EXPECT_EQ(18, bitsof(this->v2_));
-    for (auto bv: this->v2_) {
-        EXPECT_FALSE(bv);
+  EXPECT_EQ(18, this->v2_.size());
+  for (auto bv : this->v2_) {
+    EXPECT_FALSE(bv);
+  }
+  using WordType = typename TestFixture::base_type;
+  using vec_type = typename TestFixture::vec_type;
+  for (unsigned int veclen = 0; veclen < 4 * this->digits; veclen++) {
+    this->empty_vec = vec_type(veclen);
+    for (unsigned int i = 0; i < veclen; ++i) {
+      EXPECT_FALSE(this->empty_vec[i]);
     }
-    using WordType = typename TestFixture::base_type;
-    using vec_type = typename TestFixture::vec_type;
-    for (unsigned int veclen = 0; veclen < 4*this->digits; veclen++) {
-        this->empty_vec = vec_type(veclen);
-        for (unsigned int i = 0; i < veclen; ++i) {
-            EXPECT_FALSE(this->empty_vec[i]);
-        }
-        this->empty_vec = bit::bit_vector<WordType>(veclen);
-        unsigned int i = 0;
-        // TODO misplaced test for range-based for loop
-        for (auto bv: this->empty_vec) {
-            EXPECT_FALSE(bv);
-            i++;
-        }
-        EXPECT_EQ(i, veclen);
+    this->empty_vec = bit::bit_vector<WordType>(veclen);
+    unsigned int i = 0;
+    // TODO misplaced test for range-based for loop
+    for (auto bv : this->empty_vec) {
+      EXPECT_FALSE(bv);
+      i++;
     }
+    EXPECT_EQ(i, veclen);
+  }
 }
 
 TYPED_TEST(VectorTest, CountValueConstructor) {

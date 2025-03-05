@@ -22,7 +22,7 @@ target_include_directories(bitlib INTERFACE
     $<INSTALL_INTERFACE:include>
 )
 
-target_compile_features(bitlib INTERFACE cxx_std_20)
+target_compile_features(bitlib INTERFACE cxx_std_23)
 
 
 # specify global compiler flags
