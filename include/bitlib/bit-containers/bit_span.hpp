@@ -14,6 +14,9 @@
 
 namespace bit {
 
+template <typename T>
+concept Scalar = std::is_scalar_v<T>;
+
 // Helper storage: for a fixed extent no runtime size is stored.
 template<typename WordType, std::size_t Extent>
 struct bit_span_storage {
@@ -72,10 +75,18 @@ public:
     // Construct from a WordType pointer and a bit count.
     constexpr bit_span(WordType* word_ptr, size_type bit_count) noexcept requires(Extent == std::dynamic_extent);
     constexpr bit_span(WordType* word_ptr) noexcept;
+    constexpr bit_span(WordType& word_ref, size_type bit_count) noexcept
+      requires(Extent == std::dynamic_extent);
+    constexpr bit_span(WordType& word_ref) noexcept;
 
     // Construct from a iterator and a bit count.
     constexpr bit_span(iterator iter, size_type bit_count) noexcept requires(Extent == std::dynamic_extent);
     constexpr bit_span(iterator iter) noexcept;
+
+    constexpr bit_span(WordType& s)
+      requires(std::is_scalar_v<WordType>);
+    constexpr bit_span(WordType* s)
+      requires(std::is_scalar_v<WordType>);
 
     // --- Observers ---
 
@@ -127,6 +138,21 @@ public:
     constexpr bit_span<WordType, Extent-RevOffset> last() const noexcept requires(RevOffset != std::dynamic_extent);
     constexpr bit_span<WordType, std::dynamic_extent> last(size_type offset) const noexcept requires(Extent == std::dynamic_extent);
 };
+// Class Template Argument Deduction
+
+// CTAD guide for the constructor taking a WordType&,
+// deducing Extent as bitsof<WordType>().
+template <typename WordType>
+bit_span(WordType&) -> bit_span<WordType, bitsof<WordType>()>;
+template <typename WordType>
+bit_span(WordType*) -> bit_span<WordType, bitsof<WordType>()>;
+
+// CTAD guide for the constructor taking a WordType* and a size,
+// which should always be used when Extent is std::dynamic_extent.
+template <typename WordType>
+bit_span(WordType&, std::size_t) -> bit_span<WordType, std::dynamic_extent>;
+template <typename WordType>
+bit_span(WordType*, std::size_t) -> bit_span<WordType, std::dynamic_extent>;
 
 // --- Constructors ---
 
@@ -145,6 +171,11 @@ constexpr bit_span<WordType,Extent>::bit_span(pointer data, size_type bit_count)
 template<typename WordType, std::size_t Extent>
 constexpr bit_span<WordType,Extent>::bit_span(WordType* word_ptr, size_type bit_count) noexcept requires(Extent == std::dynamic_extent) : data_(pointer(word_ptr, 0)), bit_span_storage<WordType, Extent>(bit_count) { }
 
+template <typename WordType, std::size_t Extent>
+constexpr bit_span<WordType, Extent>::bit_span(WordType& word_ref, size_type bit_count) noexcept
+  requires(Extent == std::dynamic_extent)
+    : bit_span(&word_ref, bit_count) {}
+
 template<typename WordType, std::size_t Extent>
 constexpr bit_span<WordType,Extent>::bit_span(iterator iter, size_type bit_count) noexcept requires(Extent == std::dynamic_extent) : data_(&(*iter)), bit_span_storage<WordType, Extent>(bit_count) { }
 
@@ -159,6 +190,17 @@ constexpr bit_span<WordType,Extent>::bit_span(WordType* word_ptr) noexcept : dat
 template<typename WordType, std::size_t Extent>
 constexpr bit_span<WordType,Extent>::bit_span(iterator iter) noexcept : data_(&(*iter)), bit_span_storage<WordType, Extent>() { }
 
+template <typename WordType, std::size_t Extent>
+constexpr bit_span<WordType, Extent>::bit_span(WordType* word_ptr)
+  requires(std::is_scalar_v<WordType>)
+    : data_(word_ptr), bit_span_storage<WordType, Extent>() {
+}
+
+template <typename WordType, std::size_t Extent>
+constexpr bit_span<WordType, Extent>::bit_span(WordType& word_ref)
+  requires(std::is_scalar_v<WordType>)
+    : bit_span(&word_ref) {
+}
 
 // --- Observers ---
 

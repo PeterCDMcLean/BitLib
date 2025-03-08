@@ -30,6 +30,32 @@ TEST(BitSpanTest, ConstructorFromBitPointerDynamic) {
     EXPECT_FALSE(span.empty());
 }
 
+TEST(BitSpanTest, ConstructorDeductionWordType) {
+  uint32_t word = 0xDEADBEEF;
+  bit::bit_span span(word);
+  EXPECT_EQ(span.size(), 32);
+  //0xF
+  EXPECT_EQ(span[0], bit::bit1);
+  EXPECT_EQ(span[1], bit::bit1);
+  EXPECT_EQ(span[2], bit::bit1);
+  EXPECT_EQ(span[3], bit::bit1);
+  //0xE
+  EXPECT_EQ(span[4], bit::bit0);
+  EXPECT_EQ(span[5], bit::bit1);
+  EXPECT_EQ(span[6], bit::bit1);
+  EXPECT_EQ(span[7], bit::bit1);
+  //0xE
+  EXPECT_EQ(span[8], bit::bit0);
+  EXPECT_EQ(span[9], bit::bit1);
+  EXPECT_EQ(span[10], bit::bit1);
+  EXPECT_EQ(span[11], bit::bit1);
+  //0xB
+  EXPECT_EQ(span[12], bit::bit1);
+  EXPECT_EQ(span[13], bit::bit1);
+  EXPECT_EQ(span[14], bit::bit0);
+  EXPECT_EQ(span[15], bit::bit1);
+}
+
 TEST(BitSpanTest, ConstructorFromWordPointerDynamic) {
     WordType word = 0;
     // One word gives bit::bitsof<WordType>() bits.
