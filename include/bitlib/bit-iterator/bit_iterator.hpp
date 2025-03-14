@@ -14,125 +14,156 @@
 
 // ================================ PREAMBLE ================================ //
 // C++ standard library
+#include <compare>
+#include <concepts>
+#include <cstddef>
+#include <iterator>
+#include <type_traits>
+
 // Project sources
 #include "bit_details.hpp"
 // Third-party libraries
 // Miscellaneous
 namespace bit {
 // ========================================================================== //
+template <typename Ref, typename Value>
+concept reference_like =
+    std::copyable<Ref> &&               // Copyable (no move-only weirdness)
+    std::convertible_to<Ref, Value> &&  // Can be converted to the value type
+    std::assignable_from<Ref&, Value>;  // Supports assignment from value type
 
+template <typename It>
+concept bit_iterator_c = requires(It it, It it2,
+                                  typename It::difference_type n,
+                                  typename It::iterator_type i,
+                                  typename It::pointer ptr) {
+  // Required member types
+  typename It::iterator_type;
+  typename It::word_type;
+  typename It::iterator_category;
+  typename It::value_type;
+  requires std::same_as<typename It::value_type, bit_value>;
+  typename It::difference_type;  // should be std::ptrdiff_t
+  typename It::pointer;          // should be bit_pointer<word_type>
+  typename It::reference;        // should be bit_reference<word_type>
+  typename It::size_type;        // should be std::size_t
 
+  // Lifecycle requirements
+  { It() } -> std::same_as<It>;    // default-constructible
+  { It(it) } -> std::same_as<It>;  // copy constructible
+  { It(i) } -> std::same_as<It>;   // constructible from iterator_type
+  { It(i, static_cast<typename It::size_type>(0)) } -> std::same_as<It>;
+  { It(ptr) } -> std::same_as<It>;
+
+  { it2 - it } -> std::same_as<typename It::difference_type>;
+
+  // Assignment
+  { it = it2 } -> std::same_as<It&>;
+
+  // Element access
+  { *it } -> std::same_as<typename It::reference>;
+  { it.operator->() } -> std::same_as<typename It::pointer>;
+  { it[n] } -> std::same_as<typename It::reference>;
+
+  // Increment and decrement operations
+  { ++it } -> std::same_as<It&>;
+  { --it } -> std::same_as<It&>;
+  { it++ } -> std::same_as<It>;
+  { it-- } -> std::same_as<It>;
+  { it + n } -> std::same_as<It>;
+  { it - n } -> std::same_as<It>;
+  { it += n } -> std::same_as<It&>;
+  { it -= n } -> std::same_as<It&>;
+
+  // Underlying details
+  { it.base() } -> std::same_as<typename It::iterator_type>;
+  { it.position() } -> std::same_as<typename It::size_type>;
+  { it.mask() } -> std::same_as<std::remove_cv_t<typename It::word_type>>;
+
+  // Spaceship operator requirement
+  //{ it <=> it2 } -> std::convertible_to<std::strong_ordering>;
+};
+
+template <typename It>
+concept bit_contiguous_iterator = bit_iterator_c<It> &&
+                                  std::contiguous_iterator<typename It::iterator_type> &&
+                                  std::has_unique_object_representations_v<typename It::word_type>;
 
 /* ****************************** BIT ITERATOR ****************************** */
 // Bit iterator class definition
 template <class Iterator>
 class bit_iterator
 {
-    // Assertions
-    private:
-    using _traits_t = _cv_iterator_traits<Iterator>;
-    static_assert(binary_digits<typename _traits_t::value_type>::value, "");
+  // Assertions
+ private:
+  using _traits_t = _cv_iterator_traits<Iterator>;
+  static_assert(binary_digits<typename _traits_t::value_type>::value, "");
 
-    // Types
-    public:
-    using iterator_type = Iterator;
-    using word_type = typename _traits_t::value_type;
-    using iterator_category = typename _traits_t::iterator_category;
-    using value_type = bit_value;
-    using difference_type = std::ptrdiff_t;
-    using pointer = bit_pointer<word_type>;
-    using reference = bit_reference<word_type>;
-    using size_type = std::size_t;
+  // Types
+ public:
+  using iterator_type = Iterator;
+  using word_type = typename _traits_t::value_type;
+  using iterator_category = typename _traits_t::iterator_category;
+  using value_type = bit_value;
+  using difference_type = std::ptrdiff_t;
+  using pointer = bit_pointer<word_type>;
+  using reference = bit_reference<word_type>;
+  using size_type = std::size_t;
 
-    // Lifecycle
-    public:
-    constexpr bit_iterator();
-    template <class T>
-    constexpr bit_iterator(const bit_iterator<T>& other);
-    explicit constexpr bit_iterator(iterator_type i);
-    constexpr bit_iterator(iterator_type i, size_type pos);
-    explicit constexpr bit_iterator(const pointer& ptr);
+  // Lifecycle
+ public:
+  constexpr bit_iterator();
+  template <class T>
+  constexpr bit_iterator(const bit_iterator<T>& other);
+  explicit constexpr bit_iterator(iterator_type i);
+  constexpr bit_iterator(iterator_type i, size_type pos);
+  explicit constexpr bit_iterator(const pointer& ptr);
 
-    // Assignment
-    public:
-    template <class T>
-    constexpr bit_iterator& operator=(const bit_iterator<T>& other);
+  // Assignment
+ public:
+  template <class T>
+  constexpr bit_iterator& operator=(const bit_iterator<T>& other);
 
-    // Access
-    public:
-    constexpr reference operator*() const noexcept;
-    constexpr pointer operator->() const noexcept;
-    constexpr reference operator[](difference_type n) const;
+  // Access
+ public:
+  constexpr reference operator*() const noexcept;
+  constexpr pointer operator->() const noexcept;
+  constexpr reference operator[](difference_type n) const;
 
-    // Increment and decrement operators
-    public:
-    constexpr bit_iterator& operator++();
-    constexpr bit_iterator& operator--();
-    constexpr bit_iterator operator++(int);
-    constexpr bit_iterator operator--(int);
-    constexpr bit_iterator operator+(difference_type n) const;
-    constexpr bit_iterator operator-(difference_type n) const;
-    constexpr bit_iterator& operator+=(difference_type n);
-    constexpr bit_iterator& operator-=(difference_type n);
+  // Increment and decrement operators
+ public:
+  constexpr bit_iterator& operator++();
+  constexpr bit_iterator& operator--();
+  constexpr bit_iterator operator++(int);
+  constexpr bit_iterator operator--(int);
+  constexpr bit_iterator operator+(difference_type n) const;
+  constexpr bit_iterator operator-(difference_type n) const;
+  constexpr bit_iterator& operator+=(difference_type n);
+  constexpr bit_iterator& operator-=(difference_type n);
 
-    // Underlying details
-    public:
-    constexpr iterator_type base() const;
-    constexpr size_type position() const noexcept;
-    constexpr typename std::remove_cv<word_type>::type mask() const noexcept;
+  // Underlying details
+ public:
+  constexpr iterator_type base() const;
+  constexpr size_type position() const noexcept;
+  constexpr typename std::remove_cv<word_type>::type mask() const noexcept;
 
-    // Implementation details: data members
-    private:
-    iterator_type _current;
-    size_type _position;
+  // Implementation details: data members
+ private:
+  iterator_type _current;
+  size_type _position;
 
-    // Non-member arithmetic operators
-    template <class T>
-    friend constexpr bit_iterator<T> operator+(
-        typename bit_iterator<T>::difference_type n,
-        const bit_iterator<T>& i
-    );
-    template <class T, class U>
-    friend constexpr typename std::common_type<
-        typename bit_iterator<T>::difference_type,
-        typename bit_iterator<U>::difference_type
-    >::type operator-(
-        const bit_iterator<T>& lhs,
-        const bit_iterator<U>& rhs
-    );
-
-    // Comparison operators
-    public:
-    template <class T, class U>
-    friend constexpr bool operator==(
-        const bit_iterator<T>& lhs,
-        const bit_iterator<U>& rhs
-    );
-    template <class T, class U>
-    friend constexpr bool operator!=(
-        const bit_iterator<T>& lhs,
-        const bit_iterator<U>& rhs
-    );
-    template <class T, class U>
-    friend constexpr bool operator<(
-        const bit_iterator<T>& lhs,
-        const bit_iterator<U>& rhs
-    );
-    template <class T, class U>
-    friend constexpr bool operator<=(
-        const bit_iterator<T>& lhs,
-        const bit_iterator<U>& rhs
-    );
-    template <class T, class U>
-    friend constexpr bool operator>(
-        const bit_iterator<T>& lhs,
-        const bit_iterator<U>& rhs
-    );
-    template <class T, class U>
-    friend constexpr bool operator>=(
-        const bit_iterator<T>& lhs,
-        const bit_iterator<U>& rhs
-    );
+  // Non-member arithmetic operators
+  template <class T>
+  friend constexpr bit_iterator<T> operator+(
+      typename bit_iterator<T>::difference_type n,
+      const bit_iterator<T>& i);
+  template <class T, class U>
+  friend constexpr typename std::common_type<
+      typename bit_iterator<T>::difference_type,
+      typename bit_iterator<U>::difference_type>::type
+  operator-(
+      const bit_iterator<T>& lhs,
+      const bit_iterator<U>& rhs);
 };
 /* ************************************************************************** */
 
@@ -417,77 +448,25 @@ constexpr typename std::common_type<
     const difference_type main = lhs._current - rhs._current;
     return main * digits + (lhs._position - rhs._position);
 }
-// -------------------------------------------------------------------------- //
 
+static_assert(bit_iterator_c<bit_iterator<uint8_t*>>, "bit_iterator does not satisfy bit_iterator_c concept!");
 
+// Define the three-way comparison operator for bit_iterator.
+// This template works for bit_iterator<T> and bit_iterator<U> to allow mixed comparisons.
+constexpr auto operator<=>(
+    const bit_iterator_c auto& lhs,
+    const bit_iterator_c auto& rhs) {
+  if (auto cmp = lhs.base() <=> rhs.base(); cmp != 0) {
+    return cmp;
+  }
+  return lhs.position() <=> rhs.position();
+}
 
-// ------------------- BIT ITERATOR: COMPARISON OPERATORS ------------------- //
-// Checks if the left hand side is equal to the right hand side
-template <class T, class U>
 constexpr bool operator==(
-    const bit_iterator<T>& lhs,
-    const bit_iterator<U>& rhs
-)
-{
-    return lhs._current == rhs._current && lhs._position == rhs._position;
+    const bit_iterator_c auto& lhs,
+    const bit_iterator_c auto& rhs) {
+  return (lhs <=> rhs) == 0;  // Uses the spaceship operator to determine equality
 }
-
-// Checks if the left hand side is non equal to the right hand side
-template <class T, class U>
-constexpr bool operator!=(
-    const bit_iterator<T>& lhs,
-    const bit_iterator<U>& rhs
-)
-{
-    return lhs._current != rhs._current || lhs._position != rhs._position;
-}
-
-// Checks if the left hand side is less than the right hand side
-template <class T, class U>
-constexpr bool operator<(
-    const bit_iterator<T>& lhs,
-    const bit_iterator<U>& rhs
-)
-{
-    return lhs._current < rhs._current
-        || (lhs._current == rhs._current && lhs._position < rhs._position);
-}
-
-// Checks if the left hand side is less than or equal to the right hand side
-template <class T, class U>
-constexpr bool operator<=(
-    const bit_iterator<T>& lhs,
-    const bit_iterator<U>& rhs
-)
-{
-    return lhs._current < rhs._current
-        || (lhs._current == rhs._current && lhs._position <= rhs._position);
-}
-
-// Checks if the left hand side is greater than the right hand side
-template <class T, class U>
-constexpr bool operator>(
-    const bit_iterator<T>& lhs,
-    const bit_iterator<U>& rhs
-)
-{
-    return lhs._current > rhs._current
-        || (lhs._current == rhs._current && lhs._position > rhs._position);
-}
-
-// Checks if the left hand side is greater than or equal to the right hand side
-template <class T, class U>
-constexpr bool operator>=(
-    const bit_iterator<T>& lhs,
-    const bit_iterator<U>& rhs
-)
-{
-    return lhs._current > rhs._current
-        || (lhs._current == rhs._current && lhs._position >= rhs._position);
-}
-// -------------------------------------------------------------------------- //
-
-
 
 // ========================================================================== //
 } // namespace bit

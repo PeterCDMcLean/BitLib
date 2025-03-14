@@ -14,7 +14,7 @@
 #include <type_traits>
 #include <math.h>
 // Project sources
-#include "bitlib/bitlib.hpp"
+#include "bitlib/bit-iterator/bit.hpp"
 // Third-party libraries
 // Miscellaneous
 

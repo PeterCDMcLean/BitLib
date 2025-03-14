@@ -182,7 +182,10 @@ class bit_vector {
         constexpr void pop_back();
         constexpr void resize(size_type count);
         constexpr void resize(size_type count, const value_type& value);
-
+        template <bit_range R>
+        constexpr iterator insert_range(const_iterator pos, R&& range);
+        template <bit_range R>
+        constexpr void append_range(R&& range);
 
         /*
          * Helper functions
@@ -627,7 +630,17 @@ constexpr void bit_vector<WordType, Allocator>::resize(size_type count, const va
 }
 // -------------------------------------------------------------------------- //
 
+template <class WordType, class Allocator>
+template <bit_range R>
+constexpr bit_vector<WordType, Allocator>::iterator bit_vector<WordType, Allocator>::insert_range(const_iterator pos, R&& range) {
+  return this->insert(pos, range.begin(), range.end());
+}
 
+template <class WordType, class Allocator>
+template <bit_range R>
+constexpr void bit_vector<WordType, Allocator>::append_range(R&& range) {
+  this->insert(this->end(), range.begin(), range.end());
+}
 
 // ------------------------ BIT VECTOR: DEBUGGING -------------------------- //
 template<class WordType, class Allocator>

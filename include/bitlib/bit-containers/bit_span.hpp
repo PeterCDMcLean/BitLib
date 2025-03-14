@@ -1,3 +1,5 @@
+#ifndef _BIT_SPAN_HPP_INCLUDED
+#define _BIT_SPAN_HPP_INCLUDED
 #include <cstddef>
 #include <cassert>
 
@@ -44,9 +46,9 @@ public:
     using pointer           = bit_pointer<WordType>;
     using const_pointer     = const pointer;
     using iterator          = bit_iterator<typename std::span<WordType,Extent>::iterator>;
-    using const_iterator    = bit_iterator<const typename std::vector<WordType>::const_iterator>;
+    using const_iterator    = bit_iterator<const WordType*>;
 
-private:
+   private:
     // The start of the span, represented as a bit_pointer.
     pointer data_;
 
@@ -312,3 +314,4 @@ constexpr bit_span<WordType, std::dynamic_extent> bit_span<WordType, Extent>::la
 }
 
 } // namespace bit
+#endif

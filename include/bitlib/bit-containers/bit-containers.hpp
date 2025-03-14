@@ -7,6 +7,9 @@
 #ifndef _BIT_CONTAINERS_HPP_INCLUDED
 #define _BIT_CONTAINERS_HPP_INCLUDED
 // ============================== PREAMBLE ================================== //
+#include "bit_array.hpp"
+#include "bit_array_dynamic_extent.hpp"
+#include "bit_span.hpp"
 #include "bit_vector.hpp"
 // ========================================================================== //
 #endif
