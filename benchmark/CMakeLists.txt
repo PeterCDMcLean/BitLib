@@ -16,11 +16,11 @@ add_subdirectory(ext/dynamic_bitset)
 
 # specify benchmark-specific libraries
 include_directories(
-    ${googlebench_SOURCE_DIR}/benchmark/include 
+    ${googlebench_SOURCE_DIR}/benchmark/include
     src/utils
-    ext/BitArray 
+    ext/BitArray
     ext/itsy_bitsy/include)
-target_link_libraries(bitlib-bench PRIVATE benchmark::benchmark -pthread ${CMAKE_CURRENT_LIST_DIR}/ext/BitArray/libbitarr.a sul::dynamic_bitset)
+target_link_libraries(bitlib-bench PRIVATE bitlib_utils benchmark::benchmark -pthread ${CMAKE_CURRENT_LIST_DIR}/ext/BitArray/libbitarr.a sul::dynamic_bitset)
 
 target_compile_options(bitlib-bench PUBLIC -O3 -DNDEBUG -march=native -Wpedantic)
 install(TARGETS bitlib-bench DESTINATION .)

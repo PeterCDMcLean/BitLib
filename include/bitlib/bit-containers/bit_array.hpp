@@ -113,6 +113,13 @@ constexpr void swap(bit_array<N>& other) noexcept;
 //constexpr std::synth-three-way-result<bit_array> operator<=>() const noexcept;
 };
 
+static_assert(bit_range<bit_array<11>>, "bit_array does not satisfy bit_range concept!");
+static_assert(bit_sized_range<bit_array<11>>, "bit_array does not satisfy bit_sized_range concept!");
+#ifdef CONTIGUOUS_RANGE
+static_assert(bit_contiguous_range<bit_array<11>>, "bit_array does not satisfy bit_contiguous_range concept!");
+static_assert(bit_contiguous_sized_range<bit_array<11>>, "bit_array does not satisfy bit_contiguous_sized_range concept!");
+#endif
+
 template<std::size_t N>
 constexpr bit_array<N>::bit_array() noexcept : storage{} {}
 

@@ -20,74 +20,12 @@
 #include <iterator>
 #include <type_traits>
 
+#include "bitlib/bit_concepts.hpp"
 // Project sources
 #include "bit_details.hpp"
 // Third-party libraries
 // Miscellaneous
 namespace bit {
-// ========================================================================== //
-template <typename Ref, typename Value>
-concept reference_like =
-    std::copyable<Ref> &&               // Copyable (no move-only weirdness)
-    std::convertible_to<Ref, Value> &&  // Can be converted to the value type
-    std::assignable_from<Ref&, Value>;  // Supports assignment from value type
-
-template <typename It>
-concept bit_iterator_c = requires(It it, It it2,
-                                  typename It::difference_type n,
-                                  typename It::iterator_type i,
-                                  typename It::pointer ptr) {
-  // Required member types
-  typename It::iterator_type;
-  typename It::word_type;
-  typename It::iterator_category;
-  typename It::value_type;
-  requires std::same_as<typename It::value_type, bit_value>;
-  typename It::difference_type;  // should be std::ptrdiff_t
-  typename It::pointer;          // should be bit_pointer<word_type>
-  typename It::reference;        // should be bit_reference<word_type>
-  typename It::size_type;        // should be std::size_t
-
-  // Lifecycle requirements
-  { It() } -> std::same_as<It>;    // default-constructible
-  { It(it) } -> std::same_as<It>;  // copy constructible
-  { It(i) } -> std::same_as<It>;   // constructible from iterator_type
-  { It(i, static_cast<typename It::size_type>(0)) } -> std::same_as<It>;
-  { It(ptr) } -> std::same_as<It>;
-
-  { it2 - it } -> std::same_as<typename It::difference_type>;
-
-  // Assignment
-  { it = it2 } -> std::same_as<It&>;
-
-  // Element access
-  { *it } -> std::same_as<typename It::reference>;
-  { it.operator->() } -> std::same_as<typename It::pointer>;
-  { it[n] } -> std::same_as<typename It::reference>;
-
-  // Increment and decrement operations
-  { ++it } -> std::same_as<It&>;
-  { --it } -> std::same_as<It&>;
-  { it++ } -> std::same_as<It>;
-  { it-- } -> std::same_as<It>;
-  { it + n } -> std::same_as<It>;
-  { it - n } -> std::same_as<It>;
-  { it += n } -> std::same_as<It&>;
-  { it -= n } -> std::same_as<It&>;
-
-  // Underlying details
-  { it.base() } -> std::same_as<typename It::iterator_type>;
-  { it.position() } -> std::same_as<typename It::size_type>;
-  { it.mask() } -> std::same_as<std::remove_cv_t<typename It::word_type>>;
-
-  // Spaceship operator requirement
-  //{ it <=> it2 } -> std::convertible_to<std::strong_ordering>;
-};
-
-template <typename It>
-concept bit_contiguous_iterator = bit_iterator_c<It> &&
-                                  std::contiguous_iterator<typename It::iterator_type> &&
-                                  std::has_unique_object_representations_v<typename It::word_type>;
 
 /* ****************************** BIT ITERATOR ****************************** */
 // Bit iterator class definition
@@ -147,6 +85,7 @@ class bit_iterator
   constexpr size_type position() const noexcept;
   constexpr typename std::remove_cv<word_type>::type mask() const noexcept;
 
+  auto operator<=>(const bit_iterator&) const = default;
   // Implementation details: data members
  private:
   iterator_type _current;
@@ -450,23 +389,6 @@ constexpr typename std::common_type<
 }
 
 static_assert(bit_iterator_c<bit_iterator<uint8_t*>>, "bit_iterator does not satisfy bit_iterator_c concept!");
-
-// Define the three-way comparison operator for bit_iterator.
-// This template works for bit_iterator<T> and bit_iterator<U> to allow mixed comparisons.
-constexpr auto operator<=>(
-    const bit_iterator_c auto& lhs,
-    const bit_iterator_c auto& rhs) {
-  if (auto cmp = lhs.base() <=> rhs.base(); cmp != 0) {
-    return cmp;
-  }
-  return lhs.position() <=> rhs.position();
-}
-
-constexpr bool operator==(
-    const bit_iterator_c auto& lhs,
-    const bit_iterator_c auto& rhs) {
-  return (lhs <=> rhs) == 0;  // Uses the spaceship operator to determine equality
-}
 
 // ========================================================================== //
 } // namespace bit

@@ -107,6 +107,13 @@ class bit_array<std::dynamic_extent> {
   //constexpr std::synth-three-way-result<bit_array> operator<=>() const noexcept;
 };
 
+static_assert(bit_range<bit_array<>>, "bit_array<> does not satisfy bit_contiguous_range concept!");
+static_assert(bit_sized_range<bit_array<>>, "bit_array<> does not satisfy bit_contiguous_sized_range concept!");
+#ifdef CONTIGUOUS_RANGE
+static_assert(bit_contiguous_range<bit_array<>>, "bit_array<> does not satisfy bit_contiguous_range concept!");
+static_assert(bit_contiguous_sized_range<bit_array<>>, "bit_array<> does not satisfy bit_contiguous_sized_range concept!");
+#endif
+
 constexpr bit_array<std::dynamic_extent>::bit_array() noexcept
     : m_size(0), storage(std::unique_ptr<WordType[]>(nullptr)) {
 }

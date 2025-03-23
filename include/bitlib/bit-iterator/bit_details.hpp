@@ -28,6 +28,8 @@
 #include <type_traits>
 #include <utility>
 
+#include "bitlib/bit_concepts.hpp"
+
 // Project sources
 // Third-party libraries
 // Miscellaneous
@@ -38,26 +40,6 @@ template <class WordType> class bit_pointer;
 template <class Iterator> class bit_iterator;
 
 // ========================================================================== //
-
-template <typename R>
-concept bit_range =
-    std::ranges::range<R> &&
-    std::convertible_to<std::ranges::range_value_t<R>, bit_value>;
-
-template <typename R>
-concept bit_contiguous_range = bit_range<R> && 
-    std::contiguous_iterator<typename std::ranges::iterator_t<R>::iterator_type> &&
-    std::has_unique_object_representations_v<typename std::ranges::iterator_t<R>::word_type>;
-
-template <typename R>
-concept bit_sized_range =
-    bit_range<R> &&
-    std::ranges::sized_range<R>;
-
-template <typename R>
-concept bit_contiguous_sized_range =
-    bit_contiguous_range<R> &&
-    std::ranges::sized_range<R>;
 
 /* ***************************** BINARY DIGITS ****************************** */
 // Binary digits structure definition

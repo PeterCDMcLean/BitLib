@@ -128,6 +128,8 @@ class bit_pointer
         bit_pointer<U> rhs
     ) noexcept;
 };
+
+static_assert(bit_pointer_c<bit_pointer<uint8_t>, bit_reference<uint8_t>>, "bit_pointer does not satisfy bit_pointer_c concept!");
 /* ************************************************************************** */
 
 

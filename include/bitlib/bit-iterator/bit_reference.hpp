@@ -102,6 +102,7 @@ class bit_reference
     word_type* _ptr;
     typename std::remove_cv<word_type>::type _mask;
 };
+static_assert(bit_reference_c<bit_reference<uint8_t>>, "bit_reference does not satisfy bit_reference_c concept!");
 
 // Swap
 template <class T, class U>

@@ -10,7 +10,7 @@ project(Bit-Vector VERSION 0.3.0)
 # set up linters/checkers
 #set(CMAKE_CXX_CPPCHECK cppcheck;--std=c++17;--file-filter=*bitlib*)
 #set(CMAKE_CXX_CPPLINT cpplint;--linelength=100;--filter=-whitespace;)
-#set(CMAKE_CXX_CLANG_TIDY 
+#set(CMAKE_CXX_CLANG_TIDY
   #clang-tidy;
   #-header-filter=include/;)
 
@@ -24,18 +24,9 @@ target_include_directories(bitlib INTERFACE
 
 target_compile_features(bitlib INTERFACE cxx_std_23)
 
-
-# specify global compiler flags
-include_directories("include/" "utils/" )
-
-# Add fmt library (useful for printing words in binary and other debugging stuff)
-#include(FetchContent)
-#FetchContent_Declare(
-    #fmt
-    #GIT_REPOSITORY      https://github.com/fmtlib/fmt.git
-    #GIT_TAG             e57ca2e3685b160617d3d95fcd9e789c4e06ca88 #v10.1.0
-#)
-#FetchContent_MakeAvailable(fmt)
+add_library(bitlib_utils INTERFACE)
+target_include_directories(bitlib_utils INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/utils)
+target_sources(bitlib_utils INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/utils/test_utils.hpp)
 
 
 option(BITLIB_HWY "Build with google highway SIMD extensions" OFF)

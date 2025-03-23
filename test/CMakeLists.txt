@@ -22,7 +22,7 @@ endif()
 # endif()
 
 # specify test-specific libraries
-target_link_libraries(bitlib-tests PRIVATE bitlib GTest::gtest GTest::gtest_main)
+target_link_libraries(bitlib-tests PRIVATE bitlib GTest::gtest GTest::gtest_main bitlib_utils)
 target_link_options(bitlib-tests PRIVATE -pthread -lgcov --coverage)
 
 if (NOT BITLIB_GTEST_REPEAT)

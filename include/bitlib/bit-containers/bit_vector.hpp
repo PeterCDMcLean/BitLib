@@ -2,7 +2,7 @@
 // Project:     The Experimental Bit Algorithms Library
 // \file        bit_vector.hpp
 // Description: Implementation of bit_vector
-// Contributor: Bryce Kille 
+// Contributor: Bryce Kille
 // License:     BSD 3-Clause License
 // ========================================================================== //
 #ifndef _BIT_VECTOR_HPP_INCLUDED
@@ -198,6 +198,13 @@ class bit_vector {
             //return os << bv.debug_string(bv.cbegin(), bv.cend());;
         //}
 };
+static_assert(bit_range<bit_vector<uint8_t>>, "bit_vector<integral> does not satisfy bit_range concept!");
+static_assert(bit_sized_range<bit_vector<uint8_t>>, "bit_vector<integral> does not satisfy bit_sized_range concept!");
+#ifdef CONTIGUOUS_RANGE
+static_assert(bit_contiguous_range<bit_vector<uint8_t>>, "bit_vector<integral> does not satisfy bit_contiguous_range concept!");
+static_assert(bit_contiguous_sized_range<bit_vector<uint8_t>>, "bit_vector<integral> does not satisfy bit_contiguous_sized_range concept!");
+#endif
+
 /* ************************************************************************** */
 
 
