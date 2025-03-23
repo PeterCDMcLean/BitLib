@@ -140,6 +140,12 @@ public:
     constexpr bit_span<WordType, Extent-RevOffset> last() const noexcept requires(RevOffset != std::dynamic_extent);
     constexpr bit_span<WordType, std::dynamic_extent> last(size_type offset) const noexcept requires(Extent == std::dynamic_extent);
 };
+
+static_assert(bit_range<bit_span<uint8_t, 11>>, "bit_span does not satisfy bit_range concept!");
+static_assert(bit_sized_range<bit_span<uint8_t, 11>>, "bit_span does not satisfy bit_sized_range concept!");
+static_assert(bit_range<bit_span<uint8_t>>, "bit_span does not satisfy bit_range concept!");
+static_assert(bit_sized_range<bit_span<uint8_t>>, "bit_span does not satisfy bit_sized_range concept!");
+
 // Class Template Argument Deduction
 
 // CTAD guide for the constructor taking a WordType&,

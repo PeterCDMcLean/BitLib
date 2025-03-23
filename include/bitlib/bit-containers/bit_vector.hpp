@@ -175,7 +175,8 @@ class bit_vector {
         constexpr void clear() noexcept;
         constexpr iterator insert(const_iterator pos, const value_type& value);
         constexpr iterator insert(const_iterator pos, size_type count, const value_type& value);
-        constexpr iterator insert(const_iterator pos, iterator first, iterator last);
+        template <bit_iterator_c OtherIt>
+        constexpr iterator insert(const_iterator pos, OtherIt first, OtherIt last);
         constexpr iterator erase(iterator pos);
         constexpr iterator erase(iterator first, iterator last);
         constexpr void push_back(const value_type& value);
@@ -551,27 +552,28 @@ bit_vector<WordType, Allocator>::insert(
     return begin() + d;
 }
 
-template<class WordType, class Allocator>
+template <class WordType, class Allocator>
+template <bit_iterator_c OtherIt>
 constexpr typename bit_vector<WordType, Allocator>::iterator
 bit_vector<WordType, Allocator>::insert(
-        const_iterator pos,
-        iterator first,
-        iterator last) {
-    const auto d = distance(cbegin(), pos);
-    const size_t count = distance(first, last);
-    if (count == 0) {
-        return begin() + d;
-    }
-    const float bits_available = word_vector.size()*digits;
-    const auto need_to_add = length_ + count > bits_available;
-    if (need_to_add) {
-        const auto words_to_add = word_count(length_ + count - bits_available);
-        word_vector.resize(word_vector.size() + words_to_add);
-    }
-    length_ += count;
-    shift_right(begin() + d, begin() + length_, count);
-    copy(first, last, begin() + d);
+    const_iterator pos,
+    OtherIt first,
+    OtherIt last) {
+  const auto d = distance(cbegin(), pos);
+  const size_t count = distance(first, last);
+  if (count == 0) {
     return begin() + d;
+  }
+  const float bits_available = word_vector.size() * digits;
+  const auto need_to_add = length_ + count > bits_available;
+  if (need_to_add) {
+    const auto words_to_add = word_count(length_ + count - bits_available);
+    word_vector.resize(word_vector.size() + words_to_add);
+  }
+  length_ += count;
+  shift_right(begin() + d, begin() + length_, count);
+  copy(first, last, begin() + d);
+  return begin() + d;
 }
 
 template<class WordType, class Allocator>

@@ -78,6 +78,7 @@ class bit_iterator
   constexpr bit_iterator operator-(difference_type n) const;
   constexpr bit_iterator& operator+=(difference_type n);
   constexpr bit_iterator& operator-=(difference_type n);
+  constexpr difference_type operator-(const bit_iterator&) const;
 
   // Underlying details
  public:
@@ -321,6 +322,11 @@ constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator-=(
 // -------------------------------------------------------------------------- //
 
 
+template <class Iterator>
+constexpr bit_iterator<Iterator>::difference_type bit_iterator<Iterator>::operator-(const bit_iterator<Iterator>& other) const {
+    constexpr difference_type digits = binary_digits<word_type>::value;
+    return (_current - other._current) * digits + (_position - other._position);
+}
 
 // -------------------- BIT ITERATOR: UNDERLYING DETAILS -------------------- //
 // Returns a copy of the underlying iterator
