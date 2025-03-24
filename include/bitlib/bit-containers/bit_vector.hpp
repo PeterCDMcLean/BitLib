@@ -13,16 +13,18 @@
 
 // ================================ PREAMBLE ================================ //
 // C++ standard library
-#include <vector>
-#include <cmath>
-#include <string>
-#include <iostream>
 #include <algorithm>
-#include <vector>
+#include <cmath>
+#include <iostream>
+#include <ranges>
+#include <string>
 #include <type_traits>
+#include <vector>
 // Project sources
-#include "bitlib/bit-iterator/bit.hpp"
 #include "bitlib/bit-algorithms/bit_algorithm.hpp"
+#include "bitlib/bit-iterator/bit.hpp"
+#include "bitlib/bit_concepts.hpp"
+
 // Third-party libraries
 // Miscellaneous
 namespace bit {
@@ -100,11 +102,12 @@ class bit_vector {
         constexpr explicit bit_vector(
                 size_type count,
                 const Allocator& alloc=Allocator());
-        template<class RandomAccessIt>
-        constexpr bit_vector(
-                bit_iterator<RandomAccessIt> first,
-                bit_iterator<RandomAccessIt> last,
-                const Allocator& alloc=Allocator());
+        template <bit_iterator_c Iterator>
+        constexpr bit_vector(Iterator first, Iterator last, const Allocator& alloc = Allocator());
+
+        template <bit_range _Range>
+        constexpr bit_vector(std::from_range_t, _Range&& rg, const Allocator& alloc = Allocator());
+
         template<class RandomAccessIt>
         constexpr bit_vector(
                 RandomAccessIt first,
@@ -228,16 +231,19 @@ constexpr bit_vector<WordType, Allocator>::bit_vector(size_type count, const All
     : word_vector(word_count(count), alloc), length_(count) {}
 
 //TODO needs to work for input iterators
-template<class WordType, class Allocator>
-template<class RandomAccessIt>
-constexpr bit_vector<WordType, Allocator>::bit_vector(
-        bit_iterator<RandomAccessIt> first,
-        bit_iterator<RandomAccessIt> last,
-        const Allocator& alloc)
+template <class WordType, class Allocator>
+
+template <bit_iterator_c Iterator>
+constexpr bit_vector<WordType, Allocator>::bit_vector(Iterator first, Iterator last, const Allocator& alloc)
     : word_vector(distance(first, last), alloc), length_(distance(first, last)) {
-    copy(first, last, this->begin());
+  copy(first, last, this->begin());
 }
 
+template <class WordType, class Allocator>
+template <bit_range _Range>
+constexpr bit_vector<WordType, Allocator>::bit_vector(std::from_range_t, _Range&& rg, const Allocator& alloc)
+    : bit_vector(rg.begin(), rg.end(), alloc) {
+}
 
 template<class WordType, class Allocator>
 template<class RandomAccessIt>

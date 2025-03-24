@@ -5,6 +5,15 @@
 #include <iterator>
 #include <ranges>
 
+#if defined(__GNUC__) && (__GNUC__ < 13)
+namespace std {
+struct from_range_t {
+  explicit from_range_t() = default;
+};
+inline constexpr from_range_t from_range{};
+}  // namespace std
+#endif
+
 namespace bit {
 
 class bit_value;

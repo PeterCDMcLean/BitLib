@@ -16,16 +16,11 @@ When calling within template code with a type, the callee must use the `bitsof<t
 
 namespace bit {
 
-// Forward declare
-template <std::size_t N>
-class bit_array;
-
 // Concept to check for a public static constexpr size_t bits member.
 template<typename T>
 concept HasBits = requires {
     { T::bits } -> std::convertible_to<std::size_t>;
 };
-
 
 // General case: for types that do not have a bits member.
 template <typename T> requires (!HasBits<T>)
