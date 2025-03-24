@@ -30,11 +30,11 @@
 namespace bit {
 // ========================================================================== //
 
-template <std::size_t N = std::dynamic_extent>
+template <std::size_t N = std::dynamic_extent, typename V = bit_value, typename W = std::uint8_t>
 class bit_array {
  public:
   static constexpr std::size_t bits = N;
-  using word_type = std::uint8_t;
+  using word_type = W;
   using value_type = bit_value;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
@@ -44,9 +44,9 @@ class bit_array {
   using const_pointer = const pointer;
 
  private:
-  static constexpr std::size_t Words = (N * bitsof<value_type>() + bitsof<word_type>() - 1) / bitsof<word_type>();
+  static constexpr std::size_t Words = (N * bitsof<V>() + bitsof<word_type>() - 1) / bitsof<word_type>();
 
-  alignas(alignof(value_type)) std::array<word_type, Words> storage;
+  alignas(alignof(V)) std::array<word_type, Words> storage;
 
  public:
   using iterator = bit_iterator<typename std::array<word_type, Words>::iterator>;
@@ -58,8 +58,8 @@ class bit_array {
   */
   constexpr bit_array() noexcept;
   constexpr bit_array(value_type bit_val);
-  constexpr bit_array(const bit_array<N>& other) = default;
-  constexpr bit_array(const bit_array<N>&& other) noexcept;
+  constexpr bit_array(const bit_array<N, V, W>& other) = default;
+  constexpr bit_array(const bit_array<N, V, W>&& other) noexcept;
   constexpr bit_array(const std::initializer_list<value_type> init);
   constexpr bit_array(const std::initializer_list<bool> init);
   constexpr bit_array(const std::initializer_list<word_type> init);
@@ -69,10 +69,10 @@ class bit_array {
   /*
     * Assignment
     */
-  constexpr bit_array& operator=(const bit_array<N>& other) = default;
-  constexpr bit_array& operator=(bit_array<N>&& other) noexcept;
+  constexpr bit_array& operator=(const bit_array<N, V, W>& other) = default;
+  constexpr bit_array& operator=(bit_array<N, V, W>&& other) noexcept;
 
-  constexpr bool operator==(const bit_array<N>& other) const noexcept;
+  constexpr bool operator==(const bit_array<N, V, W>& other) const noexcept;
 
   /*
     * Element Access
@@ -109,7 +109,7 @@ class bit_array {
     * Operations
     */
   constexpr void fill(value_type bit_val) noexcept;
-  constexpr void swap(bit_array<N>& other) noexcept;
+  constexpr void swap(bit_array<N, V, W>& other) noexcept;
   //constexpr std::synth-three-way-result<bit_array> operator<=>() const noexcept;
 };
 
@@ -137,46 +137,46 @@ template <typename word_type>
 bit_array(word_type*, std::size_t) -> bit_array<word_type, std::dynamic_extent>;
 #endif
 
-template<std::size_t N>
-constexpr bit_array<N>::bit_array() noexcept : storage{} {}
+template <std::size_t N, typename V, typename W>
+constexpr bit_array<N, V, W>::bit_array() noexcept : storage{} {}
 
-template<std::size_t N>
-constexpr bit_array<N>::bit_array(bit_array<N>::value_type bit_val) : storage{} {
+template <std::size_t N, typename V, typename W>
+constexpr bit_array<N, V, W>::bit_array(bit_array<N, V, W>::value_type bit_val) : storage{} {
   fill(bit_val);
 }
 
-template<std::size_t N>
-constexpr void bit_array<N>::fill(bit_array<N>::value_type bit_val) noexcept {
+template <std::size_t N, typename V, typename W>
+constexpr void bit_array<N, V, W>::fill(bit_array<N, V, W>::value_type bit_val) noexcept {
   if (bit_val) {
-    std::fill(storage.begin(), storage.end(), bit_array<N>::word_type(-1));
+    std::fill(storage.begin(), storage.end(), bit_array<N, V, W>::word_type(-1));
   } else {
-    std::fill(storage.begin(), storage.end(), bit_array<N>::word_type(0));
+    std::fill(storage.begin(), storage.end(), bit_array<N, V, W>::word_type(0));
   }
 }
 
-template <std::size_t N>
-constexpr bit_array<N>::bit_array(const std::initializer_list<value_type> init) {
+template <std::size_t N, typename V, typename W>
+constexpr bit_array<N, V, W>::bit_array(const std::initializer_list<value_type> init) {
   if(init.size() != bitsof(*this)) [[unlikely]] {
     throw std::invalid_argument("initialize_list contains an invalid number of bits for bit_array.");
   }
   std::copy(init.begin(), init.end(), this->begin());
 }
 
-template<std::size_t N>
-constexpr bit_array<N>::bit_array(const std::initializer_list<bool> init) {
+template <std::size_t N, typename V, typename W>
+constexpr bit_array<N, V, W>::bit_array(const std::initializer_list<bool> init) {
   if(init.size() != bitsof(*this)) [[unlikely]] {
     throw std::invalid_argument("initialize_list contains an invalid number of bits for bit_array.");
   }
   std::copy(init.begin(), init.end(), this->begin());
 }
 
-template <std::size_t N>
-constexpr bit_array<N>::bit_array(const std::initializer_list<word_type> init) : storage(init) {
+template <std::size_t N, typename V, typename W>
+constexpr bit_array<N, V, W>::bit_array(const std::initializer_list<W> init) : storage(init) {
   static_assert(init.size() == storage.size());
 }
 
-template<std::size_t N>
-constexpr bit_array<N>::bit_array(const std::string_view s) {
+template <std::size_t N, typename V, typename W>
+constexpr bit_array<N, V, W>::bit_array(const std::string_view s) {
   if(bitsof(*this) != (std::count(s.begin(), s.end(), '0') + std::count(s.begin(), s.end(), '1'))) [[unlikely]] {
     throw std::invalid_argument("String contains an invalid number of bits for bit_array.");
   };
@@ -190,24 +190,23 @@ constexpr bit_array<N>::bit_array(const std::string_view s) {
   }
 }
 
-template<std::size_t N>
-constexpr bit_array<N>::bit_array(const bit_array<N>&& other) noexcept
+template <std::size_t N, typename V, typename W>
+constexpr bit_array<N, V, W>::bit_array(const bit_array<N, V, W>&& other) noexcept
     : storage(other.storage) {}
 
-
-template<std::size_t N>
-constexpr bit_array<N>& bit_array<N>::operator=(bit_array<N>&& other) noexcept {
+template <std::size_t N, typename V, typename W>
+constexpr bit_array<N, V, W>& bit_array<N, V, W>::operator=(bit_array<N, V, W>&& other) noexcept {
   std::copy(other.storage.begin(), other.storage.end(), storage.begin());
   return *this;
 }
 
-template<std::size_t N>
-constexpr bool bit_array<N>::operator==(const bit_array<N>& other) const noexcept {
+template <std::size_t N, typename V, typename W>
+constexpr bool bit_array<N, V, W>::operator==(const bit_array<N, V, W>& other) const noexcept {
   return equal(begin(), end(), other.begin());
 }
 
-template<std::size_t N>
-constexpr void bit_array<N>::swap(bit_array<N>& other) noexcept {
+template <std::size_t N, typename V, typename W>
+constexpr void bit_array<N, V, W>::swap(bit_array<N, V, W>& other) noexcept {
   std::swap(this->storage, other.storage);
 }
 
@@ -215,18 +214,18 @@ constexpr void bit_array<N>::swap(bit_array<N>& other) noexcept {
   /*
     * Element Access
     */
-template<std::size_t N>
-constexpr typename bit_array<N>::reference bit_array<N>::operator[](size_type pos) {
+template <std::size_t N, typename V, typename W>
+constexpr typename bit_array<N, V, W>::reference bit_array<N, V, W>::operator[](size_type pos) {
   return begin()[pos];
 }
 
-template<std::size_t N>
-constexpr typename bit_array<N>::const_reference bit_array<N>::operator[](size_type pos) const {
+template <std::size_t N, typename V, typename W>
+constexpr typename bit_array<N, V, W>::const_reference bit_array<N, V, W>::operator[](size_type pos) const {
   return begin()[pos];
 }
 
-template<std::size_t N>
-constexpr typename bit_array<N>::reference bit_array<N>::at(size_type pos) {
+template <std::size_t N, typename V, typename W>
+constexpr typename bit_array<N, V, W>::reference bit_array<N, V, W>::at(size_type pos) {
   if (pos < size()) {
     return begin()[pos];
   } else {
@@ -234,8 +233,8 @@ constexpr typename bit_array<N>::reference bit_array<N>::at(size_type pos) {
   }
 }
 
-template<std::size_t N>
-constexpr typename bit_array<N>::const_reference bit_array<N>::at(size_type pos) const {
+template <std::size_t N, typename V, typename W>
+constexpr typename bit_array<N, V, W>::const_reference bit_array<N, V, W>::at(size_type pos) const {
   if (pos < size()) {
     return begin()[pos];
   } else {
@@ -243,78 +242,77 @@ constexpr typename bit_array<N>::const_reference bit_array<N>::at(size_type pos)
   }
 }
 
-template<std::size_t N>
-constexpr typename bit_array<N>::reference bit_array<N>::front() {
+template <std::size_t N, typename V, typename W>
+constexpr typename bit_array<N, V, W>::reference bit_array<N, V, W>::front() {
   return begin()[0];
 }
 
-template<std::size_t N>
-constexpr typename bit_array<N>::const_reference bit_array<N>::front() const {
+template <std::size_t N, typename V, typename W>
+constexpr typename bit_array<N, V, W>::const_reference bit_array<N, V, W>::front() const {
   return begin()[0];
 }
 
-template<std::size_t N>
-constexpr typename bit_array<N>::reference bit_array<N>::back() {
+template <std::size_t N, typename V, typename W>
+constexpr typename bit_array<N, V, W>::reference bit_array<N, V, W>::back() {
   return begin()[size()-1];
 }
 
-template<std::size_t N>
-constexpr typename bit_array<N>::const_reference bit_array<N>::back() const {
+template <std::size_t N, typename V, typename W>
+constexpr typename bit_array<N, V, W>::const_reference bit_array<N, V, W>::back() const {
   return begin()[size()-1];
 }
 
-template <std::size_t N>
-constexpr typename bit_array<N>::word_type* bit_array<N>::data() noexcept {
+template <std::size_t N, typename V, typename W>
+constexpr typename bit_array<N, V, W>::word_type* bit_array<N, V, W>::data() noexcept {
   return size() ? storage.data() : nullptr;
 }
 
-template <std::size_t N>
-constexpr const typename bit_array<N>::word_type* bit_array<N>::data() const noexcept {
+template <std::size_t N, typename V, typename W>
+constexpr const typename bit_array<N, V, W>::word_type* bit_array<N, V, W>::data() const noexcept {
   return size() ? storage.data() : nullptr;
 }
 
 // -------------------------------------------------------------------------- //
 
+template <std::size_t N, typename V, typename W>
+constexpr typename bit_array<N, V, W>::size_type bit_array<N, V, W>::size() const noexcept { return N; }
 
-template<std::size_t N>
-constexpr typename bit_array<N>::size_type bit_array<N>::size() const noexcept {return N;}
+template <std::size_t N, typename V, typename W>
+constexpr typename bit_array<N, V, W>::size_type bit_array<N, V, W>::max_size() const noexcept { return size(); }
 
-template<std::size_t N>
-constexpr typename bit_array<N>::size_type bit_array<N>::max_size() const noexcept {return size();}
-
-template<std::size_t N>
-constexpr bool bit_array<N>::empty() const noexcept {return 0 == size();}
+template <std::size_t N, typename V, typename W>
+constexpr bool bit_array<N, V, W>::empty() const noexcept { return 0 == size(); }
 
 // Iterators
 // -------------------------------------------------------------------------- //
 
-template<std::size_t N>
-constexpr typename bit_array<N>::iterator bit_array<N>::begin() noexcept {
+template <std::size_t N, typename V, typename W>
+constexpr typename bit_array<N, V, W>::iterator bit_array<N, V, W>::begin() noexcept {
   return iterator(storage.begin());
 }
 
-template<std::size_t N>
-constexpr typename bit_array<N>::iterator bit_array<N>::end() noexcept {
+template <std::size_t N, typename V, typename W>
+constexpr typename bit_array<N, V, W>::iterator bit_array<N, V, W>::end() noexcept {
   return begin() + size();
 }
 
-template<std::size_t N>
-constexpr typename bit_array<N>::const_iterator bit_array<N>::begin() const noexcept {
+template <std::size_t N, typename V, typename W>
+constexpr typename bit_array<N, V, W>::const_iterator bit_array<N, V, W>::begin() const noexcept {
   return const_iterator(storage.begin());
 }
 
-template<std::size_t N>
-constexpr typename bit_array<N>::const_iterator bit_array<N>::end() const noexcept {
+template <std::size_t N, typename V, typename W>
+constexpr typename bit_array<N, V, W>::const_iterator bit_array<N, V, W>::end() const noexcept {
   return const_iterator(storage.begin()) + size();
 }
 
-template<std::size_t N>
-constexpr typename bit_array<N>::const_iterator bit_array<N>::cbegin() const noexcept {
+template <std::size_t N, typename V, typename W>
+constexpr typename bit_array<N, V, W>::const_iterator bit_array<N, V, W>::cbegin() const noexcept {
   return const_iterator(storage.begin());
 }
 
-template<std::size_t N>
-constexpr typename bit_array<N>::const_iterator bit_array<N>::cend() const noexcept {
+template <std::size_t N, typename V, typename W>
+constexpr typename bit_array<N, V, W>::const_iterator bit_array<N, V, W>::cend() const noexcept {
   return const_iterator(storage.begin()) + size();
 }
 
