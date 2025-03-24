@@ -26,22 +26,21 @@ namespace bit {
 template <>
 class bit_array<std::dynamic_extent> {
  public:
-  using T = bit_value;
-  using WordType = std::uint8_t;
-  using value_type = T;
+  using word_type = std::uint8_t;
+  using value_type = bit_value;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
-  using reference = bit_reference<WordType>;
-  using const_reference = const bit_reference<const WordType>;
-  using pointer = bit_pointer<WordType>;
+  using reference = bit_reference<word_type>;
+  using const_reference = const bit_reference<const word_type>;
+  using pointer = bit_pointer<word_type>;
   using const_pointer = const pointer;
-  using iterator = bit_iterator<WordType*>;
-  using const_iterator = bit_iterator<const WordType*>;
+  using iterator = bit_iterator<word_type*>;
+  using const_iterator = bit_iterator<const word_type*>;
 
  private:
   size_type m_size;
-  std::unique_ptr<WordType[]> storage;
-  static constexpr std::size_t Words(std::size_t N) { return (N * bitsof<T>() + bitsof<WordType>() - 1) / bitsof<WordType>(); };
+  std::unique_ptr<word_type[]> storage;
+  static constexpr std::size_t Words(std::size_t N) { return (N * bitsof<value_type>() + bitsof<word_type>() - 1) / bitsof<word_type>(); };
 
  public:
   /*
@@ -56,7 +55,7 @@ class bit_array<std::dynamic_extent> {
 #if 0
   constexpr bit_array(const std::initializer_list<bool> init);
 #endif
-  constexpr bit_array(const std::initializer_list<WordType> init);
+  constexpr bit_array(const std::initializer_list<word_type> init);
   constexpr bit_array(const std::string_view s);
 
   ~bit_array() = default;
@@ -79,8 +78,8 @@ class bit_array<std::dynamic_extent> {
   constexpr const_reference front() const;
   constexpr reference back();
   constexpr const_reference back() const;
-  constexpr WordType* data() noexcept;
-  constexpr const WordType* data() const noexcept;
+  constexpr word_type* data() noexcept;
+  constexpr const word_type* data() const noexcept;
 
   /*
      * Iterators
@@ -115,35 +114,35 @@ static_assert(bit_contiguous_sized_range<bit_array<>>, "bit_array<> does not sat
 #endif
 
 constexpr bit_array<std::dynamic_extent>::bit_array() noexcept
-    : m_size(0), storage(std::unique_ptr<WordType[]>(nullptr)) {
+    : m_size(0), storage(std::unique_ptr<word_type[]>(nullptr)) {
 }
 
 constexpr bit_array<std::dynamic_extent>::bit_array(size_type size)
     : m_size(size),
-      storage(std::make_unique<WordType[]>(Words(size))) {
+      storage(std::make_unique<word_type[]>(Words(size))) {
 }
 
 constexpr bit_array<std::dynamic_extent>::bit_array(size_type size, value_type bit_val)
     : m_size(size),
-      storage(std::make_unique<WordType[]>(Words(size))) {
+      storage(std::make_unique<word_type[]>(Words(size))) {
   fill(bit_val);
 }
 
 constexpr bit_array<std::dynamic_extent>::bit_array(const bit_array<std::dynamic_extent>& other)
     : m_size(other.size()),
-      storage(std::make_unique<WordType[]>(Words(m_size))) {
+      storage(std::make_unique<word_type[]>(Words(m_size))) {
   std::copy(other.begin(), other.end(), this->begin());
 }
 
 constexpr bit_array<std::dynamic_extent>::bit_array(const bit_array<std::dynamic_extent>&& other)
     : m_size(other.size()),
-      storage(std::make_unique<WordType[]>(Words(m_size))) {
+      storage(std::make_unique<word_type[]>(Words(m_size))) {
   std::copy(other.begin(), other.end(), this->begin());
 }
 
 constexpr bit_array<std::dynamic_extent>::bit_array(const std::initializer_list<bit_value> init)
     : m_size(init.size()),
-      storage(std::make_unique<WordType[]>(Words(Words(m_size)))) {
+      storage(std::make_unique<word_type[]>(Words(Words(m_size)))) {
   std::copy(init.begin(), init.end(), this->begin());
 }
 
@@ -151,21 +150,21 @@ constexpr bit_array<std::dynamic_extent>::bit_array(const std::initializer_list<
 No known conversion from bool to bit_value
 bit_value has explicit constructor from bool to bit_value so this doesnt work
 constexpr bit_array<std::dynamic_extent>::bit_array(const std::initializer_list<bool> init)
-    : storage(std::make_unique<WordType[]>(Words(init.size()))),
+    : storage(std::make_unique<word_type[]>(Words(init.size()))),
       m_size(init.size()) {
   std::copy(init.begin(), init.end(), this->begin());
 }
 #endif
 
-constexpr bit_array<std::dynamic_extent>::bit_array(const std::initializer_list<WordType> init)
-    : m_size(bitsof<WordType>() * init.size()),
-      storage(std::make_unique<WordType[]>(init.size())) {
+constexpr bit_array<std::dynamic_extent>::bit_array(const std::initializer_list<word_type> init)
+    : m_size(bitsof<word_type>() * init.size()),
+      storage(std::make_unique<word_type[]>(init.size())) {
   std::copy(init.begin(), init.end(), &storage[0]);
 }
 
 constexpr bit_array<std::dynamic_extent>::bit_array(const std::string_view s)
     : m_size((std::count(s.begin(), s.end(), '0') + std::count(s.begin(), s.end(), '1'))),
-      storage(std::make_unique<WordType[]>(Words(m_size))) {
+      storage(std::make_unique<word_type[]>(Words(m_size))) {
   size_type i = 0;
   for (char c : s) {
     if (c == '0') {
@@ -202,9 +201,9 @@ constexpr void bit_array<std::dynamic_extent>::swap(bit_array<std::dynamic_exten
 
 constexpr void bit_array<std::dynamic_extent>::fill(value_type bit_val) noexcept {
   if (bit_val) {
-    std::fill(&storage[0], &storage[Words(m_size)], bit_array<std::dynamic_extent>::WordType(-1));
+    std::fill(&storage[0], &storage[Words(m_size)], bit_array<std::dynamic_extent>::word_type(-1));
   } else {
-    std::fill(&storage[0], &storage[Words(m_size)], bit_array<std::dynamic_extent>::WordType(0));
+    std::fill(&storage[0], &storage[Words(m_size)], bit_array<std::dynamic_extent>::word_type(0));
   }
 }
 
@@ -252,11 +251,11 @@ constexpr typename bit_array<std::dynamic_extent>::const_reference bit_array<std
   return begin()[size() - 1];
 }
 
-constexpr typename bit_array<std::dynamic_extent>::WordType* bit_array<std::dynamic_extent>::data() noexcept {
+constexpr typename bit_array<std::dynamic_extent>::word_type* bit_array<std::dynamic_extent>::data() noexcept {
   return size() ? storage.get() : nullptr;
 }
 
-constexpr const typename bit_array<std::dynamic_extent>::WordType* bit_array<std::dynamic_extent>::data() const noexcept {
+constexpr const typename bit_array<std::dynamic_extent>::word_type* bit_array<std::dynamic_extent>::data() const noexcept {
   return size() ? storage.get() : nullptr;
 }
 
