@@ -36,13 +36,22 @@ constexpr bit_iterator<RandomAccessIt2> copy(bit_iterator<RandomAccessIt1> first
     // Types and constants
     using dst_word_type = typename bit_iterator<RandomAccessIt2>::word_type;
     using src_word_type = typename bit_iterator<RandomAccessIt1>::word_type;
+
+    // This checks for differing word types and uses an unoptimized copy in that event
+    if (!::std::is_same<dst_word_type, src_word_type>::value) {
+      while (first != last) {
+        *d_first = *first;
+        first++;
+        d_first++;
+      }
+      return d_first;
+    }
     using word_type = dst_word_type;
     using size_type = typename bit_iterator<RandomAccessIt2>::size_type;
     constexpr size_type digits = binary_digits<word_type>::value;
 
     // Assertions
     _assert_range_viability(first, last);
-    static_assert(::std::is_same<dst_word_type, src_word_type>::value, "Underlying word types must be equal");
     if (first == last) return d_first;
 
 
