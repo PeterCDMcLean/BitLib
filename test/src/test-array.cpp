@@ -222,13 +222,6 @@ TEST(BitArrayDynamicTest, Bitsof) {
   EXPECT_EQ(arr.size(), 23);
 }
 
-TEST(BitArrayDynamicTest, DefaultConstructorCreatesEmptyArray) {
-  bit::bit_array<> arr;
-  EXPECT_TRUE(arr.empty());
-  EXPECT_EQ(arr.size(), 0u);
-  EXPECT_EQ(arr.begin(), arr.end());
-}
-
 TEST(BitArrayDynamicTest, SizeConstructorCreatesArrayOfGivenSize) {
   const std::size_t size = 10;
   bit::bit_array<> arr(size);
@@ -332,9 +325,9 @@ TEST(BitArrayDynamicTest, IteratorTraversal) {
 }
 
 TEST(BitArrayDynamicTest, CapacityFunctions) {
-  bit::bit_array<> arr;
-  EXPECT_TRUE(arr.empty());
-  EXPECT_EQ(arr.size(), 0u);
+  bit::bit_array<> arr{bit::bit0};
+  EXPECT_FALSE(arr.empty());
+  EXPECT_EQ(arr.size(), 1u);
   // max_size() is expected to be >= size.
   EXPECT_GE(arr.max_size(), arr.size());
 }
@@ -407,10 +400,40 @@ TEST(BitArrayDynamicTest, StructOfBitArray) {
   EXPECT_EQ(s.arr3.size(), s3);
 }
 
-TEST(BitArrayDynamicTest, TwoDBitArray) {
+TEST(BitArrayDynamicTest, StringConstructor) {
+  bit::bit_array<> arr{"01001101"};
+
+  EXPECT_EQ(arr.size(), 8);
+
+  EXPECT_EQ(arr[7], bit::bit1);
+  EXPECT_EQ(arr[6], bit::bit0);
+  EXPECT_EQ(arr[5], bit::bit1);
+  EXPECT_EQ(arr[4], bit::bit1);
+  EXPECT_EQ(arr[3], bit::bit0);
+  EXPECT_EQ(arr[2], bit::bit0);
+  EXPECT_EQ(arr[1], bit::bit1);
+  EXPECT_EQ(arr[0], bit::bit0);
+}
+
+TEST(BitArrayDynamicTest, UserDefinedLiteral) {
+  auto arr = "01001101"_b;
+  EXPECT_EQ(arr.size(), 8);
+  EXPECT_EQ(arr[7], bit::bit0);
+  EXPECT_EQ(arr[0], bit::bit1);
+}
+
+TEST(BitArrayDynamicTest, TwoDBitArraySizeValueConstructor) {
   bit::bit_array<bit::bit_array<>> arr(
       16,
       bit::bit_array<>(4, bit::bit1));
+  EXPECT_EQ(arr.size(), 16);
+  EXPECT_EQ(arr[0].size(), 4);
+}
+
+TEST(BitArrayDynamicTest, TwoDBitArraySizeConstructor) {
+  bit::bit_array<bit::bit_array<>> arr(
+      16,
+      bit::bit_array<>(4));
   EXPECT_EQ(arr.size(), 16);
   EXPECT_EQ(arr[0].size(), 4);
 }

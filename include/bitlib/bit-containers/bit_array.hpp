@@ -69,7 +69,8 @@ class bit_array {
     requires(!std::is_same_v<value_type, word_type>);
   constexpr bit_array(const std::initializer_list<bool> init);
   constexpr bit_array(const std::initializer_list<word_type> init);
-  constexpr bit_array(const std::string_view s);
+  constexpr bit_array(const std::string_view s)
+    requires(std::is_same_v<value_type, bit_value>);
 
   ~bit_array() = default;
   /*
@@ -153,11 +154,7 @@ constexpr bit_array<T, N, V, W>::bit_array(bit_array<T, N, V, W>::value_type bit
 
 template <typename T, std::size_t N, std::align_val_t V, typename W>
 constexpr void bit_array<T, N, V, W>::fill(bit_array<T, N, V, W>::value_type bit_val) noexcept {
-  if (bit_val) {
-    std::fill(storage.begin(), storage.end(), bit_array<T, N, V, W>::word_type(-1));
-  } else {
-    std::fill(storage.begin(), storage.end(), bit_array<T, N, V, W>::word_type(0));
-  }
+  std::fill(this->begin(), this->end(), bit_val);
 }
 
 template <typename T, std::size_t N, std::align_val_t V, typename W>
@@ -184,7 +181,9 @@ constexpr bit_array<T, N, V, W>::bit_array(const std::initializer_list<W> init) 
 }
 
 template <typename T, std::size_t N, std::align_val_t V, typename W>
-constexpr bit_array<T, N, V, W>::bit_array(const std::string_view s) {
+constexpr bit_array<T, N, V, W>::bit_array(const std::string_view s)
+  requires(std::is_same_v<value_type, bit_value>)
+{
   if(bitsof(*this) != (std::count(s.begin(), s.end(), '0') + std::count(s.begin(), s.end(), '1'))) [[unlikely]] {
     throw std::invalid_argument("String contains an invalid number of bits for bit_array.");
   };
@@ -325,7 +324,6 @@ constexpr typename bit_array<T, N, V, W>::const_iterator bit_array<T, N, V, W>::
 }
 
 // -------------------------------------------------------------------------- //
-
 
 // ========================================================================== //
 } // namespace bit

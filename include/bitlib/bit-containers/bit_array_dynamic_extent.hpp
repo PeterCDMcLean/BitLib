@@ -50,7 +50,7 @@ class bit_array<T, std::dynamic_extent, V, W> {
   /*
   * Constructors, copies and moves...
   */
-  constexpr bit_array() noexcept;
+  bit_array() = delete;
   constexpr bit_array(size_type size);
   constexpr bit_array(size_type size, value_type bit_val);
   constexpr bit_array(const bit_array<T, std::dynamic_extent, V, W>& other);
@@ -61,7 +61,8 @@ class bit_array<T, std::dynamic_extent, V, W> {
   constexpr bit_array(const std::initializer_list<bool> init);
 #endif
   constexpr bit_array(const std::initializer_list<word_type> init);
-  constexpr bit_array(const std::string_view s);
+  constexpr bit_array(const std::string_view s)
+    requires(std::is_same_v<value_type, bit_value>);
 
   ~bit_array() = default;
   /*
@@ -118,10 +119,12 @@ static_assert(bit_contiguous_range<bit_array<>>, "bit_array<> does not satisfy b
 static_assert(bit_contiguous_sized_range<bit_array<>>, "bit_array<> does not satisfy bit_contiguous_sized_range concept!");
 #endif
 
+/* Can't imagine any use for a default constructor
 template <typename T, std::align_val_t V, typename W>
 constexpr bit_array<T, std::dynamic_extent, V, W>::bit_array() noexcept
     : m_size(0), storage(std::unique_ptr<word_type[], decltype(&std::free)>(nullptr, &std::free)) {
 }
+*/
 
 template <typename T, std::align_val_t V, typename W>
 constexpr bit_array<T, std::dynamic_extent, V, W>::bit_array(size_type size)
@@ -204,6 +207,7 @@ constexpr bit_array<T, std::dynamic_extent, V, W>::bit_array(const std::initiali
 
 template <typename T, std::align_val_t V, typename W>
 constexpr bit_array<T, std::dynamic_extent, V, W>::bit_array(const std::string_view s)
+  requires(std::is_same_v<value_type, bit_value>)
     : m_size((std::count(s.begin(), s.end(), '0') + std::count(s.begin(), s.end(), '1'))),
       storage(std::unique_ptr<word_type[], decltype(&std::free)>(
           static_cast<word_type*>(std::aligned_alloc(static_cast<size_t>(V), sizeof(word_type) * Words(m_size))), &std::free)) {
@@ -248,12 +252,7 @@ constexpr void bit_array<T, std::dynamic_extent, V, W>::swap(bit_array<T, std::d
 
 template <typename T, std::align_val_t V, typename W>
 constexpr void bit_array<T, std::dynamic_extent, V, W>::fill(value_type bit_val) noexcept {
-  std::fill(this->begin(), this->end(), bit_val); /*
-  if (bit_val) {
-    std::fill(&storage[0], &storage[Words(m_size)], bit_array<T, std::dynamic_extent, V, W>::word_type(-1));
-  } else {
-    std::fill(&storage[0], &storage[Words(m_size)], bit_array<T, std::dynamic_extent, V, W>::word_type(0));
-  }*/
+  std::fill(this->begin(), this->end(), bit_val);
 }
 
 // -------------------------------------------------------------------------- //
@@ -366,5 +365,12 @@ constexpr typename bit_array<T, std::dynamic_extent, V, W>::const_iterator bit_a
 
 // ========================================================================== //
 }  // namespace bit
+
+constexpr bit::bit_array<bit::bit_value, std::dynamic_extent> operator""_b(const char* binary, std::size_t len) {
+  auto reversed = std::make_unique<char[]>(len + 1);
+  std::reverse_copy(binary, binary + len, reversed.get());
+  return bit::bit_array<bit::bit_value, std::dynamic_extent>(std::string_view(reversed.get(), len));
+}
+
 #endif  // _BIT_ARRAY_DYNAMIC_EXTENT_HPP_INCLUDED
 // ========================================================================== //
