@@ -416,10 +416,20 @@ TEST(BitArrayDynamicTest, StringConstructor) {
 }
 
 TEST(BitArrayDynamicTest, UserDefinedLiteral) {
-  auto arr = "01001101"_b;
+  auto arr = 01001101_b;
   EXPECT_EQ(arr.size(), 8);
   EXPECT_EQ(arr[7], bit::bit0);
   EXPECT_EQ(arr[0], bit::bit1);
+}
+
+TEST(BitArrayDynamicTest, UserDefinedHexLiteral) {
+  auto arr = 0x010A110A_b;
+  EXPECT_EQ(arr.size(), 32);
+  EXPECT_EQ(arr[0], bit::bit0);
+  EXPECT_EQ(arr[1], bit::bit1);
+  EXPECT_EQ(arr[2], bit::bit0);
+  EXPECT_EQ(arr[3], bit::bit1);
+  EXPECT_EQ(arr[7], bit::bit0);
 }
 
 TEST(BitArrayDynamicTest, TwoDBitArraySizeValueConstructor) {

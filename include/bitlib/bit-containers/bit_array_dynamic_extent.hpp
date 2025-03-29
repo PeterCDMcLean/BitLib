@@ -366,11 +366,5 @@ constexpr typename bit_array<T, std::dynamic_extent, V, W>::const_iterator bit_a
 // ========================================================================== //
 }  // namespace bit
 
-constexpr bit::bit_array<bit::bit_value, std::dynamic_extent> operator""_b(const char* binary, std::size_t len) {
-  auto reversed = std::make_unique<char[]>(len + 1);
-  std::reverse_copy(binary, binary + len, reversed.get());
-  return bit::bit_array<bit::bit_value, std::dynamic_extent>(std::string_view(reversed.get(), len));
-}
-
 #endif  // _BIT_ARRAY_DYNAMIC_EXTENT_HPP_INCLUDED
 // ========================================================================== //

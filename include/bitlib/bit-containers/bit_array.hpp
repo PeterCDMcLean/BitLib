@@ -14,14 +14,12 @@
 
 // ================================ PREAMBLE ================================ //
 // C++ standard library
-#include <vector>
-#include <cmath>
-#include <string>
-#include <iostream>
 #include <algorithm>
-#include <vector>
-#include <type_traits>
+#include <cmath>
 #include <span>
+#include <string>
+#include <type_traits>
+#include <vector>
 // Project sources
 #include "bitlib/bit-iterator/bit.hpp"
 #include "bitlib/bit-algorithms/bit_algorithm.hpp"
@@ -326,6 +324,73 @@ constexpr typename bit_array<T, N, V, W>::const_iterator bit_array<T, N, V, W>::
 // -------------------------------------------------------------------------- //
 
 // ========================================================================== //
+
+template <size_t Base, typename Iter>
+constexpr void _append_char_from_parameter_pack(Iter& iter) {
+}
+
+template <size_t Base, typename Iter, char Bit>
+constexpr void _append_char_from_parameter_pack(Iter& iter) {
+  uint8_t decimal;
+  uint8_t bits;
+  switch (Base) {
+    case 2:
+      bits = 1u;
+      decimal = Bit - '0';
+      break;
+
+    case 4:
+      bits = 4u;
+      decimal = Bit - '0';
+      if (Bit >= 'a' && Bit <= 'f') {
+        decimal = Bit - 'a' + 10u;
+      }
+      if (Bit >= 'A' && Bit <= 'F') {
+        decimal = Bit - 'A' + 10u;
+      }
+      break;
+  }
+  for (int i = 0; i < bits; i++) {
+    *(iter++) = (decimal & 0x1u) ? bit1 : bit0;
+    decimal >>= 1;
+  }
+}
+
+template <size_t Base, typename Iter, char Bit, char... Bits>
+constexpr void _append_char_from_parameter_pack(Iter& iter)
+  requires(sizeof...(Bits) > 0)
+{
+  _append_char_from_parameter_pack<Base, Iter, Bits...>(iter);
+  _append_char_from_parameter_pack<Base, Iter, Bit>(iter);
+}
+
+template <char Zero, char X, char... Bits>
+constexpr size_t _parameter_pack_number_of_bits() {
+  if constexpr ((Zero == '0') && ((X == 'X') || (X == 'x'))) {
+    return sizeof...(Bits) * 4;
+  } else {
+    return 2 + sizeof...(Bits);
+  }
+}
+
+template <typename Iter, char Zero, char X, char... Bits>
+constexpr void _router_char_parameter_pack(Iter& iter) {
+  if constexpr ((Zero == '0') && ((X == 'X') || (X == 'x'))) {
+    _append_char_from_parameter_pack<4u, Iter, Bits...>(iter);
+  } else {
+    _append_char_from_parameter_pack<2u, Iter, Zero, X, Bits...>(iter);
+  }
+}
+
 } // namespace bit
+
+template <char... Str>
+constexpr bit::bit_array<bit::bit_value, bit::_parameter_pack_number_of_bits<Str...>()> operator""_b() {
+  bit::bit_array<bit::bit_value, bit::_parameter_pack_number_of_bits<Str...>()> arr{};
+  auto iter = arr.begin();
+  bit::_router_char_parameter_pack<typename bit::bit_array<bit::bit_value, bit::_parameter_pack_number_of_bits<Str...>()>::iterator, Str...>(iter);
+  return arr;
+}
+
 #endif // _BIT_ARRAY_HPP_INCLUDED
 // ========================================================================== //
