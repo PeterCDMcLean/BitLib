@@ -324,71 +324,98 @@ constexpr typename bit_array<T, N, V, W>::const_iterator bit_array<T, N, V, W>::
 // -------------------------------------------------------------------------- //
 
 // ========================================================================== //
-
-template <size_t Base, typename Iter>
-constexpr void _append_char_from_parameter_pack(Iter& iter) {
+template <char Bit>
+constexpr void _parameter_pack_base_bits_prefix_len(size_t& base, size_t& bits, size_t& prefix_len, uint64_t& num) {
+  if ('\'' == Bit) {
+    if (0 != bits) {
+      return;  //skip. Should we, though? It seems like it will be confusing
+    }
+    bits = num;
+    num = 0;
+    ++prefix_len;
+    if (0 == base) {
+      base = 10;
+    }
+  } else if (0 == base) {
+    if (Bit == 'b' || Bit == 'B') {
+      base = 2;
+      num = 0;
+    } else if (Bit == 'x' || Bit == 'X') {
+      base = 16;
+      num = 0;
+    } else if (Bit == 'd' || Bit == 'D') {
+      base = 10;
+      num = 0;
+    } else {
+      num = (num * 10) + (Bit - '0');
+    }
+    ++prefix_len;
+  } else {
+    uint8_t decimal;
+    switch (base) {
+      case 2:
+        decimal = Bit - '0';
+        break;
+      case 10:
+        decimal = Bit - '0';
+        break;
+      case 16:
+        decimal = Bit - '0';
+        if (Bit >= 'a' && Bit <= 'f') {
+          decimal = Bit - 'a' + 10u;
+        }
+        if (Bit >= 'A' && Bit <= 'F') {
+          decimal = Bit - 'A' + 10u;
+        }
+        break;
+    }
+    num = num * base + decimal;
+  }
 }
 
-template <size_t Base, typename Iter, char Bit>
-constexpr void _append_char_from_parameter_pack(Iter& iter) {
-  uint8_t decimal;
-  uint8_t bits;
-  switch (Base) {
-    case 2:
-      bits = 1u;
-      decimal = Bit - '0';
-      break;
-
-    case 4:
-      bits = 4u;
-      decimal = Bit - '0';
-      if (Bit >= 'a' && Bit <= 'f') {
-        decimal = Bit - 'a' + 10u;
-      }
-      if (Bit >= 'A' && Bit <= 'F') {
-        decimal = Bit - 'A' + 10u;
-      }
-      break;
-  }
-  for (int i = 0; i < bits; i++) {
-    *(iter++) = (decimal & 0x1u) ? bit1 : bit0;
-    decimal >>= 1;
-  }
-}
-
-template <size_t Base, typename Iter, char Bit, char... Bits>
-constexpr void _append_char_from_parameter_pack(Iter& iter)
+template <char Bit, char... Bits>
+constexpr void _parameter_pack_base_bits_prefix_len(size_t& base, size_t& bits, size_t& prefix_len, uint64_t& num)
   requires(sizeof...(Bits) > 0)
 {
-  _append_char_from_parameter_pack<Base, Iter, Bits...>(iter);
-  _append_char_from_parameter_pack<Base, Iter, Bit>(iter);
+  _parameter_pack_base_bits_prefix_len<Bit>(base, bits, prefix_len, num);
+  _parameter_pack_base_bits_prefix_len<Bits...>(base, bits, prefix_len, num);
 }
 
-template <char Zero, char X, char... Bits>
-constexpr size_t _parameter_pack_number_of_bits() {
-  if constexpr ((Zero == '0') && ((X == 'X') || (X == 'x'))) {
-    return sizeof...(Bits) * 4;
-  } else {
-    return 2 + sizeof...(Bits);
+template <char... Bits>
+constexpr std::pair<size_t, uint64_t> _parameter_pack_decode_prefixed_num() {
+  size_t base = 0;
+  size_t bits = 0;
+  size_t prefix_len = 0;
+  uint64_t num = 0;
+  _parameter_pack_base_bits_prefix_len<Bits...>(base, bits, prefix_len, num);
+  size_t digits = (sizeof...(Bits) - prefix_len);
+  if (0 == base) {
+    base = 10;
+    digits = prefix_len;
+    prefix_len = 0;
   }
-}
-
-template <typename Iter, char Zero, char X, char... Bits>
-constexpr void _router_char_parameter_pack(Iter& iter) {
-  if constexpr ((Zero == '0') && ((X == 'X') || (X == 'x'))) {
-    _append_char_from_parameter_pack<4u, Iter, Bits...>(iter);
-  } else {
-    _append_char_from_parameter_pack<2u, Iter, Zero, X, Bits...>(iter);
+  if (0 == bits) {
+    if (base == 2) {
+      bits = digits;
+    } else if (base == 10) {
+      bits = static_cast<size_t>(std::ceil(digits * std::log2(10)));
+    } else {
+      bits = 4 * digits;
+    }
   }
+  return {bits, num};
 }
 
 } // namespace bit
 
 template <char... Str>
-constexpr bit::bit_array<bit::bit_value, bit::_parameter_pack_number_of_bits<Str...>()> operator""_b() {
-  bit::bit_array<bit::bit_value, bit::_parameter_pack_number_of_bits<Str...>()> arr{};
-  auto iter = arr.begin();
-  bit::_router_char_parameter_pack<typename bit::bit_array<bit::bit_value, bit::_parameter_pack_number_of_bits<Str...>()>::iterator, Str...>(iter);
+constexpr bit::bit_array<bit::bit_value, bit::_parameter_pack_decode_prefixed_num<Str...>().first> operator""_b() {
+  bit::bit_array<bit::bit_value, bit::_parameter_pack_decode_prefixed_num<Str...>().first> arr{};
+  auto [bits, num] = bit::_parameter_pack_decode_prefixed_num<Str...>();
+  for (int i = 0; i < arr.size(); i++) {
+    arr[i] = (num & 0x1) ? bit::bit1 : bit::bit0;
+    num >>= 1;
+  }
   return arr;
 }
 
