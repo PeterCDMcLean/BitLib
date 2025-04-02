@@ -1,6 +1,7 @@
 #include "bitlib/bitlib.hpp"
 // Third-party libraries
 #include <memory>
+#include <ranges>
 
 #include "gtest/gtest.h"
 
@@ -27,6 +28,17 @@ TEST(UseCaseTest, VectorAppend) {
   EXPECT_EQ(vec[17 + 20], bit::bit1);
   EXPECT_EQ(vec[17 + 24], bit::bit1);
   EXPECT_EQ(vec[17 + 28], bit::bit0);
+}
+
+TEST(UseCaseTest, RangeCopy) {
+  uint32_t test32 = 0xABBADABA;
+  auto bspan = bit::bit_span(test32);
+  bit::bit_vector<uint32_t> v(32);
+  std::ranges::copy(bspan, v.begin());
+  EXPECT_EQ(v.size(), 32);
+  EXPECT_EQ(v[0], (0xABBADABA & (1 << 0)) ? bit::bit1 : bit::bit0);
+  EXPECT_EQ(v[1], (0xABBADABA & (1 << 1)) ? bit::bit1 : bit::bit0);
+  EXPECT_EQ(v[2], (0xABBADABA & (2 << 1)) ? bit::bit1 : bit::bit0);
 }
 
 /*
