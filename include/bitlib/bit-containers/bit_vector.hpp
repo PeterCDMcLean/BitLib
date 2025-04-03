@@ -22,6 +22,7 @@
 #include <vector>
 // Project sources
 #include "bitlib/bit-algorithms/bit_algorithm.hpp"
+#include "bitlib/bit-containers/bit_span.hpp"
 #include "bitlib/bit-iterator/bit.hpp"
 #include "bitlib/bit_concepts.hpp"
 
@@ -190,6 +191,11 @@ class bit_vector {
         constexpr iterator insert_range(const_iterator pos, R&& range);
         template <bit_range R>
         constexpr void append_range(R&& range);
+
+        /*
+          * Slice
+        */
+        constexpr bit_span<WordType, std::dynamic_extent> operator[](size_type offset, size_type right) const noexcept;
 
         /*
          * Helper functions
@@ -655,6 +661,14 @@ template <class WordType, class Allocator>
 template <bit_range R>
 constexpr void bit_vector<WordType, Allocator>::append_range(R&& range) {
   this->insert(this->end(), range.begin(), range.end());
+}
+
+/*
+  * Slice
+*/
+template <class WordType, class Allocator>
+constexpr bit_span<WordType, std::dynamic_extent> bit_vector<WordType, Allocator>::operator[](size_type offset, size_type right) const noexcept {
+  return bit_span<WordType, std::dynamic_extent>(&this->at(begin), end - begin);
 }
 
 // ------------------------ BIT VECTOR: DEBUGGING -------------------------- //

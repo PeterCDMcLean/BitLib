@@ -19,6 +19,7 @@
 #include "bitlib/bit-algorithms/bit_algorithm.hpp"
 #include "bitlib/bit-containers/bit_array.hpp"
 #include "bitlib/bit-containers/bit_bitsof.hpp"
+#include "bitlib/bit-containers/bit_span.hpp"
 #include "bitlib/bit-iterator/bit.hpp"
 
 namespace bit {
@@ -103,6 +104,11 @@ class bit_array<T, std::dynamic_extent, V, W> {
   constexpr bool empty() const noexcept;
   constexpr size_type size() const noexcept;
   constexpr size_type max_size() const noexcept;
+
+  /*
+    * Slice
+  */
+  constexpr bit_span<word_type, std::dynamic_extent> operator[](size_type offset, size_type right) const noexcept;
 
   /*
      * Operations
@@ -362,6 +368,11 @@ constexpr typename bit_array<T, std::dynamic_extent, V, W>::const_iterator bit_a
 }
 
 // -------------------------------------------------------------------------- //
+
+template <typename T, std::align_val_t V, typename W>
+constexpr bit_span<W, std::dynamic_extent> bit_array<T, std::dynamic_extent, V, W>::operator[](size_type begin, size_type end) const noexcept {
+  return bit_span<W, std::dynamic_extent>(&this->at(begin), end - begin);
+}
 
 // ========================================================================== //
 }  // namespace bit

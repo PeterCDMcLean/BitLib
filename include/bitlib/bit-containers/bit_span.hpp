@@ -132,6 +132,9 @@ public:
     constexpr auto subspan() const noexcept -> bit_span<WordType, subspan_extent<NewOffset, NewExtent>()>;
     constexpr bit_span<WordType, std::dynamic_extent> subspan(size_type offset, size_type count = std::dynamic_extent) const noexcept requires(Extent == std::dynamic_extent);
 
+    constexpr bit_span<WordType, std::dynamic_extent> operator[](size_type begin, size_type end) const noexcept
+      requires(Extent == std::dynamic_extent);
+
     template<std::size_t NewExtent>
     constexpr bit_span<WordType, NewExtent> first() const noexcept requires(NewExtent != std::dynamic_extent);
     constexpr bit_span<WordType, std::dynamic_extent> first(size_type offset) const noexcept requires(Extent == std::dynamic_extent);
@@ -296,6 +299,13 @@ template<typename WordType, std::size_t Extent>
 constexpr bit_span<WordType, std::dynamic_extent> bit_span<WordType,Extent>::subspan(size_type offset, size_type count) const noexcept requires(Extent == std::dynamic_extent) {
     size_type new_count = (count == std::dynamic_extent) ? size() - offset : count;
     return bit_span<WordType, Extent>(begin() + offset, new_count);
+}
+
+template <typename WordType, std::size_t Extent>
+constexpr bit_span<WordType, std::dynamic_extent> bit_span<WordType, Extent>::operator[](size_type begin, size_type end) const noexcept
+  requires(Extent == std::dynamic_extent)
+{
+  return subspan(begin, end - begin);
 }
 
 template<typename WordType, std::size_t Extent>
