@@ -204,6 +204,17 @@ TEST(BitSpanTest, CopyConstructionFixed) {
     EXPECT_EQ(span2[2], bit::bit1);
 }
 
+TEST(BitSpanTest, Slice) {
+  uint32_t word = 0xDEADBEEF;
+  bit::bit_span span1(word);
+  auto span2 = span1[4, 8];
+  EXPECT_EQ(span2.size(), 4);
+  EXPECT_EQ(span2[0], (0xE & (1 << 0)) ? bit::bit1 : bit::bit0);
+  EXPECT_EQ(span2[1], (0xE & (1 << 1)) ? bit::bit1 : bit::bit0);
+  EXPECT_EQ(span2[2], (0xE & (1 << 2)) ? bit::bit1 : bit::bit0);
+  EXPECT_EQ(span2[3], (0xE & (1 << 3)) ? bit::bit1 : bit::bit0);
+}
+
 // ---------- Const Reference Alias Tests ----------
 
 TEST(BitSpanTest, ConstReferenceAlias) {

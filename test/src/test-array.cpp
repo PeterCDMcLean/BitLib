@@ -460,3 +460,25 @@ TEST(BitArrayDynamicTest, TwoDBitArraySizeConstructor) {
   EXPECT_EQ(arr.size(), 16);
   EXPECT_EQ(arr[0].size(), 4);
 }
+
+TEST(BitArrayTest, Slice) {
+  auto arr = 0x20'DEADBEEF_b;
+  auto span2 = arr[4, 8];
+  EXPECT_EQ(span2.size(), 4);
+  EXPECT_EQ(span2[0], (0xE & (1 << 0)) ? bit::bit1 : bit::bit0);
+  EXPECT_EQ(span2[1], (0xE & (1 << 1)) ? bit::bit1 : bit::bit0);
+  EXPECT_EQ(span2[2], (0xE & (1 << 2)) ? bit::bit1 : bit::bit0);
+  EXPECT_EQ(span2[3], (0xE & (1 << 3)) ? bit::bit1 : bit::bit0);
+}
+
+TEST(BitArrayTest, SliceModify) {
+  auto arr = 0x24'DEADBEEF_b;
+  auto span2 = arr[4, 8];
+  EXPECT_EQ(span2.size(), 4);
+  EXPECT_EQ(span2[0], (0xE & (1 << 0)) ? bit::bit1 : bit::bit0);
+  EXPECT_EQ(span2[1], (0xE & (1 << 1)) ? bit::bit1 : bit::bit0);
+  EXPECT_EQ(span2[2], (0xE & (1 << 2)) ? bit::bit1 : bit::bit0);
+  EXPECT_EQ(span2[3], (0xE & (1 << 3)) ? bit::bit1 : bit::bit0);
+  span2[3] = bit::bit0;
+  EXPECT_EQ(span2[3], bit::bit0);
+}
