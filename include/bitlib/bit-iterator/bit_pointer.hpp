@@ -263,7 +263,7 @@ constexpr bit_reference<WordType> bit_pointer<WordType>::operator[](
     if (sum < 0 && diff * digits != sum) {
         --diff;
     }
-    return bit_reference<WordType>(_ref._ptr + diff, sum - diff * digits);
+    return bit_reference<WordType>(&_ref._ref + diff, sum - diff * digits);
 }
 // -------------------------------------------------------------------------- //
 

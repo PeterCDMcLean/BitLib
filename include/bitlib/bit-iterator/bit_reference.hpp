@@ -93,14 +93,16 @@ class bit_reference
     // Implementation details: function members
     private:
     bit_reference() noexcept = default;
+#if 0
     explicit constexpr bit_reference(std::nullptr_t) noexcept;
+#endif
     explicit constexpr bit_reference(word_type* ptr) noexcept;
     constexpr bit_reference(word_type* ptr, size_type pos);
 
     // Implementation details: data members
     private:
-    word_type* _ptr;
-    typename std::remove_cv<word_type>::type _mask;
+     word_type& _ref;
+     typename std::remove_cv<word_type>::type _mask;
 };
 static_assert(bit_reference_c<bit_reference<uint8_t>>, "bit_reference does not satisfy bit_reference_c concept!");
 
@@ -141,41 +143,30 @@ std::basic_ostream<CharT, Traits>& operator<<(
 template <class WordType>
 template <class T>
 constexpr bit_reference<WordType>::bit_reference(
-    const bit_reference<T>& other
-) noexcept
-: _ptr(other._ptr)
-, _mask(other._mask)
-{
+    const bit_reference<T>& other) noexcept
+    : _ref(other._ref), _mask(other._mask) {
 }
 
 template <class WordType>
 constexpr bit_reference<WordType>::bit_reference(
-    const bit_reference<WordType>& other
-) noexcept
-: _ptr(other._ptr)
-, _mask(other._mask)
-{
+    const bit_reference<WordType>& other) noexcept
+    : _ref(other._ref), _mask(other._mask) {
 }
 
 // Explicitly constructs an aligned bit reference
 template <class WordType>
 constexpr bit_reference<WordType>::bit_reference(
-    word_type& ref
-) noexcept
-: _ptr(&ref)
-, _mask(1)
-{
+    word_type& ref) noexcept
+    : _ref(ref), _mask(1) {
 }
 
 // Explicitly constructs an unaligned bit reference
 template <class WordType>
 constexpr bit_reference<WordType>::bit_reference(
     word_type& ref,
-    size_type pos
-)
-: _ptr((assert(pos < binary_digits<word_type>::value), &ref))
-, _mask(static_cast<word_type>(1) << pos)
-{
+    size_type pos)
+    : _ref(ref), _mask(static_cast<word_type>(1) << pos) {
+  assert(pos < binary_digits<word_type>::value);
 }
 // -------------------------------------------------------------------------- //
 
@@ -233,7 +224,7 @@ constexpr bit_reference<WordType>& bit_reference<WordType>::assign(
 template <class WordType>
 constexpr bit_reference<WordType>& bit_reference<WordType>::operator&=(
     bit_value other) const noexcept {
-  *_ptr &= ~(_mask * static_cast<word_type>(!other._value));
+  _ref &= ~(_mask * static_cast<word_type>(!other._value));
   return const_cast<bit_reference<WordType>&>(*this);
 }
 
@@ -241,7 +232,7 @@ constexpr bit_reference<WordType>& bit_reference<WordType>::operator&=(
 template <class WordType>
 constexpr bit_reference<WordType>& bit_reference<WordType>::operator|=(
     bit_value other) const noexcept {
-  *_ptr |= _mask * static_cast<word_type>(other._value);
+  _ref |= _mask * static_cast<word_type>(other._value);
   return const_cast<bit_reference<WordType>&>(*this);
 }
 
@@ -249,7 +240,7 @@ constexpr bit_reference<WordType>& bit_reference<WordType>::operator|=(
 template <class WordType>
 constexpr bit_reference<WordType>& bit_reference<WordType>::operator^=(
     bit_value other) const noexcept {
-  *_ptr ^= _mask * static_cast<word_type>(other._value);
+  _ref ^= _mask * static_cast<word_type>(other._value);
   return const_cast<bit_reference<WordType>&>(*this);
 }
 // -------------------------------------------------------------------------- //
@@ -262,7 +253,7 @@ template <class WordType>
 constexpr bit_reference<WordType>::operator bool(
 ) const noexcept
 {
-    return *_ptr & _mask;
+  return _ref & _mask;
 }
 // -------------------------------------------------------------------------- //
 
@@ -274,7 +265,7 @@ template <class WordType>
 constexpr bit_pointer<WordType> bit_reference<WordType>::operator&(
 ) const noexcept
 {
-    return bit_pointer<WordType>(_ptr, position());
+  return bit_pointer<WordType>(&_ref, position());
 }
 // -------------------------------------------------------------------------- //
 
@@ -317,21 +308,21 @@ constexpr bit_reference<WordType>& bit_reference<WordType>::set(
 // Sets the value of the referenced bit to 1
 template <class WordType>
 constexpr bit_reference<WordType>& bit_reference<WordType>::set() const noexcept {
-  *_ptr |= _mask;
+  _ref |= _mask;
   return const_cast<bit_reference<WordType>&>(*this);
 }
 
 // Resets the value of the referenced bit to 0
 template <class WordType>
 constexpr bit_reference<WordType>& bit_reference<WordType>::reset() const noexcept {
-  *_ptr &= ~_mask;
+  _ref &= ~_mask;
   return const_cast<bit_reference<WordType>&>(*this);
 }
 
 // Flips the value of the referenced bit
 template <class WordType>
 constexpr bit_reference<WordType>& bit_reference<WordType>::flip() const noexcept {
-  *_ptr ^= _mask;
+  _ref ^= _mask;
   return const_cast<bit_reference<WordType>&>(*this);
 }
 // -------------------------------------------------------------------------- //
@@ -342,10 +333,8 @@ constexpr bit_reference<WordType>& bit_reference<WordType>::flip() const noexcep
 // Returns a pointer to the underlying word
 template <class WordType>
 constexpr typename bit_reference<WordType>::word_type*
-bit_reference<WordType>::address(
-) const noexcept
-{
-    return _ptr;
+bit_reference<WordType>::address() const noexcept {
+  return &_ref;
 }
 
 // Returns the position of the referenced bit within the underlying word
@@ -483,34 +472,27 @@ std::basic_ostream<CharT, Traits>& operator<<(
 
 // -------- BIT REFERENCE: IMPLEMENTATION DETAILS: FUNCTION MEMBERS --------- //
 // Privately explicitly constructs a bit reference from a nullptr
+#if 0
 template <class WordType>
 constexpr bit_reference<WordType>::bit_reference(
-    std::nullptr_t
-) noexcept
-: _ptr(nullptr)
-, _mask()
-{
+    std::nullptr_t) noexcept
+    : _ref(nullptr), _mask() {
 }
-
+#endif
 // Privately explicitly constructs an aligned bit reference from a pointer
 template <class WordType>
 constexpr bit_reference<WordType>::bit_reference(
-    word_type* ptr
-) noexcept
-: _ptr(ptr)
-, _mask(1)
-{
+    word_type* ptr) noexcept
+    : _ref(*ptr), _mask(1) {
 }
 
 // Privately explicitly constructs an unaligned bit reference from a pointer
 template <class WordType>
 constexpr bit_reference<WordType>::bit_reference(
     word_type* ptr,
-    size_type pos
-)
-: _ptr((assert(pos < binary_digits<word_type>::value), ptr))
-, _mask(static_cast<word_type>(1) << pos)
-{
+    size_type pos)
+    : _ref(*ptr), _mask(static_cast<word_type>(1) << pos) {
+  assert(pos < binary_digits<word_type>::value);
 }
 // -------------------------------------------------------------------------- //
 
