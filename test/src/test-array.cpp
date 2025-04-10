@@ -463,7 +463,7 @@ TEST(BitArrayDynamicTest, TwoDBitArraySizeConstructor) {
 
 TEST(BitArrayTest, Slice) {
   auto arr = 0x20'DEADBEEF_b;
-  auto span2 = arr[4, 8];
+  auto span2 = arr(4, 8);
   EXPECT_EQ(span2.size(), 4);
   EXPECT_EQ(span2[0], (0xE & (1 << 0)) ? bit::bit1 : bit::bit0);
   EXPECT_EQ(span2[1], (0xE & (1 << 1)) ? bit::bit1 : bit::bit0);
@@ -473,7 +473,7 @@ TEST(BitArrayTest, Slice) {
 
 TEST(BitArrayTest, SliceModify) {
   auto arr = 0x24'DEADBEEF_b;
-  auto span2 = arr[4, 8];
+  auto span2 = arr(4, 8);
   EXPECT_EQ(span2.size(), 4);
   EXPECT_EQ(span2[0], (0xE & (1 << 0)) ? bit::bit1 : bit::bit0);
   EXPECT_EQ(span2[1], (0xE & (1 << 1)) ? bit::bit1 : bit::bit0);

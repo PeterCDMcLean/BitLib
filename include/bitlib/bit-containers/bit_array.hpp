@@ -114,8 +114,8 @@ class bit_array {
   /*
     * Slice
   */
-  constexpr bit_span<const word_type, std::dynamic_extent> operator[](size_type offset, size_type right) const noexcept;
-  constexpr bit_span<word_type, std::dynamic_extent> operator[](size_type offset, size_type right) noexcept;
+  constexpr bit_span<const word_type, std::dynamic_extent> operator()(size_type offset, size_type right) const noexcept;
+  constexpr bit_span<word_type, std::dynamic_extent> operator()(size_type offset, size_type right) noexcept;
 
   /*
     * Operations
@@ -331,12 +331,12 @@ constexpr typename bit_array<T, N, V, W>::const_iterator bit_array<T, N, V, W>::
 // -------------------------------------------------------------------------- //
 
 template <typename T, std::size_t N, std::align_val_t V, typename W>
-constexpr bit_span<const W, std::dynamic_extent> bit_array<T, N, V, W>::operator[](size_type begin, size_type end) const noexcept {
+constexpr bit_span<const W, std::dynamic_extent> bit_array<T, N, V, W>::operator()(size_type begin, size_type end) const noexcept {
   return bit_span<const W, std::dynamic_extent>(&this->at(begin), end - begin);
 }
 
 template <typename T, std::size_t N, std::align_val_t V, typename W>
-constexpr bit_span<W, std::dynamic_extent> bit_array<T, N, V, W>::operator[](size_type begin, size_type end) noexcept {
+constexpr bit_span<W, std::dynamic_extent> bit_array<T, N, V, W>::operator()(size_type begin, size_type end) noexcept {
   return bit_span<W, std::dynamic_extent>(&this->at(begin), end - begin);
 }
 

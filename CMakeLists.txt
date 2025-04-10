@@ -14,7 +14,6 @@ project(Bit-Vector VERSION 0.3.0)
   #clang-tidy;
   #-header-filter=include/;)
 
-
 add_library(bitlib INTERFACE)
 add_library(bitlib::bitlib ALIAS bitlib)
 target_include_directories(bitlib INTERFACE
@@ -35,6 +34,15 @@ option(BITLIB_EXAMPLE "Build bitlib examples" OFF)
 option(BITLIB_TEST "Build bitlib tests" OFF)
 option(BITLIB_PROFILE "Buid simple example for profiling" OFF)
 option(BITLIB_COVERAGE "Compute test coverage" OFF)
+option(BITLIB_MDSPAN "Compute test coverage" ON)
+
+if (BITLIB_MDSPAN)
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        find_package(mdspan CONFIG REQUIRED)
+        target_compile_definitions(bitlib INTERFACE MDSPAN_IMPL_STANDARD_NAMESPACE=std MDSPAN_IMPL_PROPOSED_NAMESPACE=experimental)
+        target_link_libraries(bitlib INTERFACE std::mdspan)
+    endif()
+endif()
 
 if (BITLIB_HWY)
     add_definitions(-DBITLIB_HWY)
