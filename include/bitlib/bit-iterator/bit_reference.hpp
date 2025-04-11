@@ -85,13 +85,7 @@ class bit_reference
      constexpr bit_reference& reset() const noexcept;
      constexpr bit_reference& flip() const noexcept;
 
-     // Underlying details
-    public:
-    constexpr word_type* address() const noexcept;
-    constexpr size_type position() const noexcept;
-    constexpr mask_type mask() const noexcept;
-
-    // Implementation details: function members
+     // Implementation details: function members
     private:
     bit_reference() noexcept = default;
 #if 0
@@ -266,7 +260,7 @@ template <class WordType>
 constexpr bit_pointer<WordType> bit_reference<WordType>::operator&(
 ) const noexcept
 {
-  return bit_pointer<WordType>(&_ref, position());
+  return bit_pointer<WordType>(&_ref, _tzcnt(_mask));
 }
 // -------------------------------------------------------------------------- //
 
@@ -327,34 +321,6 @@ constexpr bit_reference<WordType>& bit_reference<WordType>::flip() const noexcep
   return const_cast<bit_reference<WordType>&>(*this);
 }
 // -------------------------------------------------------------------------- //
-
-
-
-// ------------------- BIT REFERENCE: UNDERLYING DETAILS -------------------- //
-// Returns a pointer to the underlying word
-template <class WordType>
-constexpr typename bit_reference<WordType>::word_type*
-bit_reference<WordType>::address() const noexcept {
-  return &_ref;
-}
-
-// Returns the position of the referenced bit within the underlying word
-template <class WordType>
-constexpr typename bit_reference<WordType>::size_type
-bit_reference<WordType>::position(
-) const noexcept
-{
-    return _tzcnt(_mask);
-}
-
-// Returns a mask corresponding to the referenced bit
-template <class WordType>
-constexpr bit_reference<WordType>::mask_type bit_reference<WordType>::mask() const noexcept {
-  return _mask;
-}
-// -------------------------------------------------------------------------- //
-
-
 
 // -------------------------- BIT REFERENCE: SWAP --------------------------- //
 // Swaps two bit references
