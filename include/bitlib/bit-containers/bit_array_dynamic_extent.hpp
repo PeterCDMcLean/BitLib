@@ -43,8 +43,8 @@ class bit_array<T, std::dynamic_extent, V, W> {
                                                    const word_type*>::type;
 
  private:
-  size_type m_size;
-  std::unique_ptr<word_type[], decltype(&std::free)> storage;
+  const size_type m_size;
+  const std::unique_ptr<word_type[], decltype(&std::free)> storage;
   static constexpr std::size_t Words(std::size_t N) { return (N * bitsof<value_type>() + bitsof<word_type>() - 1) / bitsof<word_type>(); };
 
  public:
@@ -252,8 +252,12 @@ constexpr bool bit_array<T, std::dynamic_extent, V, W>::operator==(const bit_arr
 
 template <typename T, std::align_val_t V, typename W>
 constexpr void bit_array<T, std::dynamic_extent, V, W>::swap(bit_array<T, std::dynamic_extent, V, W>& other) noexcept {
-  std::swap(this->storage, other.storage);
-  std::swap(this->m_size, other.m_size);
+  assert(this->m_size == other.m_size);
+  W* it1 = this->storage.get();
+  W* it2 = other.storage.get();
+  for (size_t i = 0; i < Words(this->m_size); i++, it1++, it2++) {
+    std::swap(*it1, *it2);
+  }
 }
 
 template <typename T, std::align_val_t V, typename W>

@@ -39,6 +39,7 @@ class bit_reference
     public:
     using word_type = WordType;
     using size_type = std::size_t;
+    using mask_type = typename std::remove_cv<word_type>::type;
 
     // Lifecycle
     public:
@@ -88,7 +89,7 @@ class bit_reference
     public:
     constexpr word_type* address() const noexcept;
     constexpr size_type position() const noexcept;
-    constexpr typename std::remove_cv<word_type>::type mask() const noexcept;
+    constexpr mask_type mask() const noexcept;
 
     // Implementation details: function members
     private:
@@ -102,7 +103,7 @@ class bit_reference
     // Implementation details: data members
     private:
      word_type& _ref;
-     typename std::remove_cv<word_type>::type _mask;
+     const mask_type _mask;
 };
 static_assert(bit_reference_c<bit_reference<uint8_t>>, "bit_reference does not satisfy bit_reference_c concept!");
 
@@ -348,12 +349,8 @@ bit_reference<WordType>::position(
 
 // Returns a mask corresponding to the referenced bit
 template <class WordType>
-constexpr typename std::remove_cv<
-    typename bit_reference<WordType>::word_type
->::type bit_reference<WordType>::mask(
-) const noexcept
-{
-    return _mask;
+constexpr bit_reference<WordType>::mask_type bit_reference<WordType>::mask() const noexcept {
+  return _mask;
 }
 // -------------------------------------------------------------------------- //
 

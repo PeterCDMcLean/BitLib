@@ -342,7 +342,7 @@ TEST(BitArrayDynamicTest, FillOperationSetsAllBits) {
 }
 
 TEST(BitArrayDynamicTest, SwapOperationSwapsContents) {
-  const std::size_t size1 = 5;
+  const std::size_t size1 = 8;
   const std::size_t size2 = 8;
   bit::bit_array<> arr1(size1, bit::bit_value(true));
   bit::bit_array<> arr2(size2, bit::bit_value(false));
