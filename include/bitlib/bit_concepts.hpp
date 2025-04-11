@@ -30,10 +30,6 @@ concept pointer_like = reference_like<reference_type, value_type> && requires(po
   // Must be dereferenceable
   { *proxy } -> std::same_as<reference_type>;
 
-  // Must support arrow operator functionality (not necessarily as a member function)
-  requires(std::is_pointer_v<pointer_type> ||
-           requires(pointer_type p) { { p.operator->() } -> std::same_as<reference_type*>; });
-
   // Must be assignable from reference_type*
   { proxy = &ref } -> std::same_as<pointer_type&>;
 

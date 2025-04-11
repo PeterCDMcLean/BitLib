@@ -68,6 +68,8 @@ public:
  // Default constructor:
  constexpr bit_span() noexcept;
 
+ constexpr bit_span(const bit_span& other) noexcept;
+
  // Construct from a bit_pointer and a bit count.
  constexpr bit_span(pointer data, size_type bit_count) noexcept
    requires(Extent == std::dynamic_extent);
@@ -174,41 +176,50 @@ bit_span(WordType*, std::size_t) -> bit_span<WordType, std::dynamic_extent>;
 // Default constructor:
 // For dynamic extent, we start with a null pointer and size zero.
 // For fixed extent, the pointer is null but the size is always Extent.
-template<typename WordType, std::size_t Extent>
-constexpr bit_span<WordType, Extent>::bit_span() noexcept : data_(nullptr), bit_span_storage<WordType, Extent>() { }
+template <typename WordType, std::size_t Extent>
+constexpr bit_span<WordType, Extent>::bit_span() noexcept : bit_span_storage<WordType, Extent>(), data_(nullptr) {}
+
+template <typename WordType, std::size_t Extent>
+constexpr bit_span<WordType, Extent>::bit_span(const bit_span& other) noexcept : bit_span_storage<WordType, Extent>(other), data_(other.data_) {
+}
 
 // Construct from a bit_pointer and a bit count.
-template<typename WordType, std::size_t Extent>
-constexpr bit_span<WordType,Extent>::bit_span(pointer data, size_type bit_count) noexcept requires(Extent == std::dynamic_extent) : data_(data), bit_span_storage<WordType, Extent>(bit_count) { }
+template <typename WordType, std::size_t Extent>
+constexpr bit_span<WordType, Extent>::bit_span(pointer data, size_type bit_count) noexcept
+  requires(Extent == std::dynamic_extent)
+    : bit_span_storage<WordType, Extent>(bit_count), data_(data) {}
 
 // Construct from a WordType pointer and a word count.
 // This converts the word count to a bit count using bitsof.
-template<typename WordType, std::size_t Extent>
-constexpr bit_span<WordType,Extent>::bit_span(WordType* word_ptr, size_type bit_count) noexcept requires(Extent == std::dynamic_extent) : data_(pointer(word_ptr, 0)), bit_span_storage<WordType, Extent>(bit_count) { }
+template <typename WordType, std::size_t Extent>
+constexpr bit_span<WordType, Extent>::bit_span(WordType* word_ptr, size_type bit_count) noexcept
+  requires(Extent == std::dynamic_extent)
+    : bit_span_storage<WordType, Extent>(bit_count), data_(pointer(word_ptr, 0)) {}
 
 template <typename WordType, std::size_t Extent>
 constexpr bit_span<WordType, Extent>::bit_span(WordType& word_ref, size_type bit_count) noexcept
   requires(Extent == std::dynamic_extent)
     : bit_span(&word_ref, bit_count) {}
 
-template<typename WordType, std::size_t Extent>
-constexpr bit_span<WordType,Extent>::bit_span(iterator iter, size_type bit_count) noexcept requires(Extent == std::dynamic_extent) : data_(&(*iter)), bit_span_storage<WordType, Extent>(bit_count) { }
-
+template <typename WordType, std::size_t Extent>
+constexpr bit_span<WordType, Extent>::bit_span(iterator iter, size_type bit_count) noexcept
+  requires(Extent == std::dynamic_extent)
+    : bit_span_storage<WordType, Extent>(bit_count), data_(&(*iter)) {}
 
 // Construct from a bit_pointer and a bit count.
-template<typename WordType, std::size_t Extent>
-constexpr bit_span<WordType,Extent>::bit_span(pointer data) noexcept : data_(data), bit_span_storage<WordType, Extent>() { }
+template <typename WordType, std::size_t Extent>
+constexpr bit_span<WordType, Extent>::bit_span(pointer data) noexcept : bit_span_storage<WordType, Extent>(), data_(data) {}
 
-template<typename WordType, std::size_t Extent>
-constexpr bit_span<WordType,Extent>::bit_span(WordType* word_ptr) noexcept : data_(pointer(word_ptr, 0)), bit_span_storage<WordType, Extent>() { }
+template <typename WordType, std::size_t Extent>
+constexpr bit_span<WordType, Extent>::bit_span(WordType* word_ptr) noexcept : bit_span_storage<WordType, Extent>(), data_(pointer(word_ptr, 0)) {}
 
-template<typename WordType, std::size_t Extent>
-constexpr bit_span<WordType,Extent>::bit_span(iterator iter) noexcept : data_(&(*iter)), bit_span_storage<WordType, Extent>() { }
+template <typename WordType, std::size_t Extent>
+constexpr bit_span<WordType, Extent>::bit_span(iterator iter) noexcept : bit_span_storage<WordType, Extent>(), data_(&(*iter)) {}
 
 template <typename WordType, std::size_t Extent>
 constexpr bit_span<WordType, Extent>::bit_span(WordType* word_ptr)
   requires(std::is_scalar_v<WordType>)
-    : data_(word_ptr), bit_span_storage<WordType, Extent>() {
+    : bit_span_storage<WordType, Extent>(), data_(word_ptr) {
 }
 
 template <typename WordType, std::size_t Extent>

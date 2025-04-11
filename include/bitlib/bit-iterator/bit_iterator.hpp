@@ -155,9 +155,7 @@ constexpr bit_iterator<Iterator>::bit_iterator(
 // Explicitly constructs an unaligned bit iterator from a pointer
 template <class Iterator>
 constexpr bit_iterator<Iterator>::bit_iterator(const pointer& ptr)
-: _current(ptr->address())
-, _position(ptr->position())
-{
+    : _current(ptr.address()), _position(ptr.position()) {
 }
 // -------------------------------------------------------------------------- //
 
