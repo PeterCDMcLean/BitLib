@@ -15,6 +15,8 @@
 // ================================ PREAMBLE ================================ //
 // C++ standard library
 // Project sources
+#include <type_traits>
+
 #include "../bit-containers/bit_bitsof.hpp"
 #include "bit_details.hpp"
 // Third-party libraries
@@ -38,7 +40,7 @@ class bit_pointer
     // Types
     public:
     using word_type = WordType;
-    using mask_type = typename std::remove_cv<word_type>::type;
+    using mask_type = std::make_unsigned_t<std::remove_cv_t<word_type>>;
     using size_type = std::size_t;
     using difference_type = std::ptrdiff_t;
 
@@ -84,46 +86,30 @@ class bit_pointer
     // Implementation details: data members
     private:
      word_type* _ptr;
-     const mask_type _mask;
+     mask_type _mask;
 
      // Non-member arithmetic operators
      template <class T>
-     friend constexpr bit_pointer<T> operator+(
-         typename bit_pointer<T>::difference_type n,
-         bit_pointer<T> x);
+     friend constexpr bit_pointer<T> operator+(typename bit_pointer<T>::difference_type n, bit_pointer<T> x);
      template <class T, class U>
      friend constexpr typename std::common_type<
          typename bit_pointer<T>::difference_type,
          typename bit_pointer<U>::difference_type>::type
-     operator-(
-         bit_pointer<T> lhs,
-         bit_pointer<U> rhs);
+     operator-(bit_pointer<T> lhs, bit_pointer<U> rhs);
 
      // Comparison operators
      template <class T, class U>
-     friend constexpr bool operator==(
-         bit_pointer<T> lhs,
-         bit_pointer<U> rhs) noexcept;
+     friend constexpr bool operator==(bit_pointer<T> lhs, bit_pointer<U> rhs) noexcept;
      template <class T, class U>
-     friend constexpr bool operator!=(
-         bit_pointer<T> lhs,
-         bit_pointer<U> rhs) noexcept;
+     friend constexpr bool operator!=(bit_pointer<T> lhs, bit_pointer<U> rhs) noexcept;
      template <class T, class U>
-     friend constexpr bool operator<(
-         bit_pointer<T> lhs,
-         bit_pointer<U> rhs) noexcept;
+     friend constexpr bool operator<(bit_pointer<T> lhs, bit_pointer<U> rhs) noexcept;
      template <class T, class U>
-     friend constexpr bool operator<=(
-         bit_pointer<T> lhs,
-         bit_pointer<U> rhs) noexcept;
+     friend constexpr bool operator<=(bit_pointer<T> lhs, bit_pointer<U> rhs) noexcept;
      template <class T, class U>
-     friend constexpr bool operator>(
-         bit_pointer<T> lhs,
-         bit_pointer<U> rhs) noexcept;
+     friend constexpr bool operator>(bit_pointer<T> lhs, bit_pointer<U> rhs) noexcept;
      template <class T, class U>
-     friend constexpr bool operator>=(
-         bit_pointer<T> lhs,
-         bit_pointer<U> rhs) noexcept;
+     friend constexpr bool operator>=(bit_pointer<T> lhs, bit_pointer<U> rhs) noexcept;
 };
 
 static_assert(bit_pointer_c<bit_pointer<uint8_t>, bit_reference<uint8_t>>, "bit_pointer does not satisfy bit_pointer_c concept!");
