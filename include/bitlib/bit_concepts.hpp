@@ -59,13 +59,15 @@ concept bit_iterator_c =
       // Must have a nested size_type, iterator_type.
       typename It::size_type;
       typename It::iterator_type;
+      typename It::word_type;
+      typename It::difference_type;
       requires std::integral<typename It::size_type>;
       requires std::random_access_iterator<typename It::iterator_type>;
 
       // It must provide base(), position(), and mask() with proper return types.
       { it.base() } -> std::same_as<typename It::iterator_type>;
       { it.position() } -> std::same_as<typename It::size_type>;
-      { it.mask() } -> std::same_as<std::remove_cv_t<typename std::iterator_traits<typename It::iterator_type>::value_type>>;
+      { it.mask() } -> std::same_as<std::make_unsigned_t<std::remove_cv_t<typename It::word_type>>>;
     };
 
 template <typename It>

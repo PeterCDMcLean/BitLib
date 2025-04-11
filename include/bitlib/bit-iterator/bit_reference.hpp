@@ -27,76 +27,76 @@ namespace bit {
 
 /* ***************************** BIT REFERENCE ****************************** */
 // Bit reference class definition
-template <class WordType>
-class bit_reference
-{
-    // Assertions
-    static_assert(binary_digits<WordType>::value, "");
+template <class WordType = uint8_t>
+class bit_reference {
+  // Assertions
+  static_assert(binary_digits<WordType>::value, "");
 
-    // Friendship
-    template <class> friend class bit_reference;
-    friend class bit_pointer<WordType>;
+  // Friendship
+  template <class>
+  friend class bit_reference;
+  friend class bit_pointer<WordType>;
 
-    // Types
-    public:
-    using word_type = WordType;
-    using size_type = std::size_t;
-    using mask_type = std::make_unsigned_t<std::remove_cv_t<word_type>>;
+  // Types
+ public:
+  using word_type = WordType;
+  using size_type = std::size_t;
+  using mask_type = std::make_unsigned_t<std::remove_cv_t<word_type>>;
 
-    // Lifecycle
-    public:
-    template <class T>
-    constexpr bit_reference(const bit_reference<T>& other) noexcept;
-    constexpr bit_reference(const bit_reference& other) noexcept;
-    explicit constexpr bit_reference(word_type& ref) noexcept;
-    constexpr bit_reference(word_type& ref, size_type pos);
+  // Lifecycle
+ public:
+  template <class T>
+  constexpr bit_reference(const bit_reference<T>& other) noexcept;
+  constexpr bit_reference(const bit_reference& other) noexcept;
+  explicit constexpr bit_reference(word_type& ref) noexcept;
+  constexpr bit_reference(word_type& ref, size_type pos);
 
-    // Assignment
-    public:
-     constexpr bit_reference& operator=(const bit_reference& other) const noexcept;
-     template <class T>
-     constexpr bit_reference& operator=(const bit_reference<T>& other) const noexcept;
-     constexpr bit_reference& operator=(const bit_value val) const noexcept;
-     constexpr bit_reference& assign(word_type val) const noexcept;
-     constexpr bit_reference& assign(word_type val, size_type pos) const;
+  // Assignment
+ public:
+  constexpr bit_reference& operator=(const bit_reference& other) const noexcept;
+  template <class T>
+  constexpr bit_reference& operator=(const bit_reference<T>& other) const noexcept;
+  constexpr bit_reference& operator=(const bit_value val) const noexcept;
+  constexpr bit_reference& assign(word_type val) const noexcept;
+  constexpr bit_reference& assign(word_type val, size_type pos) const;
 
-     // Bitwise assignment operators
-    public:
-     constexpr bit_reference& operator&=(bit_value other) const noexcept;
-     constexpr bit_reference& operator|=(bit_value other) const noexcept;
-     constexpr bit_reference& operator^=(bit_value other) const noexcept;
+  // Bitwise assignment operators
+ public:
+  constexpr bit_reference& operator&=(bit_value other) const noexcept;
+  constexpr bit_reference& operator|=(bit_value other) const noexcept;
+  constexpr bit_reference& operator^=(bit_value other) const noexcept;
 
-     // Conversion
-    public:
-    explicit constexpr operator bool() const noexcept;
+  // Conversion
+ public:
+  explicit constexpr operator bool() const noexcept;
 
-    // Access
-    public:
-    constexpr bit_pointer<WordType> operator&() const noexcept;
+  // Access
+ public:
+  constexpr bit_pointer<WordType> operator&() const noexcept;
 
-    // Swap members
-    public:
-     template <class T>
-     void swap(bit_reference<T> other) const;
-     void swap(bit_value& other) const;
+  // Swap members
+ public:
+  template <class T>
+  void swap(bit_reference<T> other) const;
+  void swap(bit_value& other) const;
 
-     // Bit manipulation
-    public:
-     constexpr bit_reference& set(bool b) const noexcept;
-     constexpr bit_reference& set() const noexcept;
-     constexpr bit_reference& reset() const noexcept;
-     constexpr bit_reference& flip() const noexcept;
+  // Bit manipulation
+ public:
+  constexpr bit_reference& set(bool b) const noexcept;
+  constexpr bit_reference& set() const noexcept;
+  constexpr bit_reference& reset() const noexcept;
+  constexpr bit_reference& flip() const noexcept;
 
-     // Implementation details: function members
-    private:
-     bit_reference() noexcept = default;
-     explicit constexpr bit_reference(word_type* ptr) noexcept;
-     constexpr bit_reference(word_type* ptr, size_type pos);
+  // Implementation details: function members
+ private:
+  bit_reference() noexcept = default;
+  explicit constexpr bit_reference(word_type* ptr) noexcept;
+  constexpr bit_reference(word_type* ptr, size_type pos);
 
-     // Implementation details: data members
-    private:
-     word_type& _ref;
-     const mask_type _mask;
+  // Implementation details: data members
+ private:
+  word_type& _ref;
+  const mask_type _mask;
 };
 static_assert(bit_reference_c<bit_reference<uint8_t>>, "bit_reference does not satisfy bit_reference_c concept!");
 

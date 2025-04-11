@@ -35,93 +35,84 @@ namespace bit {
 
 /* ****************************** BIT VECTOR ****************************** */
 //! A bit-vector with a similar interface to std::vector<bool>
-template<class WordType, class Allocator = std::allocator<WordType>>
+template <class WordType = uint8_t, class Allocator = std::allocator<WordType>>
 class bit_vector {
-    private:
-        static constexpr size_t digits = binary_digits<WordType>::value;
-        std::vector<WordType, Allocator> word_vector;
-        size_t length_ = 0;
+ private:
+  static constexpr size_t digits = binary_digits<WordType>::value;
+  std::vector<WordType, Allocator> word_vector;
+  size_t length_ = 0;
 
-        // TODO are privates always inlined?
-        // @brief Get the number of words needed to represet num_bits bits
-        constexpr uint64_t word_count(unsigned int num_bits) {
-            return ((num_bits + digits - 1) / digits);
-        }
+  // TODO are privates always inlined?
+  // @brief Get the number of words needed to represet num_bits bits
+  constexpr uint64_t word_count(unsigned int num_bits) {
+    return ((num_bits + digits - 1) / digits);
+  }
 
-        // Iterator pair constructor specializations
-        // Passing in iterator over bool
-        template<class RandomAccessIt>
-        typename std::enable_if<
-            std::is_same<
-                typename std::iterator_traits<RandomAccessIt>::value_type,
-                bool
-            >::value
-        >::type
-        constexpr range_constructor(
-                RandomAccessIt first,
-                RandomAccessIt last,
-                const Allocator& alloc);
+  // Iterator pair constructor specializations
+  // Passing in iterator over bool
+  template <class RandomAccessIt>
+  typename std::enable_if<
+      std::is_same<
+          typename std::iterator_traits<RandomAccessIt>::value_type,
+          bool>::value>::type constexpr range_constructor(RandomAccessIt first,
+                                                          RandomAccessIt last,
+                                                          const Allocator& alloc);
 
-        // Passing in iterator over WordType constructs via whole words
-        template<class RandomAccessIt>
-        typename std::enable_if<
-            std::is_same<
-                typename std::iterator_traits<RandomAccessIt>::value_type,
-                WordType
-            >::value
-        >::type
-        constexpr range_constructor(
-                RandomAccessIt first,
-                RandomAccessIt last,
-                const Allocator& alloc);
+  // Passing in iterator over WordType constructs via whole words
+  template <class RandomAccessIt>
+  typename std::enable_if<
+      std::is_same<
+          typename std::iterator_traits<RandomAccessIt>::value_type,
+          WordType>::value>::type constexpr range_constructor(RandomAccessIt first,
+                                                              RandomAccessIt last,
+                                                              const Allocator& alloc);
 
-    public:
-        /*
+ public:
+  /*
          * Types and typedefs
          */
-        using value_type = bit_value;
-        using base_type = WordType;
-        using allocator_type = Allocator;
-        using size_type = std::size_t;
-        using difference_type = std::ptrdiff_t;
-        using reference = bit_reference<WordType>;
-        using const_reference = const reference;
-        using pointer = bit_pointer<WordType>;
-        using iterator = bit_iterator<typename std::vector<WordType>::iterator>;
-        using const_iterator = bit_iterator<const typename std::vector<WordType>::const_iterator>;
+  using value_type = bit_value;
+  using base_type = WordType;
+  using allocator_type = Allocator;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
+  using reference = bit_reference<WordType>;
+  using const_reference = const reference;
+  using pointer = bit_pointer<WordType>;
+  using iterator = bit_iterator<typename std::vector<WordType>::iterator>;
+  using const_iterator = bit_iterator<const typename std::vector<WordType>::const_iterator>;
 
-
-        /*
+  /*
          * Constructors, copies and moves...
          */
-        constexpr bit_vector() noexcept(noexcept(Allocator()));
-        constexpr explicit bit_vector(const Allocator& alloc) noexcept;
-        constexpr bit_vector(
-                size_type count,
-                value_type bit_val,
-                const Allocator& alloc=Allocator());
-        constexpr explicit bit_vector(
-                size_type count,
-                const Allocator& alloc=Allocator());
-        template <bit_iterator_c Iterator>
-        constexpr bit_vector(Iterator first, Iterator last, const Allocator& alloc = Allocator());
+  constexpr bit_vector() noexcept(noexcept(Allocator()));
+  constexpr explicit bit_vector(const Allocator& alloc) noexcept;
+  constexpr bit_vector(
+      size_type count,
+      value_type bit_val,
+      const Allocator& alloc = Allocator());
+  constexpr explicit bit_vector(
+      size_type count,
+      const Allocator& alloc = Allocator());
+  template <bit_iterator_c Iterator>
+  constexpr bit_vector(Iterator first, Iterator last, const Allocator& alloc = Allocator());
 
-        template <bit_range _Range>
-        constexpr bit_vector(std::from_range_t, _Range&& rg, const Allocator& alloc = Allocator());
+  template <bit_range _Range>
+  constexpr bit_vector(std::from_range_t, _Range&& rg, const Allocator& alloc = Allocator());
 
-        template<class RandomAccessIt>
-        constexpr bit_vector(
-                RandomAccessIt first,
-                RandomAccessIt last,
-                const Allocator& alloc=Allocator());
-        constexpr bit_vector(const bit_vector<WordType, Allocator>& other) = default;
-        constexpr bit_vector(const bit_vector<WordType, Allocator>& other, const Allocator& alloc);
-        constexpr bit_vector(const bit_vector<WordType, Allocator>&& other) noexcept;
-        constexpr bit_vector(const bit_vector<WordType, Allocator>&& other, const Allocator& alloc);
-        constexpr bit_vector(std::initializer_list<bit_value> init, const Allocator& alloc=Allocator());
-        constexpr bit_vector(std::initializer_list<bool> init, const Allocator& alloc=Allocator());
-        constexpr bit_vector(std::initializer_list<WordType> init, const Allocator& alloc=Allocator());
-        constexpr bit_vector(std::string_view s);
+  template <class RandomAccessIt>
+  constexpr bit_vector(
+      RandomAccessIt first,
+      RandomAccessIt last,
+      const Allocator& alloc = Allocator());
+  constexpr bit_vector(const bit_vector<WordType, Allocator>& other) = default;
+  constexpr bit_vector(const bit_vector<WordType, Allocator>& other, const Allocator& alloc);
+  constexpr bit_vector(const bit_vector<WordType, Allocator>&& other) noexcept;
+  constexpr bit_vector(const bit_vector<WordType, Allocator>&& other, const Allocator& alloc);
+  constexpr bit_vector(std::initializer_list<bit_value> init, const Allocator& alloc = Allocator());
+  constexpr bit_vector(std::initializer_list<bool> init, const Allocator& alloc = Allocator());
+  constexpr bit_vector(std::initializer_list<WordType> init, const Allocator& alloc = Allocator());
+  constexpr bit_vector(std::string_view s);
 
 #if __cplusplus == 201703L
         ~bit_vector();

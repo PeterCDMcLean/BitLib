@@ -47,6 +47,7 @@ class bit_iterator
   using pointer = bit_pointer<word_type>;
   using reference = bit_reference<word_type>;
   using size_type = std::size_t;
+  using mask_type = std::make_unsigned_t<std::remove_cv_t<word_type>>;
 
   // Lifecycle
  public:
@@ -84,7 +85,7 @@ class bit_iterator
  public:
   constexpr iterator_type base() const;
   constexpr size_type position() const noexcept;
-  constexpr typename std::remove_cv<word_type>::type mask() const noexcept;
+  constexpr mask_type mask() const noexcept;
 
   auto operator<=>(const bit_iterator&) const = default;
   // Implementation details: data members
@@ -347,12 +348,8 @@ bit_iterator<Iterator>::position(
 
 // Returns a mask corresponding to the bit associated with the iterator
 template <class Iterator>
-constexpr typename std::remove_cv<
-    typename bit_iterator<Iterator>::word_type
->::type bit_iterator<Iterator>::mask(
-) const noexcept
-{
-    return static_cast<word_type>(1) << _position;
+constexpr bit_iterator<Iterator>::mask_type bit_iterator<Iterator>::mask() const noexcept {
+  return static_cast<mask_type>(1) << _position;
 }
 // -------------------------------------------------------------------------- //
 

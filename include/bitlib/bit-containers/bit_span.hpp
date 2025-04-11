@@ -35,119 +35,119 @@ struct bit_span_storage<WordType, std::dynamic_extent> {
     bit_span_storage(std::size_t size) : size_(size) {}
 };
 
-template<typename WordType, std::size_t Extent = std::dynamic_extent>
+template <typename WordType = uint8_t, std::size_t Extent = std::dynamic_extent>
 class bit_span : private bit_span_storage<WordType, Extent> {
-public:
-    using word_type         = WordType;
-    using size_type         = std::size_t;
-    using difference_type   = std::ptrdiff_t;
-    using reference         = bit_reference<WordType>;
-    using const_reference   = const bit_reference<WordType>;
-    using pointer           = bit_pointer<WordType>;
-    using const_pointer     = const pointer;
-    using iterator          = bit_iterator<typename std::span<WordType,Extent>::iterator>;
-    using const_iterator    = bit_iterator<const WordType*>;
+ public:
+  using word_type = WordType;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
+  using reference = bit_reference<WordType>;
+  using const_reference = const bit_reference<WordType>;
+  using pointer = bit_pointer<WordType>;
+  using const_pointer = const pointer;
+  using iterator = bit_iterator<typename std::span<WordType, Extent>::iterator>;
+  using const_iterator = bit_iterator<const WordType*>;
 
-   private:
-    // The start of the span, represented as a bit_pointer.
-    pointer data_;
+ private:
+  // The start of the span, represented as a bit_pointer.
+  pointer data_;
 
-    template<std::size_t NewOffset, std::size_t NewCount>
-    static constexpr size_t subspan_extent() {
-      if constexpr (NewCount != std::dynamic_extent)
-        return NewCount;
-      else if constexpr (Extent != std::dynamic_extent)
-        return Extent - NewOffset;
-      else
-        return std::dynamic_extent;
-    }
+  template <std::size_t NewOffset, std::size_t NewCount>
+  static constexpr size_t subspan_extent() {
+    if constexpr (NewCount != std::dynamic_extent)
+      return NewCount;
+    else if constexpr (Extent != std::dynamic_extent)
+      return Extent - NewOffset;
+    else
+      return std::dynamic_extent;
+  }
 
-public:
-    // --- Constructors ---
+ public:
+  // --- Constructors ---
 
- // Default constructor:
- constexpr bit_span() noexcept;
+  // Default constructor:
+  constexpr bit_span() noexcept;
 
- constexpr bit_span(const bit_span& other) noexcept;
+  constexpr bit_span(const bit_span& other) noexcept;
 
- // Construct from a bit_pointer and a bit count.
- constexpr bit_span(pointer data, size_type bit_count) noexcept
-   requires(Extent == std::dynamic_extent);
- constexpr bit_span(pointer data) noexcept;
+  // Construct from a bit_pointer and a bit count.
+  constexpr bit_span(pointer data, size_type bit_count) noexcept
+    requires(Extent == std::dynamic_extent);
+  constexpr bit_span(pointer data) noexcept;
 
- // Construct from a WordType pointer and a bit count.
- constexpr bit_span(WordType* word_ptr, size_type bit_count) noexcept
-   requires(Extent == std::dynamic_extent);
- constexpr bit_span(WordType* word_ptr) noexcept;
- constexpr bit_span(WordType& word_ref, size_type bit_count) noexcept
-   requires(Extent == std::dynamic_extent);
- constexpr bit_span(WordType& word_ref) noexcept;
+  // Construct from a WordType pointer and a bit count.
+  constexpr bit_span(WordType* word_ptr, size_type bit_count) noexcept
+    requires(Extent == std::dynamic_extent);
+  constexpr bit_span(WordType* word_ptr) noexcept;
+  constexpr bit_span(WordType& word_ref, size_type bit_count) noexcept
+    requires(Extent == std::dynamic_extent);
+  constexpr bit_span(WordType& word_ref) noexcept;
 
- // Construct from a iterator and a bit count.
- constexpr bit_span(iterator iter, size_type bit_count) noexcept
-   requires(Extent == std::dynamic_extent);
- constexpr bit_span(iterator iter) noexcept;
+  // Construct from a iterator and a bit count.
+  constexpr bit_span(iterator iter, size_type bit_count) noexcept
+    requires(Extent == std::dynamic_extent);
+  constexpr bit_span(iterator iter) noexcept;
 
- constexpr bit_span(WordType& s)
-   requires(std::is_scalar_v<WordType>);
- constexpr bit_span(WordType* s)
-   requires(std::is_scalar_v<WordType>);
+  constexpr bit_span(WordType& s)
+    requires(std::is_scalar_v<WordType>);
+  constexpr bit_span(WordType* s)
+    requires(std::is_scalar_v<WordType>);
 
- // --- Observers ---
+  // --- Observers ---
 
- // Returns the number of bits in the span.
- constexpr size_type size() const noexcept;
- // Checks if the span is empty.
- constexpr bool empty() const noexcept;
+  // Returns the number of bits in the span.
+  constexpr size_type size() const noexcept;
+  // Checks if the span is empty.
+  constexpr bool empty() const noexcept;
 
- // --- Element Access ---
+  // --- Element Access ---
 
- // Non-const element access.
- constexpr reference operator[](size_type pos);
- // Const element access returns a const_reference.
- constexpr const_reference operator[](size_type pos) const;
- // Bounds-checked access
- constexpr reference at(size_type idx);
- // Bounds-checked access
- constexpr const_reference at(size_type idx) const;
+  // Non-const element access.
+  constexpr reference operator[](size_type pos);
+  // Const element access returns a const_reference.
+  constexpr const_reference operator[](size_type pos) const;
+  // Bounds-checked access
+  constexpr reference at(size_type idx);
+  // Bounds-checked access
+  constexpr const_reference at(size_type idx) const;
 
- // Non-const front/back access.
- constexpr reference front();
- constexpr reference back();
+  // Non-const front/back access.
+  constexpr reference front();
+  constexpr reference back();
 
- // Const front/back access returns a const_reference.
- constexpr const_reference front() const;
- constexpr const_reference back() const;
+  // Const front/back access returns a const_reference.
+  constexpr const_reference front() const;
+  constexpr const_reference back() const;
 
- // --- Iterators ---
+  // --- Iterators ---
 
- // Returns an iterator to the first bit.
- constexpr iterator begin() const noexcept;
+  // Returns an iterator to the first bit.
+  constexpr iterator begin() const noexcept;
 
- // Returns an iterator just past the last bit.
- constexpr iterator end() const noexcept;
+  // Returns an iterator just past the last bit.
+  constexpr iterator end() const noexcept;
 
- // --- Subspan Functionality ---
+  // --- Subspan Functionality ---
 
- // Creates a subspan starting at offset with count bits.
- template <std::size_t NewOffset, std::size_t NewExtent = std::dynamic_extent>
- constexpr auto subspan() const noexcept -> bit_span<WordType, subspan_extent<NewOffset, NewExtent>()>;
- constexpr bit_span<WordType, std::dynamic_extent> subspan(size_type offset, size_type count = std::dynamic_extent) const noexcept
-   requires(Extent == std::dynamic_extent);
+  // Creates a subspan starting at offset with count bits.
+  template <std::size_t NewOffset, std::size_t NewExtent = std::dynamic_extent>
+  constexpr auto subspan() const noexcept -> bit_span<WordType, subspan_extent<NewOffset, NewExtent>()>;
+  constexpr bit_span<WordType, std::dynamic_extent> subspan(size_type offset, size_type count = std::dynamic_extent) const noexcept
+    requires(Extent == std::dynamic_extent);
 
- constexpr bit_span<WordType, std::dynamic_extent> operator[](size_type begin, size_type end) const noexcept;
+  constexpr bit_span<WordType, std::dynamic_extent> operator[](size_type begin, size_type end) const noexcept;
 
- template <std::size_t NewExtent>
- constexpr bit_span<WordType, NewExtent> first() const noexcept
-   requires(NewExtent != std::dynamic_extent);
- constexpr bit_span<WordType, std::dynamic_extent> first(size_type offset) const noexcept
-   requires(Extent == std::dynamic_extent);
+  template <std::size_t NewExtent>
+  constexpr bit_span<WordType, NewExtent> first() const noexcept
+    requires(NewExtent != std::dynamic_extent);
+  constexpr bit_span<WordType, std::dynamic_extent> first(size_type offset) const noexcept
+    requires(Extent == std::dynamic_extent);
 
- template <std::size_t RevOffset>
- constexpr bit_span<WordType, Extent - RevOffset> last() const noexcept
-   requires(RevOffset != std::dynamic_extent);
- constexpr bit_span<WordType, std::dynamic_extent> last(size_type offset) const noexcept
-   requires(Extent == std::dynamic_extent);
+  template <std::size_t RevOffset>
+  constexpr bit_span<WordType, Extent - RevOffset> last() const noexcept
+    requires(RevOffset != std::dynamic_extent);
+  constexpr bit_span<WordType, std::dynamic_extent> last(size_type offset) const noexcept
+    requires(Extent == std::dynamic_extent);
 };
 
 static_assert(bit_range<bit_span<uint8_t, 11>>, "bit_span does not satisfy bit_range concept!");

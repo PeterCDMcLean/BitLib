@@ -28,91 +28,98 @@ namespace bit {
 
 /* ****************************** BIT POINTER ******************************* */
 // Bit pointer class definition
-template <class WordType>
-class bit_pointer
-{
-    // Assertions
-    static_assert(binary_digits<WordType>::value, "");
+template <typename WordType = uint8_t>
+class bit_pointer {
+  // Assertions
+  static_assert(binary_digits<WordType>::value, "");
 
-    // Friendship
-    template <class> friend class bit_pointer;
+  // Friendship
+  template <class>
+  friend class bit_pointer;
 
-    // Types
-    public:
-    using word_type = WordType;
-    using mask_type = std::make_unsigned_t<std::remove_cv_t<word_type>>;
-    using size_type = std::size_t;
-    using difference_type = std::ptrdiff_t;
+  // Types
+ public:
+  using iterator_type = WordType*;
+  using value_type = bit_value;
+  using word_type = WordType;
+  using mask_type = std::make_unsigned_t<std::remove_cv_t<word_type>>;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
+  using pointer = bit_pointer<WordType>;
+  using reference = bit_reference<WordType>;
 
-    // Lifecycle
-    public:
-    constexpr bit_pointer() noexcept;
-    constexpr bit_pointer(const bit_pointer& other) noexcept;
-    template <class T>
-    constexpr bit_pointer(const bit_pointer<T>& other) noexcept;
-    constexpr bit_pointer(std::nullptr_t) noexcept;
-    explicit constexpr bit_pointer(word_type* ptr) noexcept;
-    constexpr bit_pointer(word_type* ptr, size_type pos);
+  // Lifecycle
+ public:
+  constexpr bit_pointer() noexcept;
+  constexpr bit_pointer(const bit_pointer& other) noexcept;
+  template <class T>
+  constexpr bit_pointer(const bit_pointer<T>& other) noexcept;
+  constexpr bit_pointer(std::nullptr_t) noexcept;
+  explicit constexpr bit_pointer(word_type* ptr) noexcept;
+  constexpr bit_pointer(word_type* ptr, size_type pos);
 
-    // Assignment
-    public:
-    constexpr bit_pointer& operator=(std::nullptr_t) noexcept;
-    constexpr bit_pointer& operator=(const bit_pointer& other) noexcept;
-    template <class T>
-    constexpr bit_pointer& operator=(const bit_pointer<T>& other) noexcept;
+  // Assignment
+ public:
+  constexpr bit_pointer& operator=(std::nullptr_t) noexcept;
+  constexpr bit_pointer& operator=(const bit_pointer& other) noexcept;
+  template <class T>
+  constexpr bit_pointer& operator=(const bit_pointer<T>& other) noexcept;
 
-    // Conversion
-    public:
-    explicit constexpr operator bool() const noexcept;
+  // Conversion
+ public:
+  explicit constexpr operator bool() const noexcept;
 
-    // Access
-    public:
-     constexpr bit_reference<WordType> operator*() const noexcept;
-     constexpr bit_reference<WordType> operator[](difference_type n) const;
+  // Access
+ public:
+  constexpr bit_reference<WordType> operator*() const noexcept;
+  constexpr bit_reference<WordType> operator[](difference_type n) const;
 
-     // Increment and decrement operators
-    public:
-    constexpr bit_pointer& operator++();
-    constexpr bit_pointer& operator--();
-    constexpr bit_pointer operator++(int);
-    constexpr bit_pointer operator--(int);
-    constexpr bit_pointer operator+(difference_type n) const;
-    constexpr bit_pointer operator-(difference_type n) const;
-    constexpr bit_pointer& operator+=(difference_type n);
-    constexpr bit_pointer& operator-=(difference_type n);
-    constexpr size_t position() const { return _tzcnt(_mask); }
-    constexpr word_type* address() const { return _ptr; }
+  // Increment and decrement operators
+ public:
+  constexpr bit_pointer& operator++();
+  constexpr bit_pointer& operator--();
+  constexpr bit_pointer operator++(int);
+  constexpr bit_pointer operator--(int);
+  constexpr bit_pointer operator+(difference_type n) const;
+  constexpr bit_pointer operator-(difference_type n) const;
+  constexpr bit_pointer& operator+=(difference_type n);
+  constexpr bit_pointer& operator-=(difference_type n);
+  constexpr size_type position() const { return _tzcnt(_mask); }
+  constexpr word_type* address() const { return _ptr; }
+  constexpr mask_type mask() const { return _mask; }
+  constexpr iterator_type base() const { return this->ptr; }
 
-    // Implementation details: data members
-    private:
-     word_type* _ptr;
-     mask_type _mask;
+  // Implementation details: data members
+ private:
+  word_type* _ptr;
+  mask_type _mask;
 
-     // Non-member arithmetic operators
-     template <class T>
-     friend constexpr bit_pointer<T> operator+(typename bit_pointer<T>::difference_type n, bit_pointer<T> x);
-     template <class T, class U>
-     friend constexpr typename std::common_type<
-         typename bit_pointer<T>::difference_type,
-         typename bit_pointer<U>::difference_type>::type
-     operator-(bit_pointer<T> lhs, bit_pointer<U> rhs);
+  // Non-member arithmetic operators
+  template <class T>
+  friend constexpr bit_pointer<T> operator+(typename bit_pointer<T>::difference_type n, bit_pointer<T> x);
+  template <class T, class U>
+  friend constexpr typename std::common_type<
+      typename bit_pointer<T>::difference_type,
+      typename bit_pointer<U>::difference_type>::type
+  operator-(bit_pointer<T> lhs, bit_pointer<U> rhs);
 
-     // Comparison operators
-     template <class T, class U>
-     friend constexpr bool operator==(bit_pointer<T> lhs, bit_pointer<U> rhs) noexcept;
-     template <class T, class U>
-     friend constexpr bool operator!=(bit_pointer<T> lhs, bit_pointer<U> rhs) noexcept;
-     template <class T, class U>
-     friend constexpr bool operator<(bit_pointer<T> lhs, bit_pointer<U> rhs) noexcept;
-     template <class T, class U>
-     friend constexpr bool operator<=(bit_pointer<T> lhs, bit_pointer<U> rhs) noexcept;
-     template <class T, class U>
-     friend constexpr bool operator>(bit_pointer<T> lhs, bit_pointer<U> rhs) noexcept;
-     template <class T, class U>
-     friend constexpr bool operator>=(bit_pointer<T> lhs, bit_pointer<U> rhs) noexcept;
+  // Comparison operators
+  template <class T, class U>
+  friend constexpr bool operator==(bit_pointer<T> lhs, bit_pointer<U> rhs) noexcept;
+  template <class T, class U>
+  friend constexpr bool operator!=(bit_pointer<T> lhs, bit_pointer<U> rhs) noexcept;
+  template <class T, class U>
+  friend constexpr bool operator<(bit_pointer<T> lhs, bit_pointer<U> rhs) noexcept;
+  template <class T, class U>
+  friend constexpr bool operator<=(bit_pointer<T> lhs, bit_pointer<U> rhs) noexcept;
+  template <class T, class U>
+  friend constexpr bool operator>(bit_pointer<T> lhs, bit_pointer<U> rhs) noexcept;
+  template <class T, class U>
+  friend constexpr bool operator>=(bit_pointer<T> lhs, bit_pointer<U> rhs) noexcept;
 };
 
 static_assert(bit_pointer_c<bit_pointer<uint8_t>, bit_reference<uint8_t>>, "bit_pointer does not satisfy bit_pointer_c concept!");
+static_assert(bit_iterator_c<bit_pointer<uint8_t>>, "bit_pointer does not satisfy bit_iterator_c concept!");
 /* ************************************************************************** */
 
 
@@ -201,7 +208,7 @@ constexpr bit_pointer<WordType>::operator bool() const noexcept {
 // Gets a bit reference from the bit pointer
 template <class WordType>
 constexpr bit_reference<WordType> bit_pointer<WordType>::operator*() const noexcept {
-  return bit_reference<WordType>(*_ptr, _mask);
+  return bit_reference<WordType>(*_ptr, position());
 }
 
 // Gets a bit reference, decrementing or incrementing the pointer
