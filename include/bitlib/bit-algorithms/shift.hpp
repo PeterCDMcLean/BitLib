@@ -56,6 +56,7 @@ bit_iterator<RandomAccessIt> shift_left(
     using word_type = typename bit_iterator<RandomAccessIt>::word_type;
     using size_type = typename bit_iterator<RandomAccessIt>::size_type;
     using difference_type = typename bit_iterator<RandomAccessIt>::difference_type;
+    using iterator_type = typename bit_iterator<RandomAccessIt>::iterator_type;
     constexpr size_type digits = binary_digits<word_type>::value;
 
     // Initialization
@@ -92,9 +93,9 @@ bit_iterator<RandomAccessIt> shift_left(
     // Triggered if all remaining bits can fit in a word
     if (d - n <= digits)
     {
-        word_type new_word = get_word<word_type, RandomAccessIt>(middle, d - n);
-        write_word<word_type, RandomAccessIt>(new_word, first, d - n);
-        return first + d - n;
+      word_type new_word = get_word<word_type, iterator_type>(middle, d - n);
+      write_word<word_type, iterator_type>(new_word, first, d - n);
+      return first + d - n;
     }
     // Multiple word case
     word_type first_value = *first.base();
@@ -155,17 +156,15 @@ bit_iterator<RandomAccessIt> shift_left(
     // At this point, first is aligned
     if (offset == 0)
     {
-        first = bit::bit_iterator<RandomAccessIt>(
-                STD_SHIFT_LEFT(first.base(),
-                    last.base(),
-                    word_shifts),
-                0
-        );
-        if (!is_last_aligned)
-        {
-            write_word<word_type, RandomAccessIt>(*last.base(), first, last.position());
-            first += last.position();
-        }
+      first = bit::bit_iterator<iterator_type>(
+          STD_SHIFT_LEFT(first.base(),
+                         last.base(),
+                         word_shifts),
+          0);
+      if (!is_last_aligned) {
+        write_word<word_type, iterator_type>(*last.base(), first, last.position());
+        first += last.position();
+      }
         // https://en.cppreference.com/w/cpp/algorithm/shift
         // "Elements that are in the original range but not the new range
         // are left in a valid but unspecified state."
@@ -220,8 +219,8 @@ bit_iterator<RandomAccessIt> shift_left(
     if (!is_last_aligned)
     {
         const difference_type bits_left = last.position() - middle.position();
-        const word_type new_word = get_word<word_type, RandomAccessIt>(middle, bits_left);
-        write_word<word_type, RandomAccessIt>(new_word, first, bits_left);
+        const word_type new_word = get_word<word_type, iterator_type>(middle, bits_left);
+        write_word<word_type, iterator_type>(new_word, first, bits_left);
         first += bits_left;
     }
 
@@ -238,6 +237,7 @@ bit_iterator<RandomAccessIt> shift_right(
     // Types and constants
     using word_type = typename bit_iterator<RandomAccessIt>::word_type;
     using size_type = typename bit_iterator<RandomAccessIt>::size_type;
+    using iterator_type = typename bit_iterator<RandomAccessIt>::iterator_type;
 
     // Initialization
     const bool is_last_aligned = last.position() == 0;
@@ -270,10 +270,10 @@ bit_iterator<RandomAccessIt> shift_right(
       const size_type bits_to_align = std::min<size_type>(
           last.position(),
           bit::distance(first, middle));
-      const word_type word_to_write = get_word<word_type, RandomAccessIt>(
+      const word_type word_to_write = get_word<word_type, iterator_type>(
           middle - bits_to_align,
           bits_to_align);
-      write_word<word_type, RandomAccessIt>(
+      write_word<word_type, iterator_type>(
           word_to_write,
           last - bits_to_align,
           bits_to_align);
@@ -355,10 +355,10 @@ bit_iterator<RandomAccessIt> shift_right(
     if (first.position() != middle.position())
     {
         const size_type bits_to_align = bit::distance(first, middle);
-        const word_type word_to_write = get_word<word_type, RandomAccessIt>(
+        const word_type word_to_write = get_word<word_type, iterator_type>(
             first,
             bits_to_align);
-        write_word<word_type, RandomAccessIt>(
+        write_word<word_type, iterator_type>(
             word_to_write,
             last - bits_to_align,
             bits_to_align);

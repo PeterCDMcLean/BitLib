@@ -44,6 +44,7 @@ count(
     // Types and constants
     using word_type = typename bit_iterator<RandomAccessIt>::word_type;
     using difference_type = typename bit_iterator<RandomAccessIt>::difference_type;
+    using iterator_type = typename bit_iterator<RandomAccessIt>::iterator_type;
     constexpr difference_type digits = binary_digits<word_type>::value;
 
     // Initialization
@@ -51,13 +52,13 @@ count(
 
     // Computation when bits belong to several underlying words
     if (first.base() != last.base()) {
-        RandomAccessIt it = first.base();
+      iterator_type it = first.base();
 
-        if (first.position() != 0) {
-            word_type first_value = *first.base() >> first.position();
-            result = _popcnt(first_value);
-            ++it;
-        }
+      if (first.position() != 0) {
+        word_type first_value = *first.base() >> first.position();
+        result = _popcnt(first_value);
+        ++it;
+      }
 // The SIMD implementation here is actually slower than the standard
 //#ifdef BITLIB_HWY
         //// ReduceSum not implemented for unsigned char

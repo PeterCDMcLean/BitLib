@@ -34,6 +34,8 @@ constexpr bit_iterator<RandomAccessIt2> swap_ranges(
     using word_type2 = typename bit_iterator<RandomAccessIt2>::word_type;
     using size_type1 = typename bit_iterator<RandomAccessIt1>::size_type;
     using size_type2 = typename bit_iterator<RandomAccessIt2>::size_type;
+    using iterator_type1 = typename bit_iterator<RandomAccessIt1>::iterator_type;
+    using iterator_type2 = typename bit_iterator<RandomAccessIt2>::iterator_type;
     constexpr size_type1 digits1 = binary_digits<word_type1>::value;
     constexpr size_type2 digits2 = binary_digits<word_type2>::value;
 
@@ -41,8 +43,8 @@ constexpr bit_iterator<RandomAccessIt2> swap_ranges(
     //const bool is_first1_aligned = first1.position() == 0;
     const bool is_last1_aligned = last1.position() == 0;
     //const bool is_first2_aligned = first2.position() == 0;
-    RandomAccessIt1 it1 = first1.base();
-    RandomAccessIt2 it2 = first2.base();
+    iterator_type1 it1 = first1.base();
+    iterator_type2 it2 = first2.base();
 
     if (first1 == last1)
         return first2;
