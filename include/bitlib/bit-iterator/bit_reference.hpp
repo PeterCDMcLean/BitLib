@@ -35,7 +35,6 @@ class bit_reference {
   // Friendship
   template <class>
   friend class bit_reference;
-  friend class bit_pointer<WordType>;
 
   // Types
  public:

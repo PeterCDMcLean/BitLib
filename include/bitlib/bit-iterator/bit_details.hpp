@@ -35,9 +35,11 @@
 // Miscellaneous
 namespace bit {
 class bit_value;
-template <class WordType> class bit_reference;
-template <class WordType> class bit_pointer;
+template <class WordType>
+class bit_reference;
 template <class Iterator> class bit_iterator;
+template <class WordType>
+using bit_pointer = bit_iterator<WordType*>;
 
 // ========================================================================== //
 

@@ -67,7 +67,6 @@ concept bit_iterator_c =
       // It must provide base(), position(), and mask() with proper return types.
       { it.base() } -> std::same_as<typename It::iterator_type>;
       { it.position() } -> std::same_as<typename It::size_type>;
-      { it.mask() } -> std::same_as<std::make_unsigned_t<std::remove_cv_t<typename It::word_type>>>;
     };
 
 template <typename It>
