@@ -20,6 +20,43 @@ target_include_directories(bitlib INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
+target_sources(bitlib INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bitlib.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit_concepts.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/bit_algorithm_details.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/bit_algorithm.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/copy_backward.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/copy.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/count.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/debug_utils.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/equal.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/fill.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/find.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/libpopcnt.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/move.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/reverse.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/rotate.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/shift.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/swap_ranges.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/transform.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/type_traits.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bit_array_dynamic_extent.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bit_array.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bit_bitsof.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bit-containers.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bit_mdspan_accessor.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bit_span.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bit_vector.hpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-iterator/bit_details.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-iterator/bit.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-iterator/bit_iterator.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-iterator/bit_reference.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-iterator/bit_value.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-iterator/linear_overload.hpp
+)
 
 target_compile_features(bitlib INTERFACE cxx_std_23)
 
