@@ -56,7 +56,6 @@ bit_iterator<RandomAccessIt> shift_left(
     using word_type = typename bit_iterator<RandomAccessIt>::word_type;
     using size_type = typename bit_iterator<RandomAccessIt>::size_type;
     using difference_type = typename bit_iterator<RandomAccessIt>::difference_type;
-    using iterator_type = typename bit_iterator<RandomAccessIt>::iterator_type;
     constexpr size_type digits = binary_digits<word_type>::value;
 
     // Initialization
@@ -156,7 +155,7 @@ bit_iterator<RandomAccessIt> shift_left(
     // At this point, first is aligned
     if (offset == 0)
     {
-      first = bit::bit_iterator<iterator_type>(
+      first = bit::bit_iterator<RandomAccessIt>(
           STD_SHIFT_LEFT(first.base(),
                          last.base(),
                          word_shifts),
@@ -237,7 +236,6 @@ bit_iterator<RandomAccessIt> shift_right(
     // Types and constants
     using word_type = typename bit_iterator<RandomAccessIt>::word_type;
     using size_type = typename bit_iterator<RandomAccessIt>::size_type;
-    using iterator_type = typename bit_iterator<RandomAccessIt>::iterator_type;
 
     // Initialization
     const bool is_last_aligned = last.position() == 0;
