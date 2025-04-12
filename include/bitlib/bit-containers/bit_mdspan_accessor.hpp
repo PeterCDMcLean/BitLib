@@ -9,7 +9,7 @@
 #ifndef _BIT_MDSPAN_ACCESSOR_HPP_INCLUDED
 #define _BIT_MDSPAN_ACCESSOR_HPP_INCLUDED
 
-#include "bitlib/bit-iterator/bit_pointer.hpp"
+#include "bitlib/bit-iterator/bit_details.hpp"
 #include "bitlib/bit-iterator/bit_reference.hpp"
 #include "bitlib/bit-iterator/bit_value.hpp"
 

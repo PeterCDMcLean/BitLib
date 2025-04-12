@@ -23,6 +23,7 @@
 #include "bitlib/bit_concepts.hpp"
 // Project sources
 #include "bit_details.hpp"
+#include "bit_reference.hpp"
 // Third-party libraries
 // Miscellaneous
 namespace bit {

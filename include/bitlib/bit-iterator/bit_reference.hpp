@@ -18,6 +18,7 @@
 #include <type_traits>
 
 #include "bit_details.hpp"
+#include "bit_value.hpp"
 // Third-party libraries
 // Miscellaneous
 namespace bit {
