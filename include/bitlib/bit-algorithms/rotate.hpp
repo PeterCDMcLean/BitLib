@@ -240,7 +240,7 @@ bit_iterator<ForwardIt> rotate(
         size_type k = distance(first, n_first);
         word_type temp = get_word<word_type>(first, k);
         bit_iterator<ForwardIt> new_last = shift_left(first, last, k);
-        write_word<word_type, ForwardIt>(temp, new_last, static_cast<word_type>(k));
+        write_word<word_type>(temp, new_last, static_cast<word_type>(k));
         return new_last;
     } else if (is_within<digits>(n_first, last)) {
         size_type p = distance(n_first, last);

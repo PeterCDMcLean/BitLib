@@ -93,8 +93,8 @@ bit_iterator<RandomAccessIt> shift_left(
     // Triggered if all remaining bits can fit in a word
     if (d - n <= digits)
     {
-      word_type new_word = get_word<word_type, iterator_type>(middle, d - n);
-      write_word<word_type, iterator_type>(new_word, first, d - n);
+      word_type new_word = get_word<word_type>(middle, d - n);
+      write_word<word_type>(new_word, first, d - n);
       return first + d - n;
     }
     // Multiple word case
@@ -162,7 +162,7 @@ bit_iterator<RandomAccessIt> shift_left(
                          word_shifts),
           0);
       if (!is_last_aligned) {
-        write_word<word_type, iterator_type>(*last.base(), first, last.position());
+        write_word<word_type>(*last.base(), first, last.position());
         first += last.position();
       }
         // https://en.cppreference.com/w/cpp/algorithm/shift
@@ -219,8 +219,8 @@ bit_iterator<RandomAccessIt> shift_left(
     if (!is_last_aligned)
     {
         const difference_type bits_left = last.position() - middle.position();
-        const word_type new_word = get_word<word_type, iterator_type>(middle, bits_left);
-        write_word<word_type, iterator_type>(new_word, first, bits_left);
+        const word_type new_word = get_word<word_type>(middle, bits_left);
+        write_word<word_type>(new_word, first, bits_left);
         first += bits_left;
     }
 
@@ -270,10 +270,10 @@ bit_iterator<RandomAccessIt> shift_right(
       const size_type bits_to_align = std::min<size_type>(
           last.position(),
           bit::distance(first, middle));
-      const word_type word_to_write = get_word<word_type, iterator_type>(
+      const word_type word_to_write = get_word<word_type>(
           middle - bits_to_align,
           bits_to_align);
-      write_word<word_type, iterator_type>(
+      write_word<word_type>(
           word_to_write,
           last - bits_to_align,
           bits_to_align);
@@ -355,10 +355,10 @@ bit_iterator<RandomAccessIt> shift_right(
     if (first.position() != middle.position())
     {
         const size_type bits_to_align = bit::distance(first, middle);
-        const word_type word_to_write = get_word<word_type, iterator_type>(
+        const word_type word_to_write = get_word<word_type>(
             first,
             bits_to_align);
-        write_word<word_type, iterator_type>(
+        write_word<word_type>(
             word_to_write,
             last - bits_to_align,
             bits_to_align);
