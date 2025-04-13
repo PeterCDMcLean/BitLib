@@ -25,9 +25,9 @@ TEST(MdSpanTest, BitDefaultLayout) {
       bit::bit_default_accessor<uint8_t> >
       myspan(&dynarr[0], 5, 6, 7);
 
-  for (int i = 0; i < myspan.extent(0); i++) {
-    for (int j = 0; j < myspan.extent(1); j++) {
-      for (int k = 0; k < myspan.extent(2); k++) {
+  for (size_t i = 0; i < myspan.extent(0); i++) {
+    for (size_t j = 0; j < myspan.extent(1); j++) {
+      for (size_t k = 0; k < myspan.extent(2); k++) {
         bit::bit_value expected = ((rot & 1) ? bit::bit1 : bit::bit0);
         EXPECT_EQ(dynarr[i * 6 * 7 + j * 7 + k], expected);
         bit::bit_value actual = myspan[i, j, k];

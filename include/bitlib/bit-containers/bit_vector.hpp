@@ -191,7 +191,7 @@ class bit_vector {
         /*
          * Helper functions
          */
-        constexpr std::string debug_string(const_iterator first, const_iterator last);
+        constexpr std::string debug_string(const_iterator first, const_iterator end);
         constexpr std::string debug_string();
 
         // TODO Make constexpr
@@ -663,42 +663,27 @@ constexpr bit_span<WordType, std::dynamic_extent> bit_vector<WordType, Allocator
 }
 
 // ------------------------ BIT VECTOR: DEBUGGING -------------------------- //
-template<class WordType, class Allocator>
-constexpr std::string bit_vector<WordType, Allocator>::debug_string(const_iterator first, const_iterator last) {
-    std::string ret = "";
-    iterator mem = first;
-    auto position = 0;
-    for (iterator it = first; it != last; ++it) {
-        if (position % digits == 0 && position != 0) {
-            ret += " ";
-        } else if (position % 8 == 0 && position != 0) {
-            ret += '.';
-        }
-        ret += *it == bit1 ? '1' : '0';
-        mem = it;
-        ++position;
+template <class WordType, class Allocator>
+constexpr std::string bit_vector<WordType, Allocator>::debug_string(const_iterator first, const_iterator end) {
+  std::string ret = "";
+  iterator mem = first;
+  auto position = 0;
+  for (iterator it = first; it != end; ++it) {
+    if (position % digits == 0 && position != 0) {
+      ret += " ";
+    } else if (position % 8 == 0 && position != 0) {
+      ret += '.';
     }
-    return ret;
+    ret += *it == bit1 ? '1' : '0';
+    mem = it;
+    ++position;
+  }
+  return ret;
 }
 
 template<class WordType, class Allocator>
 constexpr std::string bit_vector<WordType, Allocator>::debug_string() {
-    auto first = begin();
-    auto last = end();
-    std::string ret = "";
-    iterator mem = first;
-    auto position = 0;
-    for (iterator it = first; it != last; ++it) {
-        if (position % digits == 0 && position != 0) {
-            ret += " ";
-        } else if (position % 8 == 0 && position != 0) {
-            ret += '.';
-        }
-        ret += *it == bit1 ? '1' : '0';
-        mem = it;
-        ++position;
-    }
-    return ret;
+  return debug_string(begin(), end());
 }
 // -------------------------------------------------------------------------- //
 

@@ -218,23 +218,23 @@ TEST(BitSpanTest, Slice) {
 // ---------- Const Reference Alias Tests ----------
 
 TEST(BitSpanTest, ConstReferenceAlias) {
-    WordType word = 0;
-    bit::bit_span<WordType> span(&word, 1);
-    span[0] = bit::bit1;
+  WordType word = 0;
+  bit::bit_span<WordType> span(&word, 1);
+  span[0] = bit::bit1;
 
-    // Create a const view.
-    const bit::bit_span<WordType>& cspan = span;
+  // Create a const view.
+  const bit::bit_span<WordType>& cspan = span;
 
-    // Use a static_assert to verify that the type of cspan[0]
-    // is the same as the defined const_reference.
-    static_assert(std::is_same_v<decltype(cspan[0]),
-                  typename bit::bit_span<WordType>::const_reference>,
-                  "cspan[0] is not of type const_reference");
+  // Use a static_assert to verify that the type of cspan[0]
+  // is the same as the defined const_reference.
+  static_assert(std::is_same_v<decltype(cspan[0]),
+                               typename bit::bit_span<WordType>::const_reference>,
+                "cspan[0] is not of type const_reference");
 
-    // At runtime, verify the value is as expected.
-    EXPECT_EQ(cspan[0], bit::bit1);
+  // At runtime, verify the value is as expected.
+  EXPECT_EQ(cspan[0], bit::bit1);
 
-    // The following assignment should fail to compile if uncommented,
-    // which confirms that the const_reference is read-only.
-    // cspan[0] = bit::bit0;
+  // The following assignment should fail to compile if uncommented,
+  // which confirms that the const_reference is read-only.
+  // cspan[0] = bit::bit0;
 }

@@ -189,7 +189,7 @@ template <typename T, std::size_t N, std::align_val_t V, typename W>
 constexpr bit_array<T, N, V, W>::bit_array(const std::string_view s)
   requires(std::is_same_v<value_type, bit_value>)
 {
-  if(bitsof(*this) != (std::count(s.begin(), s.end(), '0') + std::count(s.begin(), s.end(), '1'))) [[unlikely]] {
+  if (bitsof(*this) != static_cast<size_t>(std::count(s.begin(), s.end(), '0') + std::count(s.begin(), s.end(), '1'))) [[unlikely]] {
     throw std::invalid_argument("String contains an invalid number of bits for bit_array.");
   };
   size_type i = 0;
