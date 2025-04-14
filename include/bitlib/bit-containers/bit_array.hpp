@@ -20,6 +20,8 @@
 #include <string>
 #include <type_traits>
 #include <vector>
+#include <cstring> // memcpy
+
 // Project sources
 #include "bitlib/bit-iterator/bit.hpp"
 #include "bitlib/bit-algorithms/bit_algorithm.hpp"
@@ -34,7 +36,7 @@ template <typename T = bit_value,
           typename W = std::conditional<std::is_same_v<T, bit_value>, uint8_t, T>::type>
 class bit_array {
  public:
-  static constexpr std::size_t bits = N;
+  static constexpr std::size_t bits = N * bitsof<T>();
   using word_type = W;
   using value_type = T;
   using size_type = std::size_t;
@@ -61,6 +63,8 @@ class bit_array {
   */
   constexpr bit_array() noexcept;
   constexpr bit_array(value_type bit_val);
+  template <std::integral U>
+  constexpr bit_array(const U& integral) requires (bitsof<U>() <= bits);
   constexpr bit_array(const bit_array<T, N, V, W>& other) = default;
   constexpr bit_array(const bit_array<T, N, V, W>&& other) noexcept;
   constexpr bit_array(const std::initializer_list<value_type> init)
@@ -115,7 +119,10 @@ class bit_array {
     */
   constexpr void fill(value_type bit_val) noexcept;
   constexpr void swap(bit_array<T, N, V, W>& other) noexcept;
-  //constexpr std::synth-three-way-result<bit_array> operator<=>() const noexcept;
+  template <std::integral U>
+  explicit constexpr operator U() const noexcept requires (bitsof<U>() >= (bitsof<T>() * N));
+  constexpr std::string debug_string() const;
+  constexpr std::string debug_string(const_iterator first, const_iterator end) const;
 };
 
 static_assert(bit_range<bit_array<bit_value, 11>>, "bit_array does not satisfy bit_range concept!");
@@ -148,6 +155,26 @@ constexpr bit_array<T, N, V, W>::bit_array() noexcept : storage{} {}
 template <typename T, std::size_t N, std::align_val_t V, typename W>
 constexpr bit_array<T, N, V, W>::bit_array(bit_array<T, N, V, W>::value_type bit_val) : storage{} {
   fill(bit_val);
+}
+
+template <typename T, std::size_t N, std::align_val_t V, typename W>
+template <std::integral U>
+constexpr bit_array<T, N, V, W>::bit_array(const U& integral) requires (bitsof<U>() <= bit_array<T, N, V, W>::bits) {
+  std::memcpy(&storage[0], &integral, sizeof(integral));
+
+  bool sign_extend = false;
+  if constexpr (std::is_signed_v<U>) {
+    sign_extend = (integral & (1 << (bitsof<U>()-1))) ? true : false;
+  }
+  if (sign_extend) {
+    for (auto it = begin()+bitsof<U>(); it != end(); ++it) {
+      *it = bit1;
+    }
+  } else {
+    for (auto it = begin()+bitsof<U>(); it != end(); ++it) {
+      *it = bit0;
+    }
+  }
 }
 
 template <typename T, std::size_t N, std::align_val_t V, typename W>
@@ -322,6 +349,48 @@ constexpr typename bit_array<T, N, V, W>::const_iterator bit_array<T, N, V, W>::
 }
 
 // -------------------------------------------------------------------------- //
+
+template <typename T, std::size_t N, std::align_val_t V, typename W>
+template <std::integral U>
+constexpr bit_array<T, N, V, W>::operator U() const noexcept requires (bitsof<U>() >= (bitsof<T>() * N)) {
+  U result;
+  std::memcpy(&result, &storage[0], sizeof(U));
+
+  if constexpr (std::is_signed_v<U> && begin()[size()-1]) {
+    for (size_type i = size(); i < bitsof<U>(); ++i) {
+      result |= (static_cast<U>(1) << i);
+    }
+  } else {
+    for (size_type i = size(); i < bitsof<U>(); ++i) {
+      result &= ~(static_cast<U>(1) << i);
+    }
+  }
+  return result;
+}
+
+template <typename T, std::size_t N, std::align_val_t V, typename W>
+constexpr std::string bit_array<T, N, V, W>::debug_string() const {
+  return debug_string(begin(), end());
+}
+
+template <typename T, std::size_t N, std::align_val_t V, typename W>
+constexpr std::string bit_array<T, N, V, W>::debug_string(
+  bit_array<T, N, V, W>::const_iterator first,
+  bit_array<T, N, V, W>::const_iterator end) const {
+  auto digits = bitsof<W>();
+  std::string ret = "";
+  auto position = 0;
+  for (auto it = first; it != end; ++it) {
+      if (position % digits == 0 && position != 0) {
+          ret += " ";
+      } else if (position % 8 == 0 && position != 0) {
+          ret += '.';
+      }
+      ret += *it == bit1 ? '1' : '0';
+      ++position;
+  }
+  return ret;
+}
 
 // ========================================================================== //
 template <char Bit>

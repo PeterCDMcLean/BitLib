@@ -44,6 +44,7 @@ class bit_pointer
     public:
     constexpr bit_pointer() noexcept;
     template <class T>
+    requires (std::is_const_v<WordType> == std::is_const_v<T>)
     constexpr bit_pointer(const bit_pointer<T>& other) noexcept;
     constexpr bit_pointer(std::nullptr_t) noexcept;
     explicit constexpr bit_pointer(word_type* ptr) noexcept;
@@ -146,6 +147,7 @@ constexpr bit_pointer<WordType>::bit_pointer(
 // Implicitly constructs a bit pointer from another bit pointer
 template <class WordType>
 template <class T>
+requires (std::is_const_v<WordType> == std::is_const_v<T>)
 constexpr bit_pointer<WordType>::bit_pointer(
     const bit_pointer<T>& other
 ) noexcept

@@ -5,7 +5,7 @@
 #include <iterator>
 #include <ranges>
 
-#if defined(__GNUC__) && (__GNUC__ < 13)
+#if defined(__GNUC__) && (__GNUC__ < 14)
 namespace std {
 struct from_range_t {
   explicit from_range_t() = default;
