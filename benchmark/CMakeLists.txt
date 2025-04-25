@@ -1,6 +1,18 @@
 set(BENCHMARK_ENABLE_GTEST_TESTS OFF)
 
-find_package(benchmark REQUIRED)
+find_package(benchmark CONFIG)
+if (NOT benchmark_DIR OR "${benchmark_DIR}" STREQUAL "benchmark-NOTFOUND")
+  include(FetchContent)
+
+  FetchContent_Declare(
+    benchmark
+    GIT_REPOSITORY https://github.com/google/benchmark.git
+    GIT_TAG afa23b7699c17f1e26c88cbf95257b20d78d6247 #v1.9.2
+  )
+  FetchContent_MakeAvailable(benchmark)
+endif()
+
+
 
 # set output directory of builds
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)

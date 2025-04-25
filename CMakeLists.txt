@@ -64,7 +64,17 @@ target_sources(bitlib_utils INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/utils/test_uti
 
 if (BITLIB_MDSPAN)
   if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    find_package(mdspan CONFIG REQUIRED)
+    find_package(mdspan CONFIG)
+    if (NOT mdspan_DIR OR "${mdspan_DIR}" STREQUAL "mdspan-NOTFOUND")
+      include(FetchContent)
+
+      FetchContent_Declare(
+        mdspan
+        GIT_REPOSITORY https://github.com/kokkos/mdspan.git
+        GIT_TAG 414a5dccf5c775b2eecc13d408b256e94f23d1d2 # stable 2025/04/25
+      )
+      FetchContent_MakeAvailable(mdspan)
+    endif()
     target_compile_definitions(bitlib INTERFACE MDSPAN_IMPL_STANDARD_NAMESPACE=std MDSPAN_IMPL_PROPOSED_NAMESPACE=experimental)
     target_link_libraries(bitlib INTERFACE std::mdspan)
   endif()
