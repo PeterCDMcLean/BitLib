@@ -59,6 +59,8 @@ jobs:
         wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
         sudo ./llvm.sh 19
+        # Install libc++ and libc++abi for Clang 19
+        sudo apt-get install -y libc++-19-dev libc++abi-19-dev
 
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
@@ -76,6 +78,7 @@ jobs:
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
         -DBITLIB_TEST=ON
+        ${{ matrix.c_compiler == 'clang-19' && '-DCMAKE_CXX_FLAGS=-stdlib=libc++ -DCMAKE_EXE_LINKER_FLAGS=-stdlib=libc++' || '' }}
         -S ${{ github.workspace }}
 
     - name: Build
