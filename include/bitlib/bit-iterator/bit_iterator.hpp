@@ -20,6 +20,7 @@
 #include <iterator>
 #include <type_traits>
 
+#include "bitlib/bit-containers/bit_bitsof.hpp"
 #include "bitlib/bit_concepts.hpp"
 // Project sources
 #include "bit_details.hpp"
@@ -57,10 +58,12 @@ class bit_iterator
  public:
   constexpr bit_iterator();
   template <class T>
-  constexpr bit_iterator(const bit_iterator<T>& other);
+  constexpr bit_iterator(const bit_iterator<T>& other)
+    requires std::constructible_from<iterator_type, T>;
   explicit constexpr bit_iterator(iterator_type i);
   constexpr bit_iterator(iterator_type i, size_type pos);
-  explicit constexpr bit_iterator(const pointer& ptr);
+  explicit constexpr bit_iterator(const pointer& ptr)
+    requires std::constructible_from<iterator_type, word_type*>;
 
   // Assignment
  public:
@@ -125,7 +128,9 @@ constexpr bit_iterator<Iterator>::bit_iterator()
 template <class Iterator>
 template <class T>
 constexpr bit_iterator<Iterator>::bit_iterator(const bit_iterator<T>& other)
+  requires std::constructible_from<iterator_type, T>
     : _current(other.base()), _position(other.position()) {
+  assert(_position < bitsof<word_type>());
 }
 
 // Explicitly constructs an aligned bit iterator from an iterator
@@ -143,7 +148,9 @@ constexpr bit_iterator<Iterator>::bit_iterator(const iterator_type i, size_type 
 // Explicitly constructs an unaligned bit iterator from a pointer
 template <class Iterator>
 constexpr bit_iterator<Iterator>::bit_iterator(const pointer& ptr)
+  requires std::constructible_from<iterator_type, word_type*>
     : _current(ptr._current), _position(ptr.position()) {
+  assert(_position < bitsof<word_type>());
 }
 // -------------------------------------------------------------------------- //
 
@@ -157,6 +164,7 @@ constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator=(
     const bit_iterator<T>& other) {
   _current = other._current;
   _position = other._position;
+  assert(_position < bitsof<word_type>());
   return *this;
 }
 // -------------------------------------------------------------------------- //

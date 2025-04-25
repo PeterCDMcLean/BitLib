@@ -4,7 +4,11 @@
 #include <ranges>
 
 #include "gtest/gtest.h"
+#if defined(MDSPAN_IMPL_STANDARD_NAMESPACE)
 #include "mdspan/mdspan.hpp"
+#else
+#include <mdspan>
+#endif
 
 TEST(MdSpanTest, BitDefaultLayout) {
   uint32_t rot = 0xDEADBEEF;

@@ -45,7 +45,7 @@ class bit_span : private bit_span_storage<WordType, Extent> {
   using const_reference = const bit_reference<WordType>;
   using pointer = bit_pointer<WordType>;
   using const_pointer = const pointer;
-  using iterator = bit_iterator<typename std::span<WordType, Extent>::iterator>;
+  using iterator = bit_iterator<WordType*>;
   using const_iterator = bit_iterator<const WordType*>;
 
  private:
@@ -82,11 +82,6 @@ class bit_span : private bit_span_storage<WordType, Extent> {
   constexpr bit_span(WordType& word_ref, size_type bit_count) noexcept
     requires(Extent == std::dynamic_extent);
   constexpr bit_span(WordType& word_ref) noexcept;
-
-  // Construct from a iterator and a bit count.
-  constexpr bit_span(iterator iter, size_type bit_count) noexcept
-    requires(Extent == std::dynamic_extent);
-  constexpr bit_span(iterator iter) noexcept;
 
   constexpr bit_span(WordType& s)
     requires(std::is_scalar_v<WordType>);
@@ -201,20 +196,12 @@ constexpr bit_span<WordType, Extent>::bit_span(WordType& word_ref, size_type bit
   requires(Extent == std::dynamic_extent)
     : bit_span(&word_ref, bit_count) {}
 
-template <typename WordType, std::size_t Extent>
-constexpr bit_span<WordType, Extent>::bit_span(iterator iter, size_type bit_count) noexcept
-  requires(Extent == std::dynamic_extent)
-    : bit_span_storage<WordType, Extent>(bit_count), data_(&(*iter)) {}
-
 // Construct from a bit_pointer and a bit count.
 template <typename WordType, std::size_t Extent>
 constexpr bit_span<WordType, Extent>::bit_span(pointer data) noexcept : bit_span_storage<WordType, Extent>(), data_(data) {}
 
 template <typename WordType, std::size_t Extent>
 constexpr bit_span<WordType, Extent>::bit_span(WordType* word_ptr) noexcept : bit_span_storage<WordType, Extent>(), data_(pointer(word_ptr, 0)) {}
-
-template <typename WordType, std::size_t Extent>
-constexpr bit_span<WordType, Extent>::bit_span(iterator iter) noexcept : bit_span_storage<WordType, Extent>(), data_(&(*iter)) {}
 
 template <typename WordType, std::size_t Extent>
 constexpr bit_span<WordType, Extent>::bit_span(WordType* word_ptr)

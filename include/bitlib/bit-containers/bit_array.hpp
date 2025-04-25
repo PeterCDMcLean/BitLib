@@ -15,6 +15,7 @@
 // ================================ PREAMBLE ================================ //
 // C++ standard library
 #include <algorithm>
+#include <bit>
 #include <cmath>
 #include <span>
 #include <string>
@@ -48,7 +49,7 @@ class bit_array {
  private:
   static constexpr std::size_t Words = (N * bitsof<value_type>() + bitsof<word_type>() - 1) / bitsof<word_type>();
 
-  alignas(V) std::array<word_type, Words> storage;
+  alignas(static_cast<size_t>(V)) std::array<word_type, Words> storage;
 
  public:
   using iterator = typename std::conditional<std::is_same_v<T, bit_value>,
@@ -371,18 +372,18 @@ constexpr void _parameter_pack_base_bits_prefix_len(size_t& base, size_t& bits, 
     uint8_t decimal;
     switch (base) {
       case 2:
-        decimal = Bit - '0';
+        decimal = static_cast<uint8_t>(Bit - '0');
         break;
       case 10:
-        decimal = Bit - '0';
+        decimal = static_cast<uint8_t>(Bit - '0');
         break;
       case 16:
-        decimal = Bit - '0';
+        decimal = static_cast<uint8_t>(Bit - '0');
         if (Bit >= 'a' && Bit <= 'f') {
-          decimal = Bit - 'a' + 10u;
+          decimal = static_cast<uint8_t>(Bit - 'a') + 10u;
         }
         if (Bit >= 'A' && Bit <= 'F') {
-          decimal = Bit - 'A' + 10u;
+          decimal = static_cast<uint8_t>(Bit - 'A') + 10u;
         }
         break;
     }
@@ -415,7 +416,7 @@ constexpr std::pair<size_t, uint64_t> _parameter_pack_decode_prefixed_num() {
     if (base == 2) {
       bits = digits;
     } else if (base == 10) {
-      bits = static_cast<size_t>(std::ceil(digits * std::log2(10)));
+      bits = std::bit_width(num);
     } else {
       bits = 4 * digits;
     }
