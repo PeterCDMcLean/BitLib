@@ -46,6 +46,7 @@ class bit_reference {
   // Lifecycle
  public:
   template <class T>
+  requires (std::is_const_v<WordType> == std::is_const_v<T>)
   constexpr bit_reference(const bit_reference<T>& other) noexcept;
   constexpr bit_reference(const bit_reference& other) noexcept;
   explicit constexpr bit_reference(word_type& ref) noexcept;
@@ -121,6 +122,7 @@ std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>&
 // Implicitly constructs a bit reference from another bit reference
 template <class WordType>
 template <class T>
+requires (std::is_const_v<WordType> == std::is_const_v<T>)
 constexpr bit_reference<WordType>::bit_reference(const bit_reference<T>& other) noexcept
     : _ref(other._ref), _mask(other._mask) {
 }
