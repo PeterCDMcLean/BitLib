@@ -52,7 +52,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: "Install Clang 19"
-      if: matrix.os == 'ubuntu-latest' && matrix.c_compiler == 'clang-19'"
+      if: matrix.os == 'ubuntu-latest' && matrix.c_compiler == 'clang-19'
       run: |
         sudo apt-get update
         sudo apt-get install -y wget gnupg lsb-release
