@@ -1,6 +1,6 @@
 # BitLib
 
-![Actions](https://github.com/bkille/BitLib/actions/workflows/cmake.yml/badge.svg?branch=master)[![Coverage Status](https://coveralls.io/repos/github/bkille/BitLib/badge.svg?branch=master)](https://coveralls.io/github/bkille/BitLib?branch=master)
+![Actions](https://github.com/PeterCDMcLean/BitLib/actions/workflows/cmake-multi-platform.yml/badge.svg?branch=master)[![Coverage Status](https://coveralls.io/repos/github/PeterCDMcLean/BitLib/badge.svg?branch=master)](https://coveralls.io/github/PeterCDMcLean/BitLib?branch=master)
 
 **This repository acts as an efficient replacement of `std::vector<bool>`. It provides implementations of many of the functions in [`<algorithms>`](https://en.cppreference.com/w/cpp/algorithm) optimized for containers of bits, in addition to providing a `bit_vector` class which has roughly the same interface as `std::vector<bool>`**.
 
@@ -38,11 +38,11 @@ int main() {
 ```
 
 # Installation
-BitLib is a header-only libarary. Currently, the BitLib library requires at least `-std=c++17`. 
+BitLib is a header-only libarary. Currently, the BitLib library requires at least `-std=c++17`.
 
 
 ## CMake
-You can automatically fetch the library using Cmake's `FetchContent`. 
+You can automatically fetch the library using Cmake's `FetchContent`.
 
 ```cmake
 include(FetchContent)
@@ -74,7 +74,7 @@ option(BITLIB_COVERAGE "Compute test coverage" OFF)
 ```
 
 # Usage
-The goal of BitLib is to be as similar to the C++ STL as possible. The interface of most functions and classes are the same as they are in the STL. Instead of the values being `bool`, we have `bit::bit_value`, which can take on either `bit::bit0` or `bit::bit1`. 
+The goal of BitLib is to be as similar to the C++ STL as possible. The interface of most functions and classes are the same as they are in the STL. Instead of the values being `bool`, we have `bit::bit_value`, which can take on either `bit::bit0` or `bit::bit1`.
 
 ## Containers
  Right now, the only container I have implemented is the bitvector. `bit::bit_vector<WordType>` is essentially a wrapper around `std::vector<WordType>`. The interfaces are nearly identical. In addition to the normal `vector` constructors, you can also provide a string to construct your bitvector:
@@ -106,7 +106,7 @@ auto bitret = bit::transform(
         bitvec1.end(),
         bitvec2.begin(),
         bitvec3.begin()
-        binary_op); 
+        binary_op);
 ```
 
 ## Iterators
@@ -118,9 +118,9 @@ bit::bit_iterator<WordType*>(&(wordArr[0])); // Constructs a bit iterator starti
 bit::bit_iterator<WordType*>(&(wordArr[0]), 1); // Constructs a bit iterator from the second bit (position 1) of the first word of the vector
 ```
 
-In order to grab the underlying word that a bit pointed to by a bit_iterator comes from, you can use the `bit_iterator.base()` function. 
+In order to grab the underlying word that a bit pointed to by a bit_iterator comes from, you can use the `bit_iterator.base()` function.
 
-It is worth noting that the "position" of a bit always increases from LSB to MSB. For those looking to create their own algorithms from bit_iterators, this can be a common "gotcha". For example, shifting a word to the right by `k` will eliminate the first `k` bits of the container. This is only important to those implementing their own algorithms. `bit::shift_*` works as described in the documentation i.e. `shift_right` shifts the container towards `end()` and `shift_left` shifts the container towards `begin()`. 
+It is worth noting that the "position" of a bit always increases from LSB to MSB. For those looking to create their own algorithms from bit_iterators, this can be a common "gotcha". For example, shifting a word to the right by `k` will eliminate the first `k` bits of the container. This is only important to those implementing their own algorithms. `bit::shift_*` works as described in the documentation i.e. `shift_right` shifts the container towards `end()` and `shift_left` shifts the container towards `begin()`.
 
 ```
        MSB|<-----|LSB
@@ -135,13 +135,13 @@ Value:    01000100 --> Sequence: 00100010
 ```
 
 # Documentation
-Given that the majority of the library is focused on having the same interface as the C++ STL iterators, containers, and algorithms, users should use the official [STL documentation website](https://en.cppreference.com/). We do plan on adding our own documentation in the future, however. 
+Given that the majority of the library is focused on having the same interface as the C++ STL iterators, containers, and algorithms, users should use the official [STL documentation website](https://en.cppreference.com/). We do plan on adding our own documentation in the future, however.
 
 
 # Performance Benchmarks
-I used Google's [benchmark](https://github.com/google/benchmark) library for computing benchmarks. Each benchmark is formatted as `{bit, BitArray, std}::function` (size) [(alignment-tags)]. 
+I used Google's [benchmark](https://github.com/google/benchmark) library for computing benchmarks. Each benchmark is formatted as `{bit, BitArray, std}::function` (size) [(alignment-tags)].
 
-    * `bit` is for this library, `BitArray` is for the popular C-based [BitArray library](https://github.com/noporpoise/BitArray), [dynamic_bitset](https://github.com/pinam45/dynamic_bitset) is a header-only library similar to Boost's dynamic_bitset, and`std` is the standard library operating on the infamous `vector<bool>`. 
+    * `bit` is for this library, `BitArray` is for the popular C-based [BitArray library](https://github.com/noporpoise/BitArray), [dynamic_bitset](https://github.com/pinam45/dynamic_bitset) is a header-only library similar to Boost's dynamic_bitset, and`std` is the standard library operating on the infamous `vector<bool>`.
 * (size) denotes the size of the container in bits. `small = 1 << 8`, `medium= 1 << 16`, `large = 1 << 24`, `huge = 1 << 31`
 * (alignment-tags) refers to the memory alignment of the bit-iterators. `U` means the iterator does not fall on a word boundary, `R` means the iterator is placed at random, and `A` means the iterator is aligned with a word boundary.
 
@@ -254,4 +254,4 @@ dynamic_bitset::find (large)                     259896 ns       259908 ns      
 bitarray::find (large)                           252434 ns       252445 ns         2774
 std::find (large)                              28570723 ns     28567762 ns           25
 ```
-  
+
