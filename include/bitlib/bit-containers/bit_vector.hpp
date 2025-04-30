@@ -80,7 +80,7 @@ class bit_vector {
   using const_reference = const reference;
   using pointer = bit_pointer<WordType>;
   using iterator = bit_iterator<typename std::vector<WordType>::iterator>;
-  using const_iterator = bit_iterator<const typename std::vector<WordType>::const_iterator>;
+  using const_iterator = bit_iterator<typename std::vector<WordType>::const_iterator>;
 
   /*
          * Constructors, copies and moves...
@@ -666,16 +666,14 @@ constexpr bit_span<WordType, std::dynamic_extent> bit_vector<WordType, Allocator
 template <class WordType, class Allocator>
 constexpr std::string bit_vector<WordType, Allocator>::debug_string(const_iterator first, const_iterator end) {
   std::string ret = "";
-  iterator mem = first;
   auto position = 0;
-  for (iterator it = first; it != end; ++it) {
+  for (const_iterator it = first; it != end; ++it) {
     if (position % digits == 0 && position != 0) {
       ret += " ";
     } else if (position % 8 == 0 && position != 0) {
       ret += '.';
     }
     ret += *it == bit1 ? '1' : '0';
-    mem = it;
     ++position;
   }
   return ret;

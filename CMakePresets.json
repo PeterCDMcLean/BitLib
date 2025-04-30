@@ -1,0 +1,204 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "YES",
+        "BITLIB_TEST": "OFF",
+        "BITLIB_BENCHMARK": "OFF"
+      }
+    },
+    {
+      "name": "windows_base",
+      "hidden": true,
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "linux_base",
+      "hidden": true,
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "msvc_base",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "cl",
+        "CMAKE_CXX_COMPILER": "cl"
+      }
+    },
+    {
+      "name": "gnu_base",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_C_FLAGS_Debug": "-DPOPCNT_NO_UNALIGNED -DBITLIB_STRICT_NO_UNDEFINED -g3 -fno-omit-frame-pointer -fstack-protector-all -fsanitize=address -fsanitize=undefined -finstrument-functions -fno-inline",
+        "CMAKE_CXX_FLAGS_Debug": "-DPOPCNT_NO_UNALIGNED -DBITLIB_STRICT_NO_UNDEFINED -g3 -fno-omit-frame-pointer -DPOPCNT_NO_UNALIGNED -fstack-protector-all -fsanitize=address -fsanitize=undefined -finstrument-functions -fno-inline",
+        "CMAKE_C_FLAGS_Release": "-O3 -DNDEBUG -march=native",
+        "CMAKE_CXX_FLAGS_Release": "-O3 -DNDEBUG -march=native"
+      }
+    },
+    {
+      "name": "clang_libcxx_base",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_CXX_FLAGS": "-stdlib=libc++",
+        "CMAKE_EXE_LINKER_FLAGS": "-stdlib=libc++"
+      }
+    },
+    {
+      "name": "clang_libstdcxx_base",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++",
+        "CMAKE_CXX_FLAGS": "-stdlib=libstdc++",
+        "CMAKE_EXE_LINKER_FLAGS": "-stdlib=libstdc++"
+      }
+    },
+    {
+      "name": "gcc_base",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++"
+      }
+    },
+    {
+      "name": "tests_msvc_base",
+      "hidden": true,
+      "inherits": "msvc_base",
+      "cacheVariables": {
+        "BITLIB_TEST": "ON"
+      }
+    },
+    {
+      "name": "benchmark_msvc_base",
+      "hidden": true,
+      "inherits": "msvc_base",
+      "cacheVariables": {
+        "BITLIB_BENCHMARK": "ON"
+      }
+    },
+    {
+      "name": "tests_gnu_base",
+      "hidden": true,
+      "inherits": "gnu_base",
+      "cacheVariables": {
+        "BITLIB_TEST": "ON",
+        "CMAKE_C_FLAGS": "-DPOPCNT_NO_UNALIGNED -DBITLIB_STRICT_NO_UNDEFINED -fstack-protector-strong -fsanitize=undefined -fsanitize=address -fsanitize=bounds -D_FORTIFY_SOURCE=2",
+        "CMAKE_CXX_FLAGS": "-DPOPCNT_NO_UNALIGNED -DBITLIB_STRICT_NO_UNDEFINED -fstack-protector-strong -fsanitize=undefined -fsanitize=address -fsanitize=bounds -D_FORTIFY_SOURCE=2"
+      }
+    },
+    {
+      "name": "coverage_gnu_base",
+      "hidden": true,
+      "inherits": "gnu_base",
+      "cacheVariables": {
+        "CMAKE_C_FLAGS": "--coverage",
+        "CMAKE_CXX_FLAGS": "--coverage",
+        "CMAKE_C_FLAGS_Release": "-O2 -g",
+        "CMAKE_CXX_FLAGS_Release": "-O2 -g",
+        "BITLIB_TEST": "ON"
+      }
+    },
+    {
+      "name": "benchmark_gnu_base",
+      "hidden": true,
+      "inherits": "gnu_base",
+      "cacheVariables": {
+        "CMAKE_C_FLAGS": "-O3 -DNDEBUG -march=native",
+        "CMAKE_CXX_FLAGS": "-O3 -DNDEBUG -march=native",
+        "BITLIB_BENCHMARK": "ON"
+      }
+    },
+    {
+      "name": "profile_gnu_base",
+      "hidden": true,
+      "inherits": "gnu_base",
+      "cacheVariables": {
+        "CMAKE_C_FLAGS": "-pg -fno-omit-frame-pointer",
+        "CMAKE_CXX_FLAGS": "-pg -fno-omit-frame-pointer",
+        "CMAKE_C_FLAGS_Release": "-O2 -DNDEBUG -march=native -pg -ggdb",
+        "CMAKE_CXX_FLAGS_Release": "-O2 -DNDEBUG -march=native -pg -ggdb",
+        "BITLIB_TEST": "ON",
+        "BITLIB_BENCHMARK": "ON"
+      }
+    },
+    {
+      "name": "tests_windows_msvc_msvcstl",
+      "inherits": [
+        "windows_base",
+        "tests_msvc_base"
+      ]
+    },
+    {
+      "name": "benchmark_windows_msvc_msvcstl",
+      "inherits": [
+        "windows_base",
+        "benchmark_msvc_base"
+      ]
+    },
+    {
+      "name": "tests_linux_gcc_libstdcxx",
+      "inherits": [
+        "linux_base",
+        "gcc_base",
+        "tests_gnu_base"
+      ]
+    },
+    {
+      "name": "coverage_linux_gcc_libstdcxx",
+      "inherits": [
+        "linux_base",
+        "gcc_base",
+        "coverage_gnu_base"
+      ]
+    },
+    {
+      "name": "benchmark_linux_gcc_libstdcxx",
+      "inherits": [
+        "linux_base",
+        "gcc_base",
+        "benchmark_gnu_base"
+      ]
+    },
+    {
+      "name": "tests_linux_clang_libcxx",
+      "inherits": [
+        "linux_base",
+        "clang_libcxx_base",
+        "tests_gnu_base"
+      ]
+    },
+    {
+      "name": "coverage_linux_clang_libcxx",
+      "inherits": [
+        "linux_base",
+        "clang_libcxx_base",
+        "coverage_gnu_base"
+      ]
+    },
+    {
+      "name": "benchmark_linux_clang_libcxx",
+      "inherits": [
+        "linux_base",
+        "clang_libcxx_base",
+        "benchmark_gnu_base"
+      ]
+    }
+  ]
+}

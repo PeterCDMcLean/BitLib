@@ -1,5 +1,7 @@
 # specify the C++ standard
 cmake_minimum_required(VERSION 3.14)
+cmake_policy(SET CMP0168 NEW)
+cmake_policy(SET CMP0167 NEW)
 
 # set the project name
 project(BitLib VERSION 0.3.0)
@@ -8,8 +10,6 @@ option(BITLIB_HWY "Build with google highway SIMD extensions" OFF)
 option(BITLIB_BENCHMARK "Build bitlib benchmarks" OFF)
 option(BITLIB_EXAMPLE "Build bitlib examples" OFF)
 option(BITLIB_TEST "Build bitlib tests" OFF)
-option(BITLIB_PROFILE "Buid simple example for profiling" OFF)
-option(BITLIB_COVERAGE "Compute test coverage" OFF)
 option(BITLIB_MDSPAN "Accessor Support for mdspan" ON)
 
 add_library(bitlib INTERFACE)
@@ -97,8 +97,3 @@ if (BITLIB_TEST)
   enable_testing()
   add_subdirectory(test)
 endif()
-
-if(BITLIB_PROFILE)
-  add_subdirectory(profile)
-endif()
-
