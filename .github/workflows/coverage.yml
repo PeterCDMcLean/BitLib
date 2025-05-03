@@ -84,7 +84,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: out/coverage
+          path: |
+            out/coverage
+            coverage.info
 
       - name: Coveralls
         uses: coverallsapp/github-action@master
