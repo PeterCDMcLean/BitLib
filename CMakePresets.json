@@ -6,9 +6,7 @@
       "hidden": true,
       "binaryDir": "${sourceDir}/build/${presetName}",
       "cacheVariables": {
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "YES",
-        "BITLIB_TEST": "OFF",
-        "BITLIB_BENCHMARK": "OFF"
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "YES"
       }
     },
     {
