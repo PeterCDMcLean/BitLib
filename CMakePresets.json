@@ -43,8 +43,8 @@
       "name": "gnu_base",
       "hidden": true,
       "cacheVariables": {
-        "CMAKE_C_FLAGS_Debug": "-DPOPCNT_NO_UNALIGNED -DBITLIB_STRICT_NO_UNDEFINED -g3 -fno-omit-frame-pointer -fstack-protector-all -fsanitize=address -fsanitize=undefined -finstrument-functions -fno-inline",
-        "CMAKE_CXX_FLAGS_Debug": "-DPOPCNT_NO_UNALIGNED -DBITLIB_STRICT_NO_UNDEFINED -g3 -fno-omit-frame-pointer -DPOPCNT_NO_UNALIGNED -fstack-protector-all -fsanitize=address -fsanitize=undefined -finstrument-functions -fno-inline",
+        "CMAKE_C_FLAGS_Debug": "-DPOPCNT_NO_UNALIGNED -g3 -fno-omit-frame-pointer -fstack-protector-all -fsanitize=address -fsanitize=undefined -finstrument-functions -fno-inline",
+        "CMAKE_CXX_FLAGS_Debug": "-DPOPCNT_NO_UNALIGNED -g3 -fno-omit-frame-pointer -DPOPCNT_NO_UNALIGNED -fstack-protector-all -fsanitize=address -fsanitize=undefined -finstrument-functions -fno-inline",
         "CMAKE_C_FLAGS_Release": "-O3 -DNDEBUG -march=native",
         "CMAKE_CXX_FLAGS_Release": "-O3 -DNDEBUG -march=native"
       }
@@ -99,8 +99,8 @@
       "inherits": "gnu_base",
       "cacheVariables": {
         "BITLIB_TEST": "ON",
-        "CMAKE_C_FLAGS": "-DPOPCNT_NO_UNALIGNED -DBITLIB_STRICT_NO_UNDEFINED -fstack-protector-strong -fsanitize=undefined -fsanitize=address -fsanitize=bounds -D_FORTIFY_SOURCE=2",
-        "CMAKE_CXX_FLAGS": "-DPOPCNT_NO_UNALIGNED -DBITLIB_STRICT_NO_UNDEFINED -fstack-protector-strong -fsanitize=undefined -fsanitize=address -fsanitize=bounds -D_FORTIFY_SOURCE=2"
+        "CMAKE_C_FLAGS": "-DPOPCNT_NO_UNALIGNED -fstack-protector-strong -fsanitize=undefined -fsanitize=address -fsanitize=bounds -D_FORTIFY_SOURCE=2",
+        "CMAKE_CXX_FLAGS": "-DPOPCNT_NO_UNALIGNED -fstack-protector-strong -fsanitize=undefined -fsanitize=address -fsanitize=bounds -D_FORTIFY_SOURCE=2"
       }
     },
     {
