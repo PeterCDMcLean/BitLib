@@ -1,9 +1,9 @@
 set(BENCHMARK_ENABLE_GTEST_TESTS OFF)
 
+include(FetchContent)
+
 find_package(benchmark CONFIG)
 if (NOT benchmark_DIR OR "${benchmark_DIR}" STREQUAL "benchmark-NOTFOUND")
-  include(FetchContent)
-
   FetchContent_Declare(
     benchmark
     GIT_REPOSITORY https://github.com/google/benchmark.git
@@ -12,27 +12,74 @@ if (NOT benchmark_DIR OR "${benchmark_DIR}" STREQUAL "benchmark-NOTFOUND")
   FetchContent_MakeAvailable(benchmark)
 endif()
 
+#find_package(Boost)
+#if (NOT Boost_DIR OR "${Boost_DIR}" STREQUAL "Boost-NOTFOUND")
+#  FetchContent_Declare(
+#    Boost
+#    GIT_REPOSITORY https://github.com/boostorg/boost.git
+#    GIT_TAG 199ef13d6034c85232431130142159af3adfce22 #v1.88.0
+#    EXCLUDE_FROM_ALL
+#    FIND_PACKAGE_ARGS COMPONENTS dynamic_bitset
+#  )
+#  FetchContent_MakeAvailable(Boost)
+#endif()
 
+find_package(sul-dynamic_bitset)
+if (NOT sul-dynamic_bitset_DIR OR "${sul-dynamic_bitset_DIR}" STREQUAL "sul-dynamic_bitset-NOTFOUND")
+  FetchContent_Declare(
+    sul-dynamic_bitset
+    GIT_REPOSITORY https://github.com/pinam45/dynamic_bitset.git
+    GIT_TAG ef647f07a663a4cbbd3bf8c70848876e63b64ce1 #v1.3.2
+    EXCLUDE_FROM_ALL
+    FIND_PACKAGE_ARGS
+  )
+  FetchContent_MakeAvailable(sul-dynamic_bitset)
+endif()
 
-# set output directory of builds
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-
-# set build type
-set(CMAKE_BUILD_TYPE Release)
+FetchContent_Declare(
+  BitArray
+  GIT_REPOSITORY https://github.com/noporpoise/BitArray.git
+  GIT_TAG 560ed785a0687b35301a8c23b8bb9fc06b69d827 # v2.0
+  EXCLUDE_FROM_ALL
+)
+FetchContent_MakeAvailable(BitArray)
+add_library(BitArray SHARED EXCLUDE_FROM_ALL)
+target_sources(BitArray PRIVATE
+  ${CMAKE_BINARY_DIR}/_deps/bitarray-src/bit_array.c
+  PUBLIC
+  ${CMAKE_BINARY_DIR}/_deps/bitarray-src/bit_array.h
+  ${CMAKE_BINARY_DIR}/_deps/bitarray-src/bit_macros.h
+)
+target_include_directories(BitArray PUBLIC
+  ${CMAKE_BINARY_DIR}/_deps/bitarray-src
+)
 
 # Add targets
-file(GLOB BENCH_SOURCES "src/*.cc")
-add_executable(bitlib-bench ${BENCH_SOURCES})
+add_executable(bitlib-bench EXCLUDE_FROM_ALL)
 
-add_subdirectory(ext/dynamic_bitset)
+target_sources(bitlib-bench PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/benchmark_main.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/copy_backward_bench.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/copy_bench.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/count_bench.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/equal_bench.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/fill_bench.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/find_bench.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/move_bench.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/reverse_bench.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/rotate_bench.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/rw_bench.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/shift_bench.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/swap_ranges-bench.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/transform_bench.hpp
+)
+target_include_directories(bitlib-bench PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
 
-# specify benchmark-specific libraries
-include_directories(
-    ${googlebench_SOURCE_DIR}/benchmark/include
-    src/utils
-    ext/BitArray
-    ext/itsy_bitsy/include)
-target_link_libraries(bitlib-bench PRIVATE bitlib_utils benchmark::benchmark -pthread ${CMAKE_CURRENT_LIST_DIR}/ext/BitArray/libbitarr.a sul::dynamic_bitset)
-
-target_compile_options(bitlib-bench PUBLIC -O3 -DNDEBUG -march=native -Wpedantic)
-install(TARGETS bitlib-bench DESTINATION .)
+target_link_libraries(bitlib-bench PRIVATE
+  bitlib
+  bitlib_utils
+  benchmark::benchmark
+  sul::dynamic_bitset
+  BitArray)

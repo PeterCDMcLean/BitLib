@@ -12,7 +12,7 @@ on:
 
 jobs:
   coverage:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.distro }}
 
     strategy:
       # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
@@ -25,13 +25,17 @@ jobs:
       #
       # To add more build types (Release, Debug, RelWithDebInfo, etc.) customize the build_type list.
       matrix:
-        os: [ubuntu-latest] # removed windows-latest
+        distro: [ubuntu-latest]
         build_type: [Debug]
-        c_compiler: [gcc]
+        compiler: [gcc]
         include:
-          - os: ubuntu-latest
+          - distro: ubuntu-latest
+            os: linux
+            compiler: gcc
             c_compiler: gcc
             cpp_compiler: g++
+            stdlib: libstdcxx
+            build_type: Debug
 
     steps:
       - uses: actions/checkout@v4
@@ -42,18 +46,6 @@ jobs:
         shell: bash
         run: |
           echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-          if [ "${{ matrix.c_compiler }}" = "clang-19" ]; then
-            cmake_flags="-DCMAKE_CXX_FLAGS='--coverage -stdlib=libc++'"
-            cmake_flags="${cmake_flags} -DCMAKE_C_FLAGS='--coverage'"
-            cmake_flags="${cmake_flags} -DCMAKE_EXE_LINKER_FLAGS='-stdlib=libc++'"
-            echo "cmake_flags=${cmake_flags}"
-            echo "cmake_flags=${cmake_flags}" >> $GITHUB_OUTPUT
-          else
-            cmake_flags="-DCMAKE_CXX_FLAGS='--coverage'"
-            cmake_flags="${cmake_flags} -DCMAKE_C_FLAGS='--coverage'"
-            echo "cmake_flags=${cmake_flags}"
-            echo "cmake_flags=${cmake_flags}" >> $GITHUB_OUTPUT
-          fi
 
       - name: "Install lcov"
         run: |
@@ -68,8 +60,7 @@ jobs:
           -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
           -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-          -DBITLIB_TEST=ON
-          ${{ steps.strings.outputs.cmake_flags }}
+          --preset=coverage_${{ matrix.os }}_${{ matrix.compiler }}_${{ matrix.stdlib }}
           -S ${{ github.workspace }}
 
       - name: Build
@@ -93,7 +84,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
-          path: out/coverage
+          path: |
+            out/coverage
+            coverage.info
 
       - name: Coveralls
         uses: coverallsapp/github-action@master

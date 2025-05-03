@@ -779,7 +779,11 @@ constexpr T _bitblend(T src0, T src1, T start, T len) noexcept
     static_assert(binary_digits<T>::value, "");
     constexpr T digits = binary_digits<T>::value;
     constexpr T one = 1;
-    const T msk = ((one << len) * (len < digits) - one) << start;
+    // The digits_mask is solely here to prevent Undefined Sanitizer
+    // complaining about shift of len >= digits
+    // Note: on -O1 the (len & digits_mask) is optimized to simply (len)
+    constexpr T digits_mask = digits - one;
+    const T msk = ((one << (len & digits_mask)) * (len < digits) - one) << start;
     return src0 ^ ((src0 ^ src1) & msk * (start < digits));
 }
 // -------------------------------------------------------------------------- //

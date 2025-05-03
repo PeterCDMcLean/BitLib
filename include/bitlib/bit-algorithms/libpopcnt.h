@@ -633,9 +633,24 @@ static inline uint64_t popcnt(const void* data, uint64_t size)
         cnt += popcnt64(*(const uint64_t*)(ptr + i));
       for (; i < size; i++)
         cnt += popcnt64(ptr[i]);
-
-      return cnt;
+#ifdef POPCNT_NO_UNALIGNED
+    // Address sanitizer will complain about unaligned accesses
+    // When we test with ASAN we enable aligned-only accesses
+    for (; ((uintptr_t)(ptr + i) % 8) && (i < size); i++) {
+      cnt += popcnt64(ptr[i]);
     }
+#endif
+
+    /* We use unaligned memory accesses here to improve performance */
+    for (; (i + 8) <= size; i += 8) {
+      cnt += popcnt64(*(const uint64_t*)(ptr + i));
+    }
+    for (; i < size; i++) {
+      cnt += popcnt64(ptr[i]);
+    }
+
+    return cnt;
+  }
 #endif
 
 #if !defined(HAVE_POPCNT) || \
@@ -644,8 +659,18 @@ static inline uint64_t popcnt(const void* data, uint64_t size)
    * Pure integer popcount algorithm.
    * We use unaligned memory accesses here to improve performance.
    */
-  for (; i < size - size % 8; i += 8)
+
+#ifdef POPCNT_NO_UNALIGNED
+  // Address sanitizer will complain about unaligned accesses
+  // When we test with ASAN we enable aligned-only accesses
+  for (; ((uintptr_t)(ptr + i) % 8) && (i < size); i++) {
+    cnt += popcount64(ptr[i]);
+  }
+#endif
+
+  for (; (i + 8) <= size; i += 8) {
     cnt += popcount64(*(const uint64_t*)(ptr + i));
+  }
 
   if (i < size)
   {

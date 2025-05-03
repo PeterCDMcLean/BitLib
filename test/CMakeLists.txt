@@ -44,12 +44,6 @@ if (BITLIB_MDSPAN)
   target_sources(bitlib-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/test-mdspan.cpp)
 endif()
 
-target_compile_options(bitlib-tests PUBLIC -O0 -g -fno-omit-frame-pointer -Wpedantic -fno-inline)
-
-if (BITLIB_COVERAGE)
-  target_compile_options(bitlib-tests PUBLIC --coverage -fprofile-arcs -ftest-coverage -pg)
-endif()
-
 # ASAN throws no matter what when using Google HWY, not sure why but need to fix
 # if (NOT BITLIB_HWY)
 #     target_compile_options(bitlib-tests PUBLIC -fsanitize=address)
@@ -68,7 +62,3 @@ enable_testing()
 gtest_discover_tests(
     bitlib-tests
     EXTRA_ARGS --gtest_repeat=${BITLIB_GTEST_REPEAT})
-
-#add_test(bitlib-check
-    #COMMAND env CTEST_OUTPUT_ON_FAILURE=1 GTEST_COLOR=1 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/bitlib-tests
-    #DEPENDS bitlib-tests)
