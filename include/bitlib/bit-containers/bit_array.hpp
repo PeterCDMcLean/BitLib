@@ -50,8 +50,9 @@ class bit_array {
 
  private:
   static constexpr std::size_t Words = (N * bitsof<value_type>() + bitsof<word_type>() - 1) / bitsof<word_type>();
+  static constexpr std::size_t AlignedWords = (((Words * sizeof(word_type) + static_cast<size_t>(V) - 1) & ~(static_cast<size_t>(V) - 1)) + sizeof(word_type) - 1) / sizeof(word_type);
 
-  alignas(static_cast<size_t>(V)) std::array<word_type, Words> storage;
+  alignas(static_cast<size_t>(V)) std::array<word_type, AlignedWords> storage;
 
  public:
   using iterator = typename std::conditional<std::is_same_v<T, bit_value>,
@@ -210,7 +211,7 @@ constexpr bit_array<T, N, V, W>::bit_array(const std::initializer_list<bool> ini
 
 template <typename T, std::size_t N, std::align_val_t V, typename W>
 constexpr bit_array<T, N, V, W>::bit_array(const std::initializer_list<W> init) : storage(init) {
-  static_assert(init.size() == storage.size());
+  static_assert(init.size() == Words);
 }
 
 template <typename T, std::size_t N, std::align_val_t V, typename W>

@@ -11,11 +11,12 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstring>  // memcpy
 #include <initializer_list>
 #include <memory>
+#include <new>
 #include <span>  // std::dynamic_extent
 #include <stdexcept>
-#include <cstring> // memcpy
 
 #include "bitlib/bit-algorithms/bit_algorithm.hpp"
 #include "bitlib/bit-containers/bit_array.hpp"
@@ -44,9 +45,24 @@ class bit_array<T, std::dynamic_extent, V, W> {
                                                    const word_type*>::type;
 
  private:
+  struct deleter {
+    size_type words;
+    void operator()(word_type* const p) const {
+      for (size_type i = 0; i < words; ++i) {
+        (p + i)->~word_type();
+      }
+      ::operator delete(p, V);
+    }
+  };
+
   const size_type m_size;
-  const std::unique_ptr<word_type[], decltype(&std::free)> storage;
-  static constexpr std::size_t Words(std::size_t N) { return (N * bitsof<value_type>() + bitsof<word_type>() - 1) / bitsof<word_type>(); };
+  const std::unique_ptr<word_type[], deleter> storage;
+  static constexpr size_type Words(size_type N) {
+    return (N * bitsof<value_type>() + bitsof<word_type>() - 1) / bitsof<word_type>();
+  };
+  static constexpr size_t AlignedBytes(size_t N) {
+    return (Words(N) * sizeof(word_type) + static_cast<size_t>(V) - 1) & ~(static_cast<size_t>(V) - 1);
+  };
 
  public:
   /*
@@ -142,11 +158,10 @@ constexpr bit_array<T, std::dynamic_extent, V, W>::bit_array() noexcept
 template <typename T, std::align_val_t V, typename W>
 template <std::integral U>
 constexpr bit_array<T, std::dynamic_extent, V, W>::bit_array(const size_type size, const U& integral)
-: m_size(size),
-  storage(std::unique_ptr<word_type[], decltype(&std::free)>(
-      static_cast<word_type*>(std::aligned_alloc(static_cast<size_t>(V), sizeof(word_type) * Words(m_size))), &std::free)) {
+    : m_size(size),
+      storage(static_cast<word_type*>(::operator new(AlignedBytes(m_size), V)), deleter{Words(m_size)}) {
   assert (bitsof<U>() <= size);
-  for (std::size_t i = 0; i < Words(m_size); ++i) {
+  for (size_type i = 0; i < Words(m_size); ++i) {
     new (storage.get() + i) word_type();
   }
   std::memcpy(&storage[0], &integral, sizeof(integral));
@@ -168,10 +183,9 @@ constexpr bit_array<T, std::dynamic_extent, V, W>::bit_array(const size_type siz
 template <typename T, std::align_val_t V, typename W>
 constexpr bit_array<T, std::dynamic_extent, V, W>::bit_array(const size_type size)
     : m_size(size),
-      storage(std::unique_ptr<word_type[], decltype(&std::free)>(
-          static_cast<word_type*>(std::aligned_alloc(static_cast<size_t>(V), sizeof(word_type) * Words(m_size))), &std::free)) {
+      storage(static_cast<word_type*>(::operator new(AlignedBytes(m_size), V)), deleter{Words(m_size)}) {
   //std::uninitialized_fill_n(this->begin(), Words(m_size), word_type());
-  for (std::size_t i = 0; i < Words(m_size); ++i) {
+  for (size_type i = 0; i < Words(m_size); ++i) {
     new (storage.get() + i) word_type();
   }
 }
@@ -179,14 +193,13 @@ constexpr bit_array<T, std::dynamic_extent, V, W>::bit_array(const size_type siz
 template <typename T, std::align_val_t V, typename W>
 constexpr bit_array<T, std::dynamic_extent, V, W>::bit_array(const size_type size, const value_type bit_val)
     : m_size(size),
-      storage(std::unique_ptr<word_type[], decltype(&std::free)>(
-          static_cast<word_type*>(std::aligned_alloc(static_cast<size_t>(V), sizeof(word_type) * Words(m_size))), &std::free)) {
+      storage(static_cast<word_type*>(::operator new(AlignedBytes(m_size), V)), deleter{Words(m_size)}) {
   if constexpr (std::is_same<value_type, word_type>::value) {
-    for (std::size_t i = 0; i < Words(m_size); ++i) {
+    for (size_type i = 0; i < Words(m_size); ++i) {
       new (storage.get() + i) word_type(bit_val);
     }
   } else {
-    for (std::size_t i = 0; i < Words(m_size); ++i) {
+    for (size_type i = 0; i < Words(m_size); ++i) {
       new (storage.get() + i) word_type();
     }
     fill(bit_val);
@@ -196,9 +209,8 @@ constexpr bit_array<T, std::dynamic_extent, V, W>::bit_array(const size_type siz
 template <typename T, std::align_val_t V, typename W>
 constexpr bit_array<T, std::dynamic_extent, V, W>::bit_array(const bit_array<T, std::dynamic_extent, V, W>& other)
     : m_size(other.size()),
-      storage(std::unique_ptr<word_type[], decltype(&std::free)>(
-          static_cast<word_type*>(std::aligned_alloc(static_cast<size_t>(V), sizeof(word_type) * Words(m_size))), &std::free)) {
-  for (std::size_t i = 0; i < Words(m_size); ++i) {
+      storage(static_cast<word_type*>(::operator new(AlignedBytes(m_size), V)), deleter{Words(m_size)}) {
+  for (size_type i = 0; i < Words(m_size); ++i) {
     new (storage.get() + i) word_type(other.storage[i]);
   }
 }
@@ -206,9 +218,8 @@ constexpr bit_array<T, std::dynamic_extent, V, W>::bit_array(const bit_array<T, 
 template <typename T, std::align_val_t V, typename W>
 constexpr bit_array<T, std::dynamic_extent, V, W>::bit_array(const bit_array<T, std::dynamic_extent, V, W>&& other)
     : m_size(other.size()),
-      storage(std::unique_ptr<word_type[], decltype(&std::free)>(
-          static_cast<word_type*>(std::aligned_alloc(static_cast<size_t>(V), sizeof(word_type) * Words(m_size))), &std::free)) {
-  for (std::size_t i = 0; i < Words(m_size); ++i) {
+      storage(static_cast<word_type*>(::operator new(AlignedBytes(m_size), V)), deleter{Words(m_size)}) {
+  for (size_type i = 0; i < Words(m_size); ++i) {
     new (storage.get() + i) word_type(other.storage[i]);
   }
 }
@@ -217,8 +228,7 @@ template <typename T, std::align_val_t V, typename W>
 constexpr bit_array<T, std::dynamic_extent, V, W>::bit_array(const std::initializer_list<value_type> init)
   requires(!std::is_same_v<value_type, word_type>)
     : m_size(init.size()),
-      storage(std::unique_ptr<word_type[], decltype(&std::free)>(
-          static_cast<word_type*>(std::aligned_alloc(static_cast<size_t>(V), sizeof(word_type) * Words(m_size))), &std::free)) {
+      storage(static_cast<word_type*>(::operator new(AlignedBytes(m_size), V)), deleter{Words(m_size)}) {
   std::copy(init.begin(), init.end(), this->begin());
 }
 
@@ -235,9 +245,8 @@ constexpr bit_array<std::dynamic_extent,W>::bit_array(const std::initializer_lis
 template <typename T, std::align_val_t V, typename W>
 constexpr bit_array<T, std::dynamic_extent, V, W>::bit_array(const std::initializer_list<word_type> init)
     : m_size(bitsof<word_type>() * init.size()),
-      storage(std::unique_ptr<word_type[], decltype(&std::free)>(
-          static_cast<word_type*>(std::aligned_alloc(static_cast<size_t>(V), sizeof(word_type) * Words(m_size))), &std::free)) {
-  std::size_t i = 0;
+      storage(static_cast<word_type*>(::operator new(AlignedBytes(m_size), V)), deleter{Words(m_size)}) {
+  size_type i = 0;
   auto&& it = init.begin();
   for (; i < Words(m_size); ++i, ++it) {
     new (storage.get() + i) word_type(*it);
@@ -248,8 +257,7 @@ template <typename T, std::align_val_t V, typename W>
 constexpr bit_array<T, std::dynamic_extent, V, W>::bit_array(const std::string_view s)
   requires(std::is_same_v<value_type, bit_value>)
     : m_size((std::count(s.begin(), s.end(), '0') + std::count(s.begin(), s.end(), '1'))),
-      storage(std::unique_ptr<word_type[], decltype(&std::free)>(
-          static_cast<word_type*>(std::aligned_alloc(static_cast<size_t>(V), sizeof(word_type) * Words(m_size))), &std::free)) {
+      storage(static_cast<word_type*>(::operator new(AlignedBytes(m_size), V)), deleter{Words(m_size)}) {
   size_type i = 0;
   for (char c : s) {
     if (c == '0') {
@@ -288,7 +296,7 @@ constexpr void bit_array<T, std::dynamic_extent, V, W>::swap(bit_array<T, std::d
   assert(this->m_size == other.m_size);
   W* it1 = this->storage.get();
   W* it2 = other.storage.get();
-  for (size_t i = 0; i < Words(this->m_size); i++, it1++, it2++) {
+  for (size_type i = 0; i < Words(this->m_size); i++, it1++, it2++) {
     std::swap(*it1, *it2);
   }
 }
