@@ -28,7 +28,7 @@ jobs:
       # To add more build types (Release, Debug, RelWithDebInfo, etc.) customize the build_type list.
       matrix:
         distro: [linux] # removed windows-latest
-        build_type: [Release]
+        build_type: [Debug, Release]
         compiler: [gcc, clang] # removed cl
         include:
           - distro: ubuntu-latest
@@ -37,12 +37,28 @@ jobs:
             c_compiler: gcc
             cpp_compiler: g++
             stdlib: libstdcxx
+            build_type: Release
           - distro: ubuntu-latest
             os: linux
             compiler: clang
             cpp_compiler: clang++-19
             c_compiler: clang-19
             stdlib: libcxx
+            build_type: Release
+          - distro: ubuntu-latest
+            os: linux
+            compiler: gcc
+            c_compiler: gcc
+            cpp_compiler: g++
+            stdlib: libstdcxx
+            build_type: Debug
+          - distro: ubuntu-latest
+            os: linux
+            compiler: clang
+            cpp_compiler: clang++-19
+            c_compiler: clang-19
+            stdlib: libcxx
+            build_type: Debug
 
     steps:
     - uses: actions/checkout@v4
