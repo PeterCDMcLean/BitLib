@@ -25,7 +25,7 @@ jobs:
       #
       # To add more build types (Release, Debug, RelWithDebInfo, etc.) customize the build_type list.
       matrix:
-        distro: [linux]
+        distro: [ubuntu-latest]
         build_type: [Debug]
         compiler: [gcc]
         include:
