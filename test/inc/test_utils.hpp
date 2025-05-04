@@ -71,7 +71,7 @@ auto bitcont_to_boolcont(const Container bitcont){
 
 inline std::mt19937 GetSeededRNGFromTestName() {
   auto test_info = ::testing::UnitTest::GetInstance()->current_test_info();
-  if (test_info == nullptr) {
+  if (test_info != nullptr) {
     std::string full_test_name = std::string(test_info->test_suite_name()) + "." + test_info->name();
 
     // Hash the name to get a seed
