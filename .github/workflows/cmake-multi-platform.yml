@@ -35,6 +35,7 @@ jobs:
             cpp_compiler: g++
             stdlib: libstdcxx
             preset: benchmark
+            target: bitlib-bench
             build_type: Release
           - distro: ubuntu-latest
             os: linux
@@ -43,6 +44,7 @@ jobs:
             c_compiler: clang-19
             stdlib: libcxx
             preset: benchmark
+            target: bitlib-bench
             build_type: Release
           - distro: ubuntu-latest
             os: linux
@@ -51,6 +53,7 @@ jobs:
             cpp_compiler: g++
             stdlib: libstdcxx
             preset: tests
+            target: bitlib-tests
             build_type: Debug
           - distro: ubuntu-latest
             os: linux
@@ -59,6 +62,7 @@ jobs:
             c_compiler: clang-19
             stdlib: libcxx
             preset: tests
+            target: bitlib-tests
             build_type: Debug
 
     steps:
@@ -94,7 +98,7 @@ jobs:
 
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} --parallel
+      run: cmake --target ${{ matrix.target }} --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} --parallel
 
     - name: Test
       # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).

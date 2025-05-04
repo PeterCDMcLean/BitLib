@@ -29,4 +29,21 @@ Container make_random_container(
     return c;
 }
 
+template <typename WordType>
+std::vector<WordType> get_random_vec(
+    unsigned long long int size,
+    WordType min = std::numeric_limits<WordType>::min(),
+    WordType max = std::numeric_limits<WordType>::max()) {
+  std::random_device device;
+  std::mt19937 mersenne_engine(device());
+  std::uniform_int_distribution<WordType> dist{min, max};
+
+  auto gen = [&dist, &mersenne_engine]() {
+    return dist(mersenne_engine);
+  };
+  std::vector<WordType> vec(size);
+  generate(begin(vec), end(vec), gen);
+  return vec;
+}
+
 #endif
