@@ -1,5 +1,6 @@
 #include <benchmark/benchmark.h>
-#include "test_utils.hpp"
+
+#include "benchmark_utils.hpp"
 #include "bitlib/bitlib.hpp"
 
 auto BM_BitCopy = [](benchmark::State& state, auto input) {
@@ -30,8 +31,8 @@ auto BM_BoolCopy = [](benchmark::State& state, auto input) {
     using container_type = typename std::tuple_element<0, decltype(input)>::type;
     unsigned int total_bits = std::get<2>(input);
     auto container_size = total_bits;
-    container_type boolvec1 = make_random_container<container_type> (container_size); 
-    container_type boolvec2 = make_random_container<container_type> (container_size); 
+    container_type boolvec1 = make_random_container<container_type>(container_size);
+    container_type boolvec2 = make_random_container<container_type>(container_size);
     auto first1 = boolvec1.begin();
     auto first2 = boolvec2.begin();
 

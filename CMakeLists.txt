@@ -58,10 +58,6 @@ target_sources(bitlib INTERFACE
 
 target_compile_features(bitlib INTERFACE cxx_std_23)
 
-add_library(bitlib_utils INTERFACE)
-target_include_directories(bitlib_utils INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/utils)
-target_sources(bitlib_utils INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/utils/test_utils.hpp)
-
 if (BITLIB_MDSPAN)
   if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     if (NOT TARGET std::mdspan)

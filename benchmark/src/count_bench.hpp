@@ -1,8 +1,9 @@
 #include <benchmark/benchmark.h>
 #include <math.h>
-#include "test_utils.hpp"
-#include "bitlib/bit-algorithms/count.hpp"
+
+#include "benchmark_utils.hpp"
 #include "bit_array.h"
+#include "bitlib/bit-algorithms/count.hpp"
 #include "sul/dynamic_bitset.hpp"
 
 auto BM_BitCount = [](benchmark::State& state, auto input) {
@@ -11,7 +12,7 @@ auto BM_BitCount = [](benchmark::State& state, auto input) {
     unsigned int total_bits = std::get<2>(input);
     auto digits = bit::binary_digits<word_type>::value;
     auto container_size = ceil(float(total_bits) / digits);
-    container_type bitcont = make_random_container<container_type>(container_size); 
+    container_type bitcont = make_random_container<container_type>(container_size);
     auto first = bit::bit_iterator<decltype(std::begin(bitcont))>(std::begin(bitcont));
     auto last = bit::bit_iterator<decltype(std::end(bitcont))>(std::end(bitcont));
     for (auto _ : state) {
@@ -48,7 +49,7 @@ auto BM_BoolCount = [](benchmark::State& state, auto input) {
     using container_type = std::vector<bool>;
     using num_type = typename container_type::value_type;
     unsigned int container_size = std::get<2>(input);
-    container_type cont = make_random_container<container_type>(container_size); 
+    container_type cont = make_random_container<container_type>(container_size);
     auto first = cont.begin();
     auto last = cont.end();
     for (auto _ : state) {

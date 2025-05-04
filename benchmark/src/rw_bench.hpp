@@ -1,7 +1,8 @@
 #include <benchmark/benchmark.h>
-#include "test_utils.hpp"
-#include "sul/dynamic_bitset.hpp"
+
+#include "benchmark_utils.hpp"
 #include "bitlib/bitlib.hpp"
+#include "sul/dynamic_bitset.hpp"
 
 auto BM_BitSet = [](benchmark::State& state, auto input) {
     using container_type = typename std::tuple_element<0, decltype(input)>::type;

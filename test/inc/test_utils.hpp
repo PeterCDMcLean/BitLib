@@ -14,12 +14,14 @@
 
 // ================================ PREAMBLE ================================ //
 // C++ standard library
+#include <gtest/gtest.h>
+
+#include <forward_list>
 #include <iostream>
+#include <list>
 #include <random>
 #include <string>
 #include <vector>
-#include <list>
-#include <forward_list>
 // Project sources
 #include "bitlib/bitlib.hpp"
 // Third-party libraries
@@ -67,55 +69,44 @@ auto bitcont_to_boolcont(const Container bitcont){
     return c;
 }
 
-// Produces container of random numbers from min to max
-template <class Container, typename T = typename Container::value_type>
-Container make_random_container(
-    std::size_t size,
-    T min = std::numeric_limits<T>::min(),
-    T max = std::numeric_limits<T>::max(),
-    const T& seed = T()
-)
-{
-    Container c(size);
-    std::random_device device;
-    std::mt19937 engine(seed == T() ? device() : seed);
-    std::uniform_int_distribution<std::uintmax_t> distribution(min, max);
-    auto it = std::begin(c);
-    for (std::size_t i = 0; i < size; ++i) {
-        *it = distribution(engine);
-        ++it;
-    }
-    return c;
-}
+inline std::mt19937 GetSeededRNGFromTestName() {
+  auto test_info = ::testing::UnitTest::GetInstance()->current_test_info();
+  if (test_info == nullptr) {
+    std::string full_test_name = std::string(test_info->test_suite_name()) + "." + test_info->name();
 
+    // Hash the name to get a seed
+    std::size_t hash_value = std::hash<std::string>{}(full_test_name);
 
-inline unsigned long long generate_random_number(size_t min, size_t max) {
-    // First create an instance of an engine.
+    // Use the hash as a seed
+    return std::mt19937(static_cast<unsigned int>(hash_value));
+  } else {
     std::random_device rnd_device;
     // Specify the engine and distribution.
-    std::mt19937 mersenne_engine {rnd_device()};  // Generates random integers
-    std::uniform_int_distribution<unsigned long long> dist {min, max};
+    return std::mt19937(rnd_device());
+  }
+}
 
-    return dist(mersenne_engine);
+inline unsigned long long generate_random_number(size_t min, size_t max) {
+  std::mt19937 mersenne_engine = GetSeededRNGFromTestName();
+  std::uniform_int_distribution<unsigned long long> dist{min, max};
+
+  return dist(mersenne_engine);
 }
 
 template <typename WordType, std::size_t N>
 std::array<WordType, N> get_random_arr(
-        WordType min = std::numeric_limits<WordType>::min(),
-        WordType max = std::numeric_limits<WordType>::max()
-) {
-    // First create an instance of an engine.
-    std::random_device rnd_device;
-    // Specify the engine and distribution.
-    std::mt19937 mersenne_engine {rnd_device()};  // Generates random integers
-    std::uniform_int_distribution<WordType> dist {min, max};
+    WordType min = std::numeric_limits<WordType>::min(),
+    WordType max = std::numeric_limits<WordType>::max()) {
+  // Specify the engine and distribution.
+  std::mt19937 mersenne_engine = GetSeededRNGFromTestName();
+  std::uniform_int_distribution<WordType> dist{min, max};
 
-    auto gen = [&dist, &mersenne_engine](){
-                   return dist(mersenne_engine);
-   };
-    std::array<WordType, N> arr{};
-    generate(begin(arr), end(arr), gen);
-    return arr;
+  auto gen = [&dist, &mersenne_engine]() {
+    return dist(mersenne_engine);
+  };
+  std::array<WordType, N> arr{};
+  generate(begin(arr), end(arr), gen);
+  return arr;
 }
 
 template <typename WordType>
@@ -124,18 +115,15 @@ std::vector<WordType> get_random_vec(
         WordType min = std::numeric_limits<WordType>::min(),
         WordType max = std::numeric_limits<WordType>::max()
 ) {
-    // First create an instance of an engine.
-    std::random_device rnd_device;
-    // Specify the engine and distribution.
-    std::mt19937 mersenne_engine {rnd_device()};  // Generates random integers
-    std::uniform_int_distribution<WordType> dist {min, max};
+  std::mt19937 mersenne_engine = GetSeededRNGFromTestName();
+  std::uniform_int_distribution<WordType> dist{min, max};
 
-    auto gen = [&dist, &mersenne_engine](){
-                   return dist(mersenne_engine);
-   };
-    std::vector<WordType> vec(size);
-    generate(begin(vec), end(vec), gen);
-    return vec;
+  auto gen = [&dist, &mersenne_engine]() {
+    return dist(mersenne_engine);
+  };
+  std::vector<WordType> vec(size);
+  generate(begin(vec), end(vec), gen);
+  return vec;
 }
 
 template <typename WordType>
