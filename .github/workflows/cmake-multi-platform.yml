@@ -27,9 +27,6 @@ jobs:
       #
       # To add more build types (Release, Debug, RelWithDebInfo, etc.) customize the build_type list.
       matrix:
-        distro: [ubuntu-latest] # removed windows-latest
-        build_type: [Debug, Release]
-        compiler: [gcc, clang] # removed cl
         include:
           - distro: ubuntu-latest
             os: linux
@@ -37,6 +34,8 @@ jobs:
             c_compiler: gcc
             cpp_compiler: g++
             stdlib: libstdcxx
+            preset: benchmark
+            target: bitlib-bench
             build_type: Release
           - distro: ubuntu-latest
             os: linux
@@ -44,6 +43,8 @@ jobs:
             cpp_compiler: clang++-19
             c_compiler: clang-19
             stdlib: libcxx
+            preset: benchmark
+            target: bitlib-bench
             build_type: Release
           - distro: ubuntu-latest
             os: linux
@@ -51,6 +52,8 @@ jobs:
             c_compiler: gcc
             cpp_compiler: g++
             stdlib: libstdcxx
+            preset: tests
+            target: bitlib-tests
             build_type: Debug
           - distro: ubuntu-latest
             os: linux
@@ -58,6 +61,8 @@ jobs:
             cpp_compiler: clang++-19
             c_compiler: clang-19
             stdlib: libcxx
+            preset: tests
+            target: bitlib-tests
             build_type: Debug
 
     steps:
@@ -86,14 +91,14 @@ jobs:
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       run: >
         cmake -B ${{ steps.strings.outputs.build-output-dir }} -S ${{ github.workspace }}
-        --preset=tests_${{ matrix.os }}_${{ matrix.compiler }}_${{ matrix.stdlib }}
+        --preset=${{ matrix.preset }}_${{ matrix.os }}_${{ matrix.compiler }}_${{ matrix.stdlib }}
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
 
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }} --parallel
+      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --target ${{ matrix.target }} --config ${{ matrix.build_type }} --parallel
 
     - name: Test
       # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).

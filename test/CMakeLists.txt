@@ -38,7 +38,9 @@ target_sources(bitlib-tests PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-transform.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-usecase.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/vector_test.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/inc/test_utils.hpp
 )
+target_include_directories(bitlib-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/inc)
 
 if (BITLIB_MDSPAN)
   target_sources(bitlib-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/test-mdspan.cpp)
@@ -51,7 +53,7 @@ endif()
 # endif()
 
 # specify test-specific libraries
-target_link_libraries(bitlib-tests PRIVATE bitlib GTest::gtest GTest::gtest_main bitlib_utils)
+target_link_libraries(bitlib-tests PRIVATE bitlib GTest::gtest GTest::gtest_main)
 target_link_options(bitlib-tests PRIVATE -pthread -lgcov --coverage)
 
 if (NOT BITLIB_GTEST_REPEAT)

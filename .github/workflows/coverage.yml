@@ -75,7 +75,7 @@ jobs:
       - name: Generate Coverage Report
         run: |
           lcov --capture --directory ${{ steps.strings.outputs.build-output-dir }} --output-file coverage.info --ignore-errors mismatch
-          lcov --remove coverage.info '/usr/*' '*/_deps/*' '*/include/bitlib/bit-algorithms/libpopcnt.h' '*/utils/test_utils.hpp' '*/test/src/*' --output-file coverage.info
+          lcov --remove coverage.info '/usr/*' '*/_deps/*' '*/include/bitlib/bit-algorithms/libpopcnt.h' '*/test/inc/*' '*/test/src/*' --output-file coverage.info
           lcov --list coverage.info
           # Generate an HTML report
           genhtml coverage.info --output-directory out/coverage

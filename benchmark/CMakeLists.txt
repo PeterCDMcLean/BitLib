@@ -2,6 +2,9 @@ set(BENCHMARK_ENABLE_GTEST_TESTS OFF)
 
 include(FetchContent)
 
+set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
+set(BENCHMARK_ENABLE_WERROR OFF CACHE BOOL "" FORCE)
+
 find_package(benchmark CONFIG)
 if (NOT benchmark_DIR OR "${benchmark_DIR}" STREQUAL "benchmark-NOTFOUND")
   FetchContent_Declare(
@@ -11,18 +14,6 @@ if (NOT benchmark_DIR OR "${benchmark_DIR}" STREQUAL "benchmark-NOTFOUND")
   )
   FetchContent_MakeAvailable(benchmark)
 endif()
-
-#find_package(Boost)
-#if (NOT Boost_DIR OR "${Boost_DIR}" STREQUAL "Boost-NOTFOUND")
-#  FetchContent_Declare(
-#    Boost
-#    GIT_REPOSITORY https://github.com/boostorg/boost.git
-#    GIT_TAG 199ef13d6034c85232431130142159af3adfce22 #v1.88.0
-#    EXCLUDE_FROM_ALL
-#    FIND_PACKAGE_ARGS COMPONENTS dynamic_bitset
-#  )
-#  FetchContent_MakeAvailable(Boost)
-#endif()
 
 find_package(sul-dynamic_bitset)
 if (NOT sul-dynamic_bitset_DIR OR "${sul-dynamic_bitset_DIR}" STREQUAL "sul-dynamic_bitset-NOTFOUND")
@@ -72,14 +63,15 @@ target_sources(bitlib-bench PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/src/shift_bench.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/swap_ranges-bench.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/transform_bench.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/inc/benchmark_utils.hpp
 )
 target_include_directories(bitlib-bench PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}/inc
 )
 
 target_link_libraries(bitlib-bench PRIVATE
   bitlib
-  bitlib_utils
   benchmark::benchmark
   sul::dynamic_bitset
   BitArray)

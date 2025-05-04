@@ -1,10 +1,12 @@
-#include <functional>
-#include <cstring>
 #include <benchmark/benchmark.h>
-#include "test_utils.hpp"
+
+#include <cstring>
+#include <functional>
+
+#include "benchmark_utils.hpp"
+#include "bit_array.h"
 #include "bitlib/bitlib.hpp"
 #include "sul/dynamic_bitset.hpp"
-#include "bit_array.h"
 
 auto BM_BitTransformUnaryAA = [](benchmark::State& state, auto input) {
     using container_type = typename std::tuple_element<0, decltype(input)>::type;
@@ -84,8 +86,8 @@ auto BM_BoolTransformUnary = [](benchmark::State& state, auto input) {
     using container_type = typename std::tuple_element<0, decltype(input)>::type;
     unsigned int total_bits = std::get<2>(input);
     auto container_size = total_bits;
-    container_type boolvec1 = make_random_container<container_type> (container_size); 
-    container_type boolvec2 = make_random_container<container_type> (container_size); 
+    container_type boolvec1 = make_random_container<container_type>(container_size);
+    container_type boolvec2 = make_random_container<container_type>(container_size);
     auto first1 = boolvec1.begin();
     auto first2 = boolvec2.begin();
 
@@ -191,9 +193,9 @@ auto BM_BoolTransformBinary = [](benchmark::State& state, auto input) {
     using container_type = typename std::tuple_element<0, decltype(input)>::type;
     unsigned int total_bits = std::get<2>(input);
     auto container_size = total_bits;
-    container_type boolvec1 = make_random_container<container_type> (container_size); 
-    container_type boolvec2 = make_random_container<container_type> (container_size); 
-    container_type boolvec3 = make_random_container<container_type> (container_size); 
+    container_type boolvec1 = make_random_container<container_type>(container_size);
+    container_type boolvec2 = make_random_container<container_type>(container_size);
+    container_type boolvec3 = make_random_container<container_type>(container_size);
     auto first1 = boolvec1.begin();
     auto first2 = boolvec2.begin();
 
