@@ -270,14 +270,28 @@ constexpr bit_iterator<Iterator> bit_iterator<Iterator>::operator-(difference_ty
 // Increments the iterator by several bits and returns it
 template <class Iterator>
 constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator+=(difference_type n) {
-  *this = *this + n;
+  constexpr difference_type digits = binary_digits<word_type>::value;
+  const difference_type sum = _position + n;
+  difference_type diff = sum / digits;
+  if (sum < 0 && diff * digits != sum) {
+    --diff;
+  }
+  _current = std::next(_current, diff);
+  _position = (sum - diff * digits);
   return *this;
 }
 
 // Decrements the iterator by several bits and returns it
 template <class Iterator>
 constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator-=(difference_type n) {
-  *this = *this - n;
+  constexpr difference_type digits = binary_digits<word_type>::value;
+  const difference_type sum = _position - n;
+  difference_type diff = sum / digits;
+  if (sum < 0 && diff * digits != sum) {
+    --diff;
+  }
+  _current = std::next(_current, diff);
+  _position = (sum - diff * digits);
   return *this;
 }
 // -------------------------------------------------------------------------- //
