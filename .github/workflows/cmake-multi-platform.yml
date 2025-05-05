@@ -64,12 +64,21 @@ jobs:
             preset: tests
             target: bitlib-tests
             build_type: Debug
+          - distro: ubuntu-latest
+            os: linux
+            compiler: gcc
+            c_compiler: gcc
+            cpp_compiler: g++
+            stdlib: libstdcxx
+            preset: coverage
+            target: bitlib-tests
+            build_type: Debug
 
     steps:
     - uses: actions/checkout@v4
 
     - name: "Install Clang 19"
-      if: matrix.distro == 'ubuntu-latest' && matrix.c_compiler == 'clang-19'
+      if: matrix.os == 'linux' && matrix.c_compiler == 'clang-19'
       run: |
         sudo apt-get update
         sudo apt-get install -y wget gnupg lsb-release
@@ -104,3 +113,8 @@ jobs:
       # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest --test-dir ${{ steps.strings.outputs.build-output-dir }} --build-config ${{ matrix.build_type }} --output-on-failure --parallel
+
+    - uses: ./.github/actions/coverage_epilogue
+      if: matrix.preset == 'coverage'
+      with:
+        build-output-dir: ${{ steps.strings.outputs.build-output-dir }}
