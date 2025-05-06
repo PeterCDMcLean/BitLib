@@ -116,10 +116,9 @@ jobs:
 
     - uses: ./.github/actions/coverage_epilogue
       if: matrix.preset == 'coverage'
-      secrets:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        build-output-dir: ${{ steps.strings.outputs.build-output-dir }} 
+        build-output-dir: ${{ steps.strings.outputs.build-output-dir }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - uses: ./.github/actions/benchmark_epilogue
       if: matrix.preset == 'benchmark'
