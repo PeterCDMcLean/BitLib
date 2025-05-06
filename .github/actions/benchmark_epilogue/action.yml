@@ -19,7 +19,7 @@ runs:
       with:
         tool: 'googlecpp'
         # Where the output from the benchmark tool is stored
-        output-file-path: ${{ inputs.build-output-dir }}/benchmark_result.json
+        output-file-path: ${{ inputs.build-output-dir }}/benchmark/benchmark_result.json
         # Where the previous data file is stored
         external-data-json-path: ./cache/benchmark_result.json
         # Workflow will fail when an alert happens
