@@ -118,3 +118,8 @@ jobs:
       if: matrix.preset == 'coverage'
       with:
         build-output-dir: ${{ steps.strings.outputs.build-output-dir }}
+
+    - uses: ./.github/actions/benchmark_epilogue
+      if: matrix.preset == 'benchmark'
+      with:
+        build-output-dir: ${{ steps.strings.outputs.build-output-dir }}
