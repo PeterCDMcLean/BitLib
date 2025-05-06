@@ -4,6 +4,11 @@ inputs:
   build-output-dir:
     required: true
     description: 'Build output directory'
+on:
+  workflow_call:
+    secrets:
+      GITHUB_TOKEN:
+        required: true
 runs:
   using: "composite"
   steps:
