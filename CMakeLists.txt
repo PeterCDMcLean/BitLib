@@ -83,7 +83,7 @@ if (BITLIB_HWY)
 endif()
 
 if (BITLIB_BENCHMARK)
-  set(BENCHMARK_ENABLE_GTEST_TESTS OFF)
+  enable_testing()
   add_subdirectory(benchmark)
 endif()
 

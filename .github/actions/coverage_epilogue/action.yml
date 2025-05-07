@@ -1,0 +1,47 @@
+name: "Coverage Epilogue"
+description: "Processes coverage information with lcov and uploads it to coveralls/codecov"
+inputs:
+  build-output-dir:
+    required: true
+    description: 'Build output directory'
+  GITHUB_TOKEN:
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: "Install lcov"
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y lcov
+
+    - name: Generate Coverage Report
+      shell: bash
+      run: |
+        lcov --capture --directory ${{ inputs.build-output-dir }} --output-file coverage.info --ignore-errors mismatch
+        lcov --remove coverage.info '/usr/*' '*/_deps/*' '*/include/bitlib/bit-algorithms/libpopcnt.h' '*/test/inc/*' '*/test/src/*' --output-file coverage.info
+        lcov --list coverage.info
+        # Generate an HTML report
+        genhtml coverage.info --output-directory out/coverage
+
+    - name: Upload coverage artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: |
+          out/coverage
+          coverage.info
+
+    - name: Coveralls
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ inputs.GITHUB_TOKEN }}
+        path-to-lcov: coverage.info
+
+    - name: Upload to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        files: coverage.info
+        flags: unittests
+        name: codecov-coverage-report

@@ -2,6 +2,7 @@ set(BENCHMARK_ENABLE_GTEST_TESTS OFF)
 
 include(FetchContent)
 
+set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "" FORCE)
 set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
 set(BENCHMARK_ENABLE_WERROR OFF CACHE BOOL "" FORCE)
 
@@ -25,6 +26,24 @@ if (NOT sul-dynamic_bitset_DIR OR "${sul-dynamic_bitset_DIR}" STREQUAL "sul-dyna
     FIND_PACKAGE_ARGS
   )
   FetchContent_MakeAvailable(sul-dynamic_bitset)
+endif()
+
+if (NOT TARGET itsy::bitsy)
+
+  set(ITSY_BITSY_SINGLE OFF CACHE BOOL "" FORCE)
+  set(ITSY_BITSY_TESTS OFF CACHE BOOL "" FORCE)
+
+  find_package(itsy.bitsy)
+  if (NOT itsy.bitsy_DIR OR "${itsy.bitsy_DIR}" STREQUAL "itsy.bitsy-NOTFOUND")
+  FetchContent_Declare(
+    itsy.bitsy
+    GIT_REPOSITORY https://github.com/ThePhD/itsy_bitsy.git
+    GIT_TAG d5b6bf9509bb2dff6235452d427f0b1c349d5f8b # main @ Aug 1, 2022
+    EXCLUDE_FROM_ALL
+    FIND_PACKAGE_ARGS
+  )
+  FetchContent_MakeAvailable(itsy.bitsy)
+  endif()
 endif()
 
 FetchContent_Declare(
@@ -75,3 +94,8 @@ target_link_libraries(bitlib-bench PRIVATE
   benchmark::benchmark
   sul::dynamic_bitset
   BitArray)
+
+add_test(
+  NAME BenchmarkTest
+  COMMAND $<TARGET_FILE:bitlib-bench> --benchmark_format=json --benchmark_out=benchmark_result.json
+)

@@ -4,7 +4,7 @@
     {
       "name": "base",
       "hidden": true,
-      "binaryDir": "${sourceDir}/build/${presetName}",
+      "binaryDir": "${sourceDir}/../build/${presetName}",
       "cacheVariables": {
         "CMAKE_EXPORT_COMPILE_COMMANDS": "YES"
       }
@@ -88,6 +88,7 @@
       "hidden": true,
       "inherits": "msvc_base",
       "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
         "BITLIB_BENCHMARK": "ON"
       }
     },
@@ -118,6 +119,7 @@
       "hidden": true,
       "inherits": "gnu_base",
       "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_C_FLAGS": "-O3 -DNDEBUG -march=native",
         "CMAKE_CXX_FLAGS": "-O3 -DNDEBUG -march=native",
         "BITLIB_BENCHMARK": "ON"
@@ -128,6 +130,7 @@
       "hidden": true,
       "inherits": "gnu_base",
       "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_C_FLAGS": "-pg -fno-omit-frame-pointer",
         "CMAKE_CXX_FLAGS": "-pg -fno-omit-frame-pointer",
         "CMAKE_C_FLAGS_RELEASE": "-O2 -DNDEBUG -march=native -pg -ggdb",
@@ -196,6 +199,330 @@
         "linux_base",
         "clang_libcxx_base",
         "benchmark_gnu_base"
+      ]
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "tests_windows_msvc_msvcstl",
+      "configurePreset": "tests_windows_msvc_msvcstl",
+      "targets": "bitlib-tests",
+      "configuration": "Debug",
+      "jobs": 0,
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "benchmark_windows_msvc_msvcstl",
+      "configurePreset": "benchmark_windows_msvc_msvcstl",
+      "targets": "bitlib-bench",
+      "configuration": "Release",
+      "jobs": 0,
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "tests_linux_gcc_libstdcxx",
+      "configurePreset": "tests_linux_gcc_libstdcxx",
+      "targets": "bitlib-tests",
+      "jobs": 0,
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "coverage_linux_gcc_libstdcxx",
+      "configurePreset": "coverage_linux_gcc_libstdcxx",
+      "targets": "bitlib-tests",
+      "jobs": 0,
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "benchmark_linux_gcc_libstdcxx",
+      "configurePreset": "benchmark_linux_gcc_libstdcxx",
+      "targets": "bitlib-bench",
+      "jobs": 0,
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "tests_linux_clang_libcxx",
+      "configurePreset": "tests_linux_clang_libcxx",
+      "targets": "bitlib-tests",
+      "jobs": 0,
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "coverage_linux_clang_libcxx",
+      "configurePreset": "coverage_linux_clang_libcxx",
+      "targets": "bitlib-tests",
+      "jobs": 0,
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "benchmark_linux_clang_libcxx",
+      "configurePreset": "benchmark_linux_clang_libcxx",
+      "targets": "bitlib-bench",
+      "jobs": 0,
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "tests_windows_msvc_msvcstl",
+      "configurePreset": "tests_windows_msvc_msvcstl",
+      "configuration": "Debug",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "benchmark_windows_msvc_msvcstl",
+      "configurePreset": "benchmark_windows_msvc_msvcstl",
+      "configuration": "Release",
+      "execution": {
+        "jobs": 1
+      },
+      "output": {
+        "verbosity": "verbose"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "tests_linux_gcc_libstdcxx",
+      "configurePreset": "tests_linux_gcc_libstdcxx",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "coverage_linux_gcc_libstdcxx",
+      "configurePreset": "coverage_linux_gcc_libstdcxx",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "benchmark_linux_gcc_libstdcxx",
+      "configurePreset": "benchmark_linux_gcc_libstdcxx",
+      "execution": {
+        "jobs": 1
+      },
+      "output": {
+        "verbosity": "verbose"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "tests_linux_clang_libcxx",
+      "configurePreset": "tests_linux_clang_libcxx",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "coverage_linux_clang_libcxx",
+      "configurePreset": "coverage_linux_clang_libcxx",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "benchmark_linux_clang_libcxx",
+      "configurePreset": "benchmark_linux_clang_libcxx",
+      "execution": {
+        "jobs": 1
+      },
+      "output": {
+        "verbosity": "verbose"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "tests_windows_msvc_msvcstl",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "tests_windows_msvc_msvcstl"
+        },
+        {
+          "type": "build",
+          "name": "tests_windows_msvc_msvcstl"
+        },
+        {
+          "type": "test",
+          "name": "tests_windows_msvc_msvcstl"
+        }
+      ]
+    },
+    {
+      "name": "benchmark_windows_msvc_msvcstl",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "benchmark_windows_msvc_msvcstl"
+        },
+        {
+          "type": "build",
+          "name": "benchmark_windows_msvc_msvcstl"
+        },
+        {
+          "type": "test",
+          "name": "benchmark_windows_msvc_msvcstl"
+        }
+      ]
+    },
+    {
+      "name": "tests_linux_gcc_libstdcxx",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "tests_linux_gcc_libstdcxx"
+        },
+        {
+          "type": "build",
+          "name": "tests_linux_gcc_libstdcxx"
+        },
+        {
+          "type": "test",
+          "name": "tests_linux_gcc_libstdcxx"
+        }
+      ]
+    },
+    {
+      "name": "coverage_linux_gcc_libstdcxx",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "coverage_linux_gcc_libstdcxx"
+        },
+        {
+          "type": "build",
+          "name": "coverage_linux_gcc_libstdcxx"
+        },
+        {
+          "type": "test",
+          "name": "coverage_linux_gcc_libstdcxx"
+        }
+      ]
+    },
+    {
+      "name": "benchmark_linux_gcc_libstdcxx",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "benchmark_linux_gcc_libstdcxx"
+        },
+        {
+          "type": "build",
+          "name": "benchmark_linux_gcc_libstdcxx"
+        },
+        {
+          "type": "test",
+          "name": "benchmark_linux_gcc_libstdcxx"
+        }
+      ]
+    },
+    {
+      "name": "tests_linux_clang_libcxx",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "tests_linux_clang_libcxx"
+        },
+        {
+          "type": "build",
+          "name": "tests_linux_clang_libcxx"
+        },
+        {
+          "type": "test",
+          "name": "tests_linux_clang_libcxx"
+        }
+      ]
+    },
+    {
+      "name": "coverage_linux_clang_libcxx",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "coverage_linux_clang_libcxx"
+        },
+        {
+          "type": "build",
+          "name": "coverage_linux_clang_libcxx"
+        },
+        {
+          "type": "test",
+          "name": "coverage_linux_clang_libcxx"
+        }
+      ]
+    },
+    {
+      "name": "benchmark_linux_clang_libcxx",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "benchmark_linux_clang_libcxx"
+        },
+        {
+          "type": "build",
+          "name": "benchmark_linux_clang_libcxx"
+        },
+        {
+          "type": "test",
+          "name": "benchmark_linux_clang_libcxx"
+        }
       ]
     }
   ]
