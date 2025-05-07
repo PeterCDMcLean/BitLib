@@ -33,3 +33,9 @@ runs:
         external-data-json-path: ./cache/benchmark_result.json
         # Workflow will fail when an alert happens
         fail-on-alert: true
+
+    - name: Archive benchmark results
+      uses: actions/upload-artifact@v4
+      with:
+        name: benchmark_json
+        path: ${{ inputs.build-output-dir }}/benchmark/benchmark_result.json
