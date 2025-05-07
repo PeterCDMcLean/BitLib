@@ -6,7 +6,7 @@
 include(FetchContent)
 
 find_package(GTest)
-if (NOT GTest OR "${GTest_DIR}" STREQUAL "GTest-NOTFOUND")
+if (NOT GTest_DIR OR "${GTest_DIR}" STREQUAL "GTest_DIR-NOTFOUND")
   FetchContent_Declare(
     googletest
     GIT_REPOSITORY https://github.com/google/googletest.git
@@ -45,12 +45,6 @@ target_include_directories(bitlib-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/inc)
 if (BITLIB_MDSPAN)
   target_sources(bitlib-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/test-mdspan.cpp)
 endif()
-
-# ASAN throws no matter what when using Google HWY, not sure why but need to fix
-# if (NOT BITLIB_HWY)
-#     target_compile_options(bitlib-tests PUBLIC -fsanitize=address)
-#     target_link_options(bitlib-tests PUBLIC -fsanitize=address)
-# endif()
 
 # specify test-specific libraries
 target_link_libraries(bitlib-tests PRIVATE bitlib GTest::gtest GTest::gtest_main)
