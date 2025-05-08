@@ -502,7 +502,7 @@ template <char... Str>
 constexpr bit::bit_array<bit::bit_value, bit::_parameter_pack_decode_prefixed_num<Str...>().first> operator""_b() {
   bit::bit_array<bit::bit_value, bit::_parameter_pack_decode_prefixed_num<Str...>().first> arr{};
   auto [bits, num] = bit::_parameter_pack_decode_prefixed_num<Str...>();
-  for (int i = 0; i < arr.size(); i++) {
+  for (typename decltype(arr)::size_type i = 0; i < arr.size(); i++) {
     arr[i] = (num & 0x1) ? bit::bit1 : bit::bit0;
     num >>= 1;
   }

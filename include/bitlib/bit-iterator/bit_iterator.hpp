@@ -339,12 +339,12 @@ operator-(const bit_iterator<T>& lhs, const bit_iterator<U>& rhs) {
   using lhs_type = typename bit_iterator<T>::difference_type;
   using rhs_type = typename bit_iterator<U>::difference_type;
   using difference_type = typename std::common_type<lhs_type, rhs_type>::type;
-  constexpr difference_type lhs_digits = binary_digits<lhs_utype>::value;
-  constexpr difference_type rhs_digits = binary_digits<rhs_utype>::value;
+  constexpr difference_type lhs_digits = static_cast<difference_type>(binary_digits<lhs_utype>::value);
+  constexpr difference_type rhs_digits = static_cast<difference_type>(binary_digits<rhs_utype>::value);
   constexpr difference_type digits = rhs_digits;
   static_assert(lhs_digits == rhs_digits, "");
-  const difference_type main = lhs._current - rhs._current;
-  return main * digits + (lhs._position - rhs._position);
+  const difference_type main = static_cast<difference_type>(lhs._current - rhs._current);
+  return main * digits + static_cast<difference_type>(lhs._position - rhs._position);
 }
 
 static_assert(bit_iterator_c<bit_iterator<uint8_t*>>, "bit_iterator does not satisfy bit_iterator_c concept!");

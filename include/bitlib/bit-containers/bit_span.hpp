@@ -130,7 +130,7 @@ class bit_span : private bit_span_storage<WordType, Extent> {
   constexpr bit_span<WordType, std::dynamic_extent> subspan(size_type offset, size_type count = std::dynamic_extent) const noexcept
     requires(Extent == std::dynamic_extent);
 
-  constexpr bit_span<WordType, std::dynamic_extent> operator[](size_type begin, size_type end) const noexcept;
+  constexpr bit_span<WordType, std::dynamic_extent> operator()(size_type begin, size_type end) const noexcept;
 
   template <std::size_t NewExtent>
   constexpr bit_span<WordType, NewExtent> first() const noexcept
@@ -304,7 +304,7 @@ constexpr bit_span<WordType, std::dynamic_extent> bit_span<WordType,Extent>::sub
 }
 
 template <typename WordType, std::size_t Extent>
-constexpr bit_span<WordType, std::dynamic_extent> bit_span<WordType, Extent>::operator[](size_type begin, size_type end) const noexcept {
+constexpr bit_span<WordType, std::dynamic_extent> bit_span<WordType, Extent>::operator()(size_type begin, size_type end) const noexcept {
   return bit_span<WordType, std::dynamic_extent>(&(this->begin()[begin]), end - begin);
 }
 
@@ -327,6 +327,7 @@ constexpr bit_span<WordType, Extent-RevOffset> bit_span<WordType, Extent>::last(
 
 template<typename WordType, std::size_t Extent>
 constexpr bit_span<WordType, std::dynamic_extent> bit_span<WordType, Extent>::last(size_type offset) const noexcept requires(Extent == std::dynamic_extent) {
+  return bit_span<WordType, Extent>(begin() + (size() - offset), offset);
 }
 
 } // namespace bit
