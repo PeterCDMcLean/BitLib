@@ -54,6 +54,7 @@ class bit_array {
 
   alignas(static_cast<size_t>(V)) std::array<word_type, AlignedWords> storage;
 
+  friend class bit_array<T, std::dynamic_extent, V, W>;
  public:
   using iterator = typename std::conditional<std::is_same_v<T, bit_value>,
                                              bit_iterator<typename std::array<word_type, Words>::iterator>,
