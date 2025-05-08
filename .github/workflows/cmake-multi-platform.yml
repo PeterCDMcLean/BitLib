@@ -105,9 +105,15 @@ jobs:
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
 
+    - name: Register Compiler Problem Matcher
+      run: echo "::add-matcher::.github/problem_matchers/${{ matrix.compiler}}_problem_matcher.json"
+
     - name: Build
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --target ${{ matrix.target }} --config ${{ matrix.build_type }} --parallel
+
+    - name: Unregister Compiler Problem Matcher
+      run: echo "::remove-matcher owner=${{ matrix.compiler}}::"
 
     - name: Test
       # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
@@ -123,4 +129,7 @@ jobs:
     - uses: ./.github/actions/benchmark_epilogue
       if: matrix.preset == 'benchmark'
       with:
+        os: ${{ matrix.os }}
+        compiler: ${{ matrix.compiler }}
+        stdlib: ${{ matrix.stdlib }}
         build-output-dir: ${{ steps.strings.outputs.build-output-dir }}
