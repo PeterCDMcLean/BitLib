@@ -57,6 +57,15 @@ jobs:
             build_type: Debug
           - distro: ubuntu-latest
             os: linux
+            compiler: gcc
+            c_compiler: gcc
+            cpp_compiler: g++
+            stdlib: libstdcxx
+            preset: warnings
+            target: bitlib-tests
+            build_type: Debug
+          - distro: ubuntu-latest
+            os: linux
             compiler: clang
             cpp_compiler: clang++-19
             c_compiler: clang-19
@@ -126,6 +135,7 @@ jobs:
         build-output-dir: ${{ steps.strings.outputs.build-output-dir }}
 
     - name: Test
+      if: matrix.preset != 'warnings'
       # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest --test-dir ${{ steps.strings.outputs.build-output-dir }} --build-config ${{ matrix.build_type }} --output-on-failure --parallel
