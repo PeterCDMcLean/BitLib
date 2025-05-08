@@ -80,6 +80,7 @@ class bit_array : public bit_array_base<bit_array<T, N, V, W>, T, W, detail::bit
 
   alignas(static_cast<size_t>(V)) std::array<word_type, AlignedWords> storage;
 
+  friend class bit_array<T, std::dynamic_extent, V, W>;
  public:
   /*
   * Constructors, copies and moves...
