@@ -718,7 +718,7 @@ constexpr T _bitswap(T src) noexcept
     constexpr bool is_octet = std::numeric_limits<byte_t>::digits == 8;
     constexpr bool is_pow2 = _popcnt(digits, ignore) == 1;
     T dst = src;
-    T i = digits - 1;
+    typename std::make_signed<T>::type i = static_cast<typename std::make_signed<T>::type>(digits) - 1;
     if (is_size1 && is_byte && is_octet) {
         dst = ((src * first) & second) * third >> fourth;
     } else if (is_pow2) {

@@ -90,15 +90,16 @@ bit_iterator<RandomAccessIt> shift_left(
     }
 
     // Triggered if all remaining bits can fit in a word
-    if (d - n <= digits)
+    if (d - n <= static_cast<typename bit_iterator<RandomAccessIt>::difference_type>(digits))
     {
       word_type new_word = get_word<word_type>(middle, d - n);
       write_word<word_type>(new_word, first, d - n);
       return first + d - n;
     }
     // Multiple word case
-    word_type first_value = *first.base();
-    word_type last_value = !is_last_aligned ? *last.base() : 0;
+    // These values are needed for future use if changing direction implementation
+    // word_type first_value = *first.base();
+    // word_type last_value = !is_last_aligned ? *last.base() : 0;
 
     // Align first
     if (!is_first_aligned) {
@@ -289,13 +290,10 @@ bit_iterator<RandomAccessIt> shift_right(
 
     // Shift bit sequence to the msb
     if (offset == 0) {
-        auto new_first = bit::bit_iterator<RandomAccessIt>(
-                STD_SHIFT_RIGHT(
-                    first.base(),
-                    last.base(),
-                    word_shifts),
-                first.position()
-        );
+        STD_SHIFT_RIGHT(
+            first.base(),
+            last.base(),
+            word_shifts);
         // https://en.cppreference.com/w/cpp/algorithm/shift
         // "Elements that are in the original range but not the new range
         // are left in a valid but unspecified state."
@@ -304,7 +302,7 @@ bit_iterator<RandomAccessIt> shift_right(
         return first + n;
     }
 
-    if (bit::distance(first, middle) >= digits)
+    if (bit::distance(first, middle) >= static_cast<typename bit_iterator<RandomAccessIt>::difference_type>(digits))
     {
 #ifdef BITLIB_HWY
         // Align to 64 bit boundary
