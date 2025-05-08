@@ -567,7 +567,7 @@ bit_vector<WordType, Allocator>::insert(
   if (count == 0) {
     return begin() + d;
   }
-  const float bits_available = word_vector.size() * digits;
+  const size_type bits_available = word_vector.size() * digits;
   const auto need_to_add = length_ + count > bits_available;
   if (need_to_add) {
     const auto words_to_add = word_count(length_ + count - bits_available);

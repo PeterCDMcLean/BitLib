@@ -106,7 +106,7 @@ class SingleRangeTest : public testing::Test {
         }
         word_size = 2*64*64;
         random_vec = get_random_vec<WordType>(word_size);
-        size_t bit_size = (word_size)*digits;
+        bit_size = (word_size)*digits;
         for (size_t cont_size = bit_size - digits - 4; cont_size < bit_size - digits + 4; ++cont_size) {
             auto bitvec = bit::bit_vector<WordType>(bit_size);
             std::copy(random_vec.begin(), random_vec.end(), bitvec.begin().base());
