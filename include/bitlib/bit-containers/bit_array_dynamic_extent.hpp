@@ -20,29 +20,36 @@
 
 #include "bitlib/bit-algorithms/bit_algorithm.hpp"
 #include "bitlib/bit-containers/bit_array.hpp"
+#include "bitlib/bit-containers/bit_array_base.hpp"
 #include "bitlib/bit-containers/bit_bitsof.hpp"
 #include "bitlib/bit-containers/bit_span.hpp"
 #include "bitlib/bit-iterator/bit.hpp"
 
 namespace bit {
-
+namespace detail {
+template <typename value_type, typename word_type>
+using bit_array_it = typename std::conditional<std::is_same_v<value_type, bit_value>,
+                                               bit_iterator<word_type*>,
+                                               word_type*>::type;
+template <typename value_type, typename word_type>
+using bit_array_cit = typename std::conditional<std::is_same_v<value_type, bit_value>,
+                                                bit_iterator<const word_type*>,
+                                                const word_type*>::type;
+}  // namespace detail
 template <typename T, std::align_val_t V, typename W>
-class bit_array<T, std::dynamic_extent, V, W> {
+class bit_array<T, std::dynamic_extent, V, W>
+    : public bit_array_base<bit_array<T, std::dynamic_extent, V, W>, T, W, detail::bit_array_it<T, W>, detail::bit_array_cit<T, W>> {
  public:
-  using word_type = W;
-  using value_type = T;
-  using size_type = std::size_t;
-  using difference_type = std::ptrdiff_t;
-  using reference = typename std::conditional<std::is_same_v<T, bit_value>, bit_reference<word_type>, T&>::type;
-  using const_reference = typename std::conditional<std::is_same_v<T, bit_value>, const bit_reference<const word_type>, const T&>::type;
-  using pointer = typename std::conditional<std::is_same_v<T, bit_value>, bit_pointer<word_type>, T&>::type;
-  using const_pointer = const pointer;
-  using iterator = typename std::conditional<std::is_same_v<T, bit_value>,
-                                             bit_iterator<word_type*>,
-                                             word_type*>::type;
-  using const_iterator = typename std::conditional<std::is_same_v<T, bit_value>,
-                                                   bit_iterator<const word_type*>,
-                                                   const word_type*>::type;
+  using typename bit_array_base<bit_array<T, std::dynamic_extent, V, W>, T, W, detail::bit_array_it<T, W>, detail::bit_array_cit<T, W>>::word_type;
+  using typename bit_array_base<bit_array<T, std::dynamic_extent, V, W>, T, W, detail::bit_array_it<T, W>, detail::bit_array_cit<T, W>>::value_type;
+  using typename bit_array_base<bit_array<T, std::dynamic_extent, V, W>, T, W, detail::bit_array_it<T, W>, detail::bit_array_cit<T, W>>::size_type;
+  using typename bit_array_base<bit_array<T, std::dynamic_extent, V, W>, T, W, detail::bit_array_it<T, W>, detail::bit_array_cit<T, W>>::difference_type;
+  using typename bit_array_base<bit_array<T, std::dynamic_extent, V, W>, T, W, detail::bit_array_it<T, W>, detail::bit_array_cit<T, W>>::reference;
+  using typename bit_array_base<bit_array<T, std::dynamic_extent, V, W>, T, W, detail::bit_array_it<T, W>, detail::bit_array_cit<T, W>>::const_reference;
+  using typename bit_array_base<bit_array<T, std::dynamic_extent, V, W>, T, W, detail::bit_array_it<T, W>, detail::bit_array_cit<T, W>>::pointer;
+  using typename bit_array_base<bit_array<T, std::dynamic_extent, V, W>, T, W, detail::bit_array_it<T, W>, detail::bit_array_cit<T, W>>::const_pointer;
+  using typename bit_array_base<bit_array<T, std::dynamic_extent, V, W>, T, W, detail::bit_array_it<T, W>, detail::bit_array_cit<T, W>>::iterator;
+  using typename bit_array_base<bit_array<T, std::dynamic_extent, V, W>, T, W, detail::bit_array_it<T, W>, detail::bit_array_cit<T, W>>::const_iterator;
 
  private:
   struct deleter {
@@ -91,19 +98,11 @@ class bit_array<T, std::dynamic_extent, V, W> {
   constexpr bit_array<T, std::dynamic_extent, V, W>& operator=(const bit_array<T, std::dynamic_extent, V, W>& other);
   constexpr bit_array<T, std::dynamic_extent, V, W>& operator=(bit_array<T, std::dynamic_extent, V, W>&& other);
 
-  constexpr bool operator==(const bit_array<T, std::dynamic_extent, V, W>& other) const noexcept;
+  // Comparison from base class
 
   /*
      * Element Access
      */
-  constexpr reference operator[](size_type pos);
-  constexpr const_reference operator[](size_type pos) const;
-  constexpr reference at(size_type pos);
-  constexpr const_reference at(size_type pos) const;
-  constexpr reference front();
-  constexpr const_reference front() const;
-  constexpr reference back();
-  constexpr const_reference back() const;
   constexpr word_type* data() noexcept;
   constexpr const word_type* data() const noexcept;
 
@@ -120,25 +119,27 @@ class bit_array<T, std::dynamic_extent, V, W> {
   /*
      * Capacity
      */
-  constexpr bool empty() const noexcept;
   constexpr size_type size() const noexcept;
-  constexpr size_type max_size() const noexcept;
 
   /*
     * Slice
   */
-  constexpr bit_span<word_type, std::dynamic_extent> operator()(size_type offset, size_type right) const noexcept;
+  constexpr bit_span<const word_type, std::dynamic_extent> operator()(size_type offset, size_type right) const noexcept;
+  constexpr bit_span<word_type, std::dynamic_extent> operator()(size_type offset, size_type right) noexcept;
 
   /*
      * Operations
      */
+  // Common operations
   constexpr void fill(value_type bit_val) noexcept;
   constexpr void swap(bit_array<T, std::dynamic_extent, V, W>& other) noexcept;
   template <std::integral U>
   explicit constexpr operator U() const noexcept;
-  //constexpr std::synth-three-way-result<bit_array> operator<=>() const noexcept;
-  constexpr std::string debug_string() const;
-  constexpr std::string debug_string(const_iterator first, const_iterator end) const;
+
+  // String representation
+  constexpr std::string debug_string(const_iterator first, const_iterator last) const {
+    return bit_array_utils::debug_string_impl(first, last, bitsof<word_type>());
+  }
 };
 
 static_assert(bit_range<bit_array<>>, "bit_array<> does not satisfy bit_contiguous_range concept!");
@@ -164,7 +165,7 @@ constexpr bit_array<T, std::dynamic_extent, V, W>::bit_array(const size_type siz
   for (size_type i = 0; i < Words(m_size); ++i) {
     new (storage.get() + i) word_type();
   }
-  std::memcpy(&storage[0], &integral, sizeof(integral));
+  std::memcpy(storage.get(), &integral, sizeof(integral));
   bool sign_extend = false;
   if constexpr (std::is_signed_v<U>) {
     sign_extend = (integral & (1 << (bitsof<U>()-1))) ? true : false;
@@ -211,7 +212,7 @@ constexpr bit_array<T, std::dynamic_extent, V, W>::bit_array(const bit_array<T, 
     : m_size(other.size()),
       storage(static_cast<word_type*>(::operator new(AlignedBytes(m_size), V)), deleter{Words(m_size)}) {
   for (size_type i = 0; i < Words(m_size); ++i) {
-    new (storage.get() + i) word_type(other.storage[i]);
+    new (storage.get() + i) word_type(*(other.storage.get() + i));
   }
 }
 
@@ -220,7 +221,7 @@ constexpr bit_array<T, std::dynamic_extent, V, W>::bit_array(const bit_array<T, 
     : m_size(other.size()),
       storage(static_cast<word_type*>(::operator new(AlignedBytes(m_size), V)), deleter{Words(m_size)}) {
   for (size_type i = 0; i < Words(m_size); ++i) {
-    new (storage.get() + i) word_type(other.storage[i]);
+    new (storage.get() + i) word_type(*(other.storage.get() + i));
   }
 }
 
@@ -229,6 +230,9 @@ constexpr bit_array<T, std::dynamic_extent, V, W>::bit_array(const std::initiali
   requires(!std::is_same_v<value_type, word_type>)
     : m_size(init.size()),
       storage(static_cast<word_type*>(::operator new(AlignedBytes(m_size), V)), deleter{Words(m_size)}) {
+  for (size_type i = 0; i < Words(m_size); ++i) {
+    new (storage.get() + i) word_type();
+  }
   std::copy(init.begin(), init.end(), this->begin());
 }
 
@@ -247,9 +251,13 @@ constexpr bit_array<T, std::dynamic_extent, V, W>::bit_array(const std::initiali
     : m_size(bitsof<word_type>() * init.size()),
       storage(static_cast<word_type*>(::operator new(AlignedBytes(m_size), V)), deleter{Words(m_size)}) {
   size_type i = 0;
-  auto&& it = init.begin();
-  for (; i < Words(m_size); ++i, ++it) {
+  auto it = init.begin();
+  for (; i < Words(m_size) && it != init.end(); ++i, ++it) {
     new (storage.get() + i) word_type(*it);
+  }
+  // Initialize remaining words if any
+  for (; i < Words(m_size); ++i) {
+    new (storage.get() + i) word_type();
   }
 }
 
@@ -258,6 +266,9 @@ constexpr bit_array<T, std::dynamic_extent, V, W>::bit_array(const std::string_v
   requires(std::is_same_v<value_type, bit_value>)
     : m_size((std::count(s.begin(), s.end(), '0') + std::count(s.begin(), s.end(), '1'))),
       storage(static_cast<word_type*>(::operator new(AlignedBytes(m_size), V)), deleter{Words(m_size)}) {
+  for (size_type i = 0; i < Words(m_size); ++i) {
+    new (storage.get() + i) word_type();
+  }
   size_type i = 0;
   for (char c : s) {
     if (c == '0') {
@@ -287,11 +298,6 @@ constexpr bit_array<T, std::dynamic_extent, V, W>& bit_array<T, std::dynamic_ext
 }
 
 template <typename T, std::align_val_t V, typename W>
-constexpr bool bit_array<T, std::dynamic_extent, V, W>::operator==(const bit_array<T, std::dynamic_extent, V, W>& other) const noexcept {
-  return equal(begin(), end(), other.begin());
-}
-
-template <typename T, std::align_val_t V, typename W>
 constexpr void bit_array<T, std::dynamic_extent, V, W>::swap(bit_array<T, std::dynamic_extent, V, W>& other) noexcept {
   assert(this->m_size == other.m_size);
   W* it1 = this->storage.get();
@@ -311,54 +317,6 @@ constexpr void bit_array<T, std::dynamic_extent, V, W>::fill(value_type bit_val)
     * Element Access
     */
 template <typename T, std::align_val_t V, typename W>
-constexpr typename bit_array<T, std::dynamic_extent, V, W>::reference bit_array<T, std::dynamic_extent, V, W>::operator[](size_type pos) {
-  return begin()[pos];
-}
-
-template <typename T, std::align_val_t V, typename W>
-constexpr typename bit_array<T, std::dynamic_extent, V, W>::const_reference bit_array<T, std::dynamic_extent, V, W>::operator[](size_type pos) const {
-  return begin()[pos];
-}
-
-template <typename T, std::align_val_t V, typename W>
-constexpr typename bit_array<T, std::dynamic_extent, V, W>::reference bit_array<T, std::dynamic_extent, V, W>::at(size_type pos) {
-  if (pos < size()) {
-    return begin()[pos];
-  } else {
-    throw std::out_of_range("Position is out of range");
-  }
-}
-
-template <typename T, std::align_val_t V, typename W>
-constexpr typename bit_array<T, std::dynamic_extent, V, W>::const_reference bit_array<T, std::dynamic_extent, V, W>::at(size_type pos) const {
-  if (pos < size()) {
-    return begin()[pos];
-  } else {
-    throw std::out_of_range("Position is out of range");
-  }
-}
-
-template <typename T, std::align_val_t V, typename W>
-constexpr typename bit_array<T, std::dynamic_extent, V, W>::reference bit_array<T, std::dynamic_extent, V, W>::front() {
-  return begin()[0];
-}
-
-template <typename T, std::align_val_t V, typename W>
-constexpr typename bit_array<T, std::dynamic_extent, V, W>::const_reference bit_array<T, std::dynamic_extent, V, W>::front() const {
-  return begin()[0];
-}
-
-template <typename T, std::align_val_t V, typename W>
-constexpr typename bit_array<T, std::dynamic_extent, V, W>::reference bit_array<T, std::dynamic_extent, V, W>::back() {
-  return begin()[size() - 1];
-}
-
-template <typename T, std::align_val_t V, typename W>
-constexpr typename bit_array<T, std::dynamic_extent, V, W>::const_reference bit_array<T, std::dynamic_extent, V, W>::back() const {
-  return begin()[size() - 1];
-}
-
-template <typename T, std::align_val_t V, typename W>
 constexpr typename bit_array<T, std::dynamic_extent, V, W>::word_type* bit_array<T, std::dynamic_extent, V, W>::data() noexcept {
   return size() ? storage.get() : nullptr;
 }
@@ -372,12 +330,6 @@ constexpr const typename bit_array<T, std::dynamic_extent, V, W>::word_type* bit
 
 template <typename T, std::align_val_t V, typename W>
 constexpr typename bit_array<T, std::dynamic_extent, V, W>::size_type bit_array<T, std::dynamic_extent, V, W>::size() const noexcept { return m_size; }
-
-template <typename T, std::align_val_t V, typename W>
-constexpr typename bit_array<T, std::dynamic_extent, V, W>::size_type bit_array<T, std::dynamic_extent, V, W>::max_size() const noexcept { return size(); }
-
-template <typename T, std::align_val_t V, typename W>
-constexpr bool bit_array<T, std::dynamic_extent, V, W>::empty() const noexcept { return 0 == size(); }
 
 // Iterators
 // -------------------------------------------------------------------------- //
@@ -415,56 +367,40 @@ constexpr typename bit_array<T, std::dynamic_extent, V, W>::const_iterator bit_a
 // -------------------------------------------------------------------------- //
 
 template <typename T, std::align_val_t V, typename W>
-constexpr bit_span<W, std::dynamic_extent> bit_array<T, std::dynamic_extent, V, W>::operator()(size_type begin, size_type end) const noexcept {
-  return bit_span<W, std::dynamic_extent>(&this->at(begin), end - begin);
+constexpr bit_span<const typename bit_array<T, std::dynamic_extent, V, W>::word_type, std::dynamic_extent>
+bit_array<T, std::dynamic_extent, V, W>::operator()(size_type offset, size_type right) const noexcept {
+  return bit_span<const word_type, std::dynamic_extent>(&this->at(offset), right - offset);
+}
+
+template <typename T, std::align_val_t V, typename W>
+constexpr bit_span<typename bit_array<T, std::dynamic_extent, V, W>::word_type, std::dynamic_extent>
+bit_array<T, std::dynamic_extent, V, W>::operator()(size_type offset, size_type right) noexcept {
+  return bit_span<word_type, std::dynamic_extent>(&this->at(offset), right - offset);
 }
 
 template <typename T, std::align_val_t V, typename W>
 template <std::integral U>
 constexpr bit_array<T, std::dynamic_extent, V, W>::operator U() const noexcept {
   assert(size() <= bitsof<U>());
-  U result;
-  std::memcpy(&result, &storage[0], sizeof(U));
+  U result{};
+  std::memcpy(&result, storage.get(), std::min(sizeof(U), Words(m_size) * sizeof(word_type)));
 
-  if constexpr (std::is_signed_v<U> && begin()[size()-1]) {
-    for (size_type i = size(); i < bitsof<U>(); ++i) {
-      result |= (static_cast<U>(1) << i);
-    }
-  } else {
-    for (size_type i = size(); i < bitsof<U>(); ++i) {
-      result &= ~(static_cast<U>(1) << i);
+  if constexpr (std::is_signed_v<U>) {
+    if (size() > 0 && begin()[size() - 1]) {
+      for (size_type i = size(); i < bitsof<U>(); ++i) {
+        result |= (static_cast<U>(1) << i);
+      }
+    } else {
+      for (size_type i = size(); i < bitsof<U>(); ++i) {
+        result &= ~(static_cast<U>(1) << i);
+      }
     }
   }
   return result;
 }
 
-
-template <typename T, std::align_val_t V, typename W>
-constexpr std::string bit_array<T, std::dynamic_extent, V, W>::debug_string() const {
-  return debug_string(begin(), end());
-}
-template <typename T, std::align_val_t V, typename W>
-constexpr std::string bit_array<T, std::dynamic_extent, V, W>::debug_string(
-  bit_array<T, std::dynamic_extent, V, W>::const_iterator first,
-  bit_array<T, std::dynamic_extent, V, W>::const_iterator end) const {
-  auto digits = bitsof<W>();
-  std::string ret = "";
-  auto position = 0;
-  for (auto it = first; it != end; ++it) {
-      if (position % digits == 0 && position != 0) {
-          ret += " ";
-      } else if (position % 8 == 0 && position != 0) {
-          ret += '.';
-      }
-      ret += *it == bit1 ? '1' : '0';
-      ++position;
-  }
-  return ret;
-}
-
-
 // ========================================================================== //
 }  // namespace bit
 
 #endif  // _BIT_ARRAY_DYNAMIC_EXTENT_HPP_INCLUDED
-// ========================================================================== //
+        // ========================================================================== //
