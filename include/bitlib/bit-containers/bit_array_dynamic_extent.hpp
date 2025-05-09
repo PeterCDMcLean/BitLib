@@ -124,22 +124,19 @@ class bit_array<T, std::dynamic_extent, V, W>
   /*
     * Slice
   */
-  constexpr bit_span<const word_type, std::dynamic_extent> operator()(size_type offset, size_type right) const noexcept;
-  constexpr bit_span<word_type, std::dynamic_extent> operator()(size_type offset, size_type right) noexcept;
+  // Slice operators are provided by the base class
 
   /*
      * Operations
      */
   // Common operations
-  constexpr void fill(value_type bit_val) noexcept;
+  // Fill is provided by the base class
   constexpr void swap(bit_array<T, std::dynamic_extent, V, W>& other) noexcept;
   template <std::integral U>
   explicit constexpr operator U() const noexcept;
 
   // String representation
-  constexpr std::string debug_string(const_iterator first, const_iterator last) const {
-    return bit_array_utils::debug_string_impl(first, last, bitsof<word_type>());
-  }
+  // debug_string is provided by the base class
 };
 
 static_assert(bit_range<bit_array<>>, "bit_array<> does not satisfy bit_contiguous_range concept!");
@@ -203,7 +200,7 @@ constexpr bit_array<T, std::dynamic_extent, V, W>::bit_array(const size_type siz
     for (size_type i = 0; i < Words(m_size); ++i) {
       new (storage.get() + i) word_type();
     }
-    fill(bit_val);
+    this->fill(bit_val);
   }
 }
 
@@ -307,10 +304,7 @@ constexpr void bit_array<T, std::dynamic_extent, V, W>::swap(bit_array<T, std::d
   }
 }
 
-template <typename T, std::align_val_t V, typename W>
-constexpr void bit_array<T, std::dynamic_extent, V, W>::fill(value_type bit_val) noexcept {
-  std::fill(this->begin(), this->end(), bit_val);
-}
+// fill method is now provided by the base class
 
 // -------------------------------------------------------------------------- //
 /*
@@ -366,17 +360,7 @@ constexpr typename bit_array<T, std::dynamic_extent, V, W>::const_iterator bit_a
 
 // -------------------------------------------------------------------------- //
 
-template <typename T, std::align_val_t V, typename W>
-constexpr bit_span<const typename bit_array<T, std::dynamic_extent, V, W>::word_type, std::dynamic_extent>
-bit_array<T, std::dynamic_extent, V, W>::operator()(size_type offset, size_type right) const noexcept {
-  return bit_span<const word_type, std::dynamic_extent>(&this->at(offset), right - offset);
-}
-
-template <typename T, std::align_val_t V, typename W>
-constexpr bit_span<typename bit_array<T, std::dynamic_extent, V, W>::word_type, std::dynamic_extent>
-bit_array<T, std::dynamic_extent, V, W>::operator()(size_type offset, size_type right) noexcept {
-  return bit_span<word_type, std::dynamic_extent>(&this->at(offset), right - offset);
-}
+// Slice operators are now provided by the base class
 
 template <typename T, std::align_val_t V, typename W>
 template <std::integral U>
