@@ -65,9 +65,13 @@ class bit_array<T, std::dynamic_extent, V, W>
 
   const size_type m_size;
   const std::unique_ptr<word_type[], deleter> storage;
+
+ protected:
   static constexpr size_type Words(size_type N) {
     return (N * bitsof<value_type>() + bitsof<word_type>() - 1) / bitsof<word_type>();
   };
+
+ private:
   static constexpr size_t AlignedBytes(size_t N) {
     return (Words(N) * sizeof(word_type) + static_cast<size_t>(V) - 1) & ~(static_cast<size_t>(V) - 1);
   };
@@ -274,21 +278,7 @@ class bit_array<T, std::dynamic_extent, V, W>
   template <std::integral U>
   explicit constexpr operator U() const noexcept {
     assert(size() <= bitsof<U>());
-    U result{};
-    std::memcpy(&result, data(), std::min(sizeof(U), Words(m_size) * sizeof(word_type)));
-
-    if constexpr (std::is_signed_v<U>) {
-      if (size() > 0 && begin()[size() - 1]) {
-        for (size_type i = size(); i < bitsof<U>(); ++i) {
-          result |= (static_cast<U>(1) << i);
-        }
-      } else {
-        for (size_type i = size(); i < bitsof<U>(); ++i) {
-          result &= ~(static_cast<U>(1) << i);
-        }
-      }
-    }
-    return result;
+    return base::operator U();
   }
 };
 

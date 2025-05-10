@@ -67,9 +67,14 @@ class bit_array : public bit_array_base<bit_array<T, N, V, W>, T, W, detail::bit
 
   static constexpr std::size_t bits = N * bitsof<T>();
 
+ protected:
+  static constexpr std::size_t Words(std::size_t size_) {
+    return (size_ * bitsof<value_type>() + bitsof<word_type>() - 1) / bitsof<word_type>();
+  }
+
  private:
-  static constexpr std::size_t Words = (N * bitsof<value_type>() + bitsof<word_type>() - 1) / bitsof<word_type>();
-  static constexpr std::size_t AlignedWords = (((Words * sizeof(word_type) + static_cast<size_t>(V) - 1) & ~(static_cast<size_t>(V) - 1)) + sizeof(word_type) - 1) / sizeof(word_type);
+  static constexpr std::size_t Words_ = Words(N);
+  static constexpr std::size_t AlignedWords = (((Words_ * sizeof(word_type) + static_cast<size_t>(V) - 1) & ~(static_cast<size_t>(V) - 1)) + sizeof(word_type) - 1) / sizeof(word_type);
 
   alignas(static_cast<size_t>(V)) std::array<word_type, AlignedWords> storage;
 
@@ -213,19 +218,7 @@ class bit_array : public bit_array_base<bit_array<T, N, V, W>, T, W, detail::bit
   explicit constexpr operator U() const noexcept
     requires(bitsof<U>() >= (bitsof<T>() * N))
   {
-    U result;
-    std::memcpy(&result, data(), sizeof(U));
-
-    if constexpr (std::is_signed_v<U> && begin()[size() - 1]) {
-      for (size_type i = size(); i < bitsof<U>(); ++i) {
-        result |= (static_cast<U>(1) << i);
-      }
-    } else {
-      for (size_type i = size(); i < bitsof<U>(); ++i) {
-        result &= ~(static_cast<U>(1) << i);
-      }
-    }
-    return result;
+    return base::operator U();
   }
 };
 

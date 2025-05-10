@@ -15,11 +15,11 @@
 #include <algorithm>
 #include <bit>
 #include <cmath>
+#include <cstring>  // memcpy
 #include <span>
 #include <string>
 #include <type_traits>
 #include <vector>
-#include <cstring> // memcpy
 
 // Project sources
 #include "bitlib/bit-algorithms/bit_algorithm.hpp"
@@ -36,7 +36,7 @@ namespace bit {
  */
 namespace bit_array_utils {
 
-    /**
+/**
      * @brief Generate a string representation of a range of bits
      *
      * @tparam Iterator The iterator type
@@ -45,47 +45,47 @@ namespace bit_array_utils {
      * @param digits The number of bits in a word
      * @return A string representation of the bits
      */
-    template <typename Iterator>
-    [[deprecated("Use bit_array_base::debug_string instead")]]
-    constexpr std::string debug_string_impl(Iterator first, Iterator last, std::size_t digits) {
-        std::string ret = "";
-        auto position = 0;
-        for (auto it = first; it != last; ++it) {
-            if (position % digits == 0 && position != 0) {
-                ret += " ";
-            } else if (position % 8 == 0 && position != 0) {
-                ret += '.';
-            }
-            ret += *it == bit1 ? '1' : '0';
-            ++position;
-        }
-        return ret;
+template <typename Iterator>
+[[deprecated("Use bit_array_base::debug_string instead")]]
+constexpr std::string debug_string_impl(Iterator first, Iterator last, std::size_t digits) {
+  std::string ret = "";
+  auto position = 0;
+  for (auto it = first; it != last; ++it) {
+    if (position % digits == 0 && position != 0) {
+      ret += " ";
+    } else if (position % 8 == 0 && position != 0) {
+      ret += '.';
     }
+    ret += *it == bit1 ? '1' : '0';
+    ++position;
+  }
+  return ret;
+}
 
-    /**
+/**
      * @brief Element access helper for at() method
      */
-    template <typename Container>
-    [[deprecated("Use bit_array_base::at instead")]]
-    constexpr auto at_impl(Container& container, typename Container::size_type pos)
-        -> decltype(container.begin()[pos]) {
-        if (pos < container.size()) {
-            return container.begin()[pos];
-        } else {
-            throw std::out_of_range("Position is out of range");
-        }
-    }
+template <typename Container>
+[[deprecated("Use bit_array_base::at instead")]]
+constexpr auto at_impl(Container& container, typename Container::size_type pos)
+    -> decltype(container.begin()[pos]) {
+  if (pos < container.size()) {
+    return container.begin()[pos];
+  } else {
+    throw std::out_of_range("Position is out of range");
+  }
+}
 
-    /**
+/**
      * @brief Equality comparison implementation
      */
-    template <typename Container>
-    [[deprecated("Use bit_array_base::operator== instead")]]
-    constexpr bool equal_impl(const Container& lhs, const Container& rhs) {
-        return equal(lhs.begin(), lhs.end(), rhs.begin());
-    }
+template <typename Container>
+[[deprecated("Use bit_array_base::operator== instead")]]
+constexpr bool equal_impl(const Container& lhs, const Container& rhs) {
+  return equal(lhs.begin(), lhs.end(), rhs.begin());
+}
 
-} // namespace bit_array_utils
+}  // namespace bit_array_utils
 
 /**
  * @brief Base class template for bit_array implementations
@@ -101,121 +101,142 @@ namespace bit_array_utils {
  */
 template <typename Derived, typename T, typename W, typename It, typename CIt>
 class bit_array_base {
-public:
-    using word_type = W;
-    using value_type = T;
-    using size_type = std::size_t;
-    using difference_type = std::ptrdiff_t;
-    using reference = typename std::conditional<std::is_same_v<T, bit_value>, bit_reference<word_type>, T&>::type;
-    using const_reference = typename std::conditional<std::is_same_v<T, bit_value>, const bit_reference<const word_type>, const T&>::type;
-    using pointer = typename std::conditional<std::is_same_v<T, bit_value>, bit_pointer<word_type>, T&>::type;
-    using const_pointer = const pointer;
-    using iterator = It;
-    using const_iterator = CIt;
+ public:
+  using word_type = W;
+  using value_type = T;
+  using size_type = std::size_t;
+  using difference_type = std::ptrdiff_t;
+  using reference = typename std::conditional<std::is_same_v<T, bit_value>, bit_reference<word_type>, T&>::type;
+  using const_reference = typename std::conditional<std::is_same_v<T, bit_value>, const bit_reference<const word_type>, const T&>::type;
+  using pointer = typename std::conditional<std::is_same_v<T, bit_value>, bit_pointer<word_type>, T&>::type;
+  using const_pointer = const pointer;
+  using iterator = It;
+  using const_iterator = CIt;
 
-    // Element access
-    constexpr reference operator[](size_type pos) {
-        return derived().begin()[pos];
+  // Element access
+  constexpr reference operator[](size_type pos) {
+    return derived().begin()[pos];
+  }
+
+  constexpr const_reference operator[](size_type pos) const {
+    return derived().begin()[pos];
+  }
+
+  constexpr reference at(size_type pos) {
+    if (pos < derived().size()) {
+      return derived().begin()[pos];
+    } else {
+      throw std::out_of_range("Position is out of range");
     }
+  }
 
-    constexpr const_reference operator[](size_type pos) const {
-        return derived().begin()[pos];
+  constexpr const_reference at(size_type pos) const {
+    if (pos < derived().size()) {
+      return derived().begin()[pos];
+    } else {
+      throw std::out_of_range("Position is out of range");
     }
+  }
 
-    constexpr reference at(size_type pos) {
-        if (pos < derived().size()) {
-            return derived().begin()[pos];
-        } else {
-            throw std::out_of_range("Position is out of range");
+  constexpr reference front() {
+    return derived().begin()[0];
+  }
+
+  constexpr const_reference front() const {
+    return derived().begin()[0];
+  }
+
+  constexpr reference back() {
+    return derived().begin()[derived().size() - 1];
+  }
+
+  constexpr const_reference back() const {
+    return derived().begin()[derived().size() - 1];
+  }
+
+  // Capacity
+  constexpr bool empty() const noexcept {
+    return 0 == derived().size();
+  }
+
+  constexpr size_type max_size() const noexcept {
+    return derived().size();
+  }
+
+  // String representation
+  constexpr std::string debug_string() const {
+    return debug_string(derived().begin(), derived().end());
+  }
+
+  constexpr std::string debug_string(const_iterator first, const_iterator last) const {
+    std::string ret = "";
+    auto position = 0;
+    for (auto it = first; it != last; ++it) {
+      if (position % bitsof<word_type>() == 0 && position != 0) {
+        ret += " ";
+      } else if (position % 8 == 0 && position != 0) {
+        ret += '.';
+      }
+      ret += *it == bit1 ? '1' : '0';
+      ++position;
+    }
+    return ret;
+  }
+
+  // Comparison
+  constexpr bool operator==(const Derived& other) const noexcept {
+    if (derived().size() != other.size()) {
+      return false;
+    }
+    return equal(derived().begin(), derived().end(), other.begin());
+  }
+
+  // Slice operations
+  constexpr auto operator()(size_type offset, size_type right) const noexcept {
+    return bit_span<const word_type, std::dynamic_extent>(&this->at(offset), right - offset);
+  }
+
+  constexpr auto operator()(size_type offset, size_type right) noexcept {
+    return bit_span<word_type, std::dynamic_extent>(&this->at(offset), right - offset);
+  }
+
+  // Common operations
+  constexpr void fill(value_type bit_val) noexcept {
+    std::fill(derived().begin(), derived().end(), bit_val);
+  }
+
+  // Common integral conversion operator
+  template <std::integral U>
+  explicit constexpr operator U() const noexcept {
+    U result{};
+    // Calculate bytes to copy (minimum of integral type size or array's storage size)
+    std::memcpy(&result, derived().data(), std::min(sizeof(U), ((derived().size() + bitsof<word_type>() - 1) / bitsof<word_type>()) * sizeof(word_type)));
+
+    if constexpr (std::is_signed_v<U>) {
+      if (derived().size() > 0 && derived().begin()[derived().size() - 1]) {
+        for (size_type i = derived().size(); i < bitsof<U>(); ++i) {
+          result |= (static_cast<U>(1) << i);
         }
-    }
-
-    constexpr const_reference at(size_type pos) const {
-        if (pos < derived().size()) {
-            return derived().begin()[pos];
-        } else {
-            throw std::out_of_range("Position is out of range");
+      } else {
+        for (size_type i = derived().size(); i < bitsof<U>(); ++i) {
+          result &= ~(static_cast<U>(1) << i);
         }
+      }
     }
+    return result;
+  }
 
-    constexpr reference front() {
-        return derived().begin()[0];
-    }
+ protected:
+  constexpr Derived& derived() noexcept {
+    return static_cast<Derived&>(*this);
+  }
 
-    constexpr const_reference front() const {
-        return derived().begin()[0];
-    }
-
-    constexpr reference back() {
-        return derived().begin()[derived().size() - 1];
-    }
-
-    constexpr const_reference back() const {
-        return derived().begin()[derived().size() - 1];
-    }
-
-    // Capacity
-    constexpr bool empty() const noexcept {
-        return 0 == derived().size();
-    }
-
-    constexpr size_type max_size() const noexcept {
-        return derived().size();
-    }
-
-    // String representation
-    constexpr std::string debug_string() const {
-        return debug_string(derived().begin(), derived().end());
-    }
-
-    constexpr std::string debug_string(const_iterator first, const_iterator last) const {
-        std::string ret = "";
-        auto position = 0;
-        for (auto it = first; it != last; ++it) {
-            if (position % bitsof<word_type>() == 0 && position != 0) {
-                ret += " ";
-            } else if (position % 8 == 0 && position != 0) {
-                ret += '.';
-            }
-            ret += *it == bit1 ? '1' : '0';
-            ++position;
-        }
-        return ret;
-    }
-
-    // Comparison
-    constexpr bool operator==(const Derived& other) const noexcept {
-        if (derived().size() != other.size()) {
-            return false;
-        }
-        return equal(derived().begin(), derived().end(), other.begin());
-    }
-
-    // Slice operations
-    constexpr auto operator()(size_type offset, size_type right) const noexcept {
-        return bit_span<const word_type, std::dynamic_extent>(&this->at(offset), right - offset);
-    }
-
-    constexpr auto operator()(size_type offset, size_type right) noexcept {
-        return bit_span<word_type, std::dynamic_extent>(&this->at(offset), right - offset);
-    }
-
-    // Common operations
-    constexpr void fill(value_type bit_val) noexcept {
-        std::fill(derived().begin(), derived().end(), bit_val);
-    }
-
-protected:
-    constexpr Derived& derived() noexcept {
-        return static_cast<Derived&>(*this);
-    }
-
-    constexpr const Derived& derived() const noexcept {
-        return static_cast<const Derived&>(*this);
-    }
+  constexpr const Derived& derived() const noexcept {
+    return static_cast<const Derived&>(*this);
+  }
 };
 
-} // namespace bit
+}  // namespace bit
 
-#endif // _BIT_ARRAY_BASE_HPP_INCLUDED
-// ========================================================================== //
+#endif  // _BIT_ARRAY_BASE_HPP_INCLUDED
+        // ========================================================================== //
