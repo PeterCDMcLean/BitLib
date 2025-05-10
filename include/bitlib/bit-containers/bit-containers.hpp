@@ -9,6 +9,8 @@
 // ============================== PREAMBLE ================================== //
 #include "bit_array.hpp"
 #include "bit_array_dynamic_extent.hpp"
+#include "bit_array_ref.hpp"
+#include "bit_literal.hpp"
 #include "bit_mdspan_accessor.hpp"
 #include "bit_span.hpp"
 #include "bit_vector.hpp"
