@@ -54,6 +54,7 @@ template <typename T = bit_value,
 class bit_array : public bit_array_base<bit_array<T, N, V, W>, T, W, detail::bit_array_d_it<T, W, N>, detail::bit_array_d_cit<T, W, N>> {
  public:
   using base = bit_array_base<bit_array<T, N, V, W>, T, W, detail::bit_array_d_it<T, W, N>, detail::bit_array_d_cit<T, W, N>>;
+  using base::end;
   using typename base::const_iterator;
   using typename base::const_pointer;
   using typename base::const_reference;
@@ -180,24 +181,8 @@ class bit_array : public bit_array_base<bit_array<T, N, V, W>, T, W, detail::bit
     return iterator(storage.begin());
   }
 
-  constexpr iterator end() noexcept {
-    return begin() + size();
-  }
-
   constexpr const_iterator begin() const noexcept {
     return const_iterator(storage.begin());
-  }
-
-  constexpr const_iterator end() const noexcept {
-    return const_iterator(storage.begin()) + size();
-  }
-
-  constexpr const_iterator cbegin() const noexcept {
-    return const_iterator(storage.begin());
-  }
-
-  constexpr const_iterator cend() const noexcept {
-    return const_iterator(storage.begin()) + size();
   }
 
   /*
@@ -212,13 +197,6 @@ class bit_array : public bit_array_base<bit_array<T, N, V, W>, T, W, detail::bit
     */
   constexpr void swap(bit_array<T, N, V, W>& other) noexcept {
     std::swap(this->storage, other.storage);
-  }
-
-  template <std::integral U>
-  explicit constexpr operator U() const noexcept
-    requires(bitsof<U>() >= (bitsof<T>() * N))
-  {
-    return base::operator U();
   }
 };
 

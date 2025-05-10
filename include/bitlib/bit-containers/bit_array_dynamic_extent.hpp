@@ -41,6 +41,7 @@ class bit_array<T, std::dynamic_extent, V, W>
     : public bit_array_base<bit_array<T, std::dynamic_extent, V, W>, T, W, detail::bit_array_it<T, W>, detail::bit_array_cit<T, W>> {
  public:
   using base = bit_array_base<bit_array<T, std::dynamic_extent, V, W>, T, W, detail::bit_array_it<T, W>, detail::bit_array_cit<T, W>>;
+  using base::end;
   using typename base::const_iterator;
   using typename base::const_pointer;
   using typename base::const_reference;
@@ -66,12 +67,10 @@ class bit_array<T, std::dynamic_extent, V, W>
   const size_type m_size;
   const std::unique_ptr<word_type[], deleter> storage;
 
- protected:
   static constexpr size_type Words(size_type N) {
     return (N * bitsof<value_type>() + bitsof<word_type>() - 1) / bitsof<word_type>();
   };
 
- private:
   static constexpr size_t AlignedBytes(size_t N) {
     return (Words(N) * sizeof(word_type) + static_cast<size_t>(V) - 1) & ~(static_cast<size_t>(V) - 1);
   };
@@ -236,24 +235,8 @@ class bit_array<T, std::dynamic_extent, V, W>
     return iterator(storage.get());
   }
 
-  constexpr iterator end() noexcept {
-    return begin() + size();
-  }
-
   constexpr const_iterator begin() const noexcept {
     return const_iterator(storage.get());
-  }
-
-  constexpr const_iterator end() const noexcept {
-    return const_iterator(storage.get()) + size();
-  }
-
-  constexpr const_iterator cbegin() const noexcept {
-    return const_iterator(storage.get());
-  }
-
-  constexpr const_iterator cend() const noexcept {
-    return const_iterator(storage.get()) + size();
   }
 
   /*
@@ -268,17 +251,12 @@ class bit_array<T, std::dynamic_extent, V, W>
    */
   constexpr void swap(bit_array<T, std::dynamic_extent, V, W>& other) noexcept {
     assert(this->m_size == other.m_size);
+    // Cannot just swap storage as it is const.
     W* it1 = this->storage.get();
     W* it2 = other.storage.get();
     for (size_type i = 0; i < Words(this->m_size); i++, it1++, it2++) {
       std::swap(*it1, *it2);
     }
-  }
-
-  template <std::integral U>
-  explicit constexpr operator U() const noexcept {
-    assert(size() <= bitsof<U>());
-    return base::operator U();
   }
 };
 

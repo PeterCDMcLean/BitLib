@@ -100,6 +100,22 @@ class bit_array_base {
     return derived().begin()[derived().size() - 1];
   }
 
+  constexpr iterator end() noexcept {
+    return derived().begin() + derived().size();
+  }
+
+  constexpr const_iterator end() const noexcept {
+    return const_iterator(derived().begin()) + derived().size();
+  }
+
+  constexpr const_iterator cbegin() const noexcept {
+    return const_iterator(derived().begin());
+  }
+
+  constexpr const_iterator cend() const noexcept {
+    return const_iterator(derived().end());
+  }
+
   // Capacity
   constexpr bool empty() const noexcept {
     return 0 == derived().size();
@@ -137,11 +153,16 @@ class bit_array_base {
     return equal(derived().begin(), derived().end(), other.begin());
   }
 
-  // Slice operations
+  /**
+   * @brief Slice operations - returns a bit_array_ref
+   */
   constexpr auto operator()(size_type offset, size_type right) const noexcept {
     return bit_array_ref<bit_value, const word_type>(&this->at(offset), right - offset);
   }
 
+  /**
+   * @brief Slice operations - returns a bit_array_ref
+   */
   constexpr auto operator()(size_type offset, size_type right) noexcept {
     return bit_array_ref<bit_value, word_type>(&this->at(offset), right - offset);
   }
@@ -151,25 +172,21 @@ class bit_array_base {
     std::fill(derived().begin(), derived().end(), bit_val);
   }
 
-  // Common integral conversion operator
+  /**
+   * @brief Explicit conversion to integral types
+   */
   template <std::integral U>
   explicit constexpr operator U() const noexcept {
-    U result{};
-    // Calculate bytes to copy (minimum of integral type size or array's storage size)
-    std::memcpy(&result, derived().data(), std::min(sizeof(U), ((derived().size() + bitsof<word_type>() - 1) / bitsof<word_type>()) * sizeof(word_type)));
-
+    assert(derived().size() <= bitsof<U>());
+    U integral;
+    bit_span<uint8_t, bitsof<U>()> integral_ref(reinterpret_cast<uint8_t*>(&integral));
+    copy(derived().begin(), derived().begin() + bitsof<U>(), integral_ref.begin());
     if constexpr (std::is_signed_v<U>) {
-      if (derived().size() > 0 && derived().begin()[derived().size() - 1]) {
-        for (size_type i = derived().size(); i < bitsof<U>(); ++i) {
-          result |= (static_cast<U>(1) << i);
-        }
-      } else {
-        for (size_type i = derived().size(); i < bitsof<U>(); ++i) {
-          result &= ~(static_cast<U>(1) << i);
-        }
-      }
+      ::bit::fill(integral_ref.begin() + derived().size(), integral_ref.end(), integral_ref[bitsof<U>() - 1]);
+    } else {
+      ::bit::fill(integral_ref.begin() + derived().size(), integral_ref.end(), bit0);
     }
-    return result;
+    return integral;
   }
 
  protected:

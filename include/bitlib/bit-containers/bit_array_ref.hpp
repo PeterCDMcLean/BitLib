@@ -41,6 +41,7 @@ class bit_array_ref
     : public bit_array_base<bit_array_ref<T, W>, T, W, bit_iterator<W*>, bit_iterator<const W*>> {
  public:
   using base = bit_array_base<bit_array_ref<T, W>, T, W, bit_iterator<W*>, bit_iterator<const W*>>;
+  using base::end;
   using typename base::const_iterator;
   using typename base::const_pointer;
   using typename base::const_reference;
@@ -55,11 +56,6 @@ class bit_array_ref
  private:
   const bit_pointer<word_type> m_storage;
   const size_type m_size;
-
- protected:
-  static constexpr size_type Words(size_type N) {
-    return (N * bitsof<value_type>() + bitsof<word_type>() - 1) / bitsof<word_type>();
-  }
 
  public:
   // Constructors
@@ -105,7 +101,7 @@ class bit_array_ref
       if (m_size != other.m_size) {
         throw std::invalid_argument("Cannot assign from bit_array_ref of different size");
       }
-      std::copy(other.begin(), other.end(), this->begin());
+      ::bit::copy(other.begin(), other.end(), this->begin());
     }
     return *this;
   }
@@ -118,7 +114,7 @@ class bit_array_ref
       if (m_size != other.m_size) {
         throw std::invalid_argument("Cannot assign from bit_array_ref of different size");
       }
-      std::copy(other.begin(), other.end(), this->begin());
+      ::bit::copy(other.begin(), other.end(), this->begin());
     }
     return *this;
   }
@@ -129,43 +125,14 @@ class bit_array_ref
   ~bit_array_ref() = default;
 
   /*
-   * Element Access
-   */
-  constexpr word_type* data() noexcept {
-    throw new std::invalid_argument("Not valid for this class. may be unaligned");
-    return const_cast<word_type*>(m_storage.base());
-  }
-
-  constexpr const word_type* data() const noexcept {
-    throw new std::invalid_argument("Not valid for this class. may be unaligned");
-    return m_storage.base();
-  }
-
-  /*
    * Iterators
    */
   constexpr iterator begin() noexcept {
     return iterator(m_storage);
   }
 
-  constexpr iterator end() noexcept {
-    return begin() + size();
-  }
-
   constexpr const_iterator begin() const noexcept {
     return const_iterator(m_storage);
-  }
-
-  constexpr const_iterator end() const noexcept {
-    return const_iterator(begin() + size());
-  }
-
-  constexpr const_iterator cbegin() const noexcept {
-    return const_iterator(begin());
-  }
-
-  constexpr const_iterator cend() const noexcept {
-    return const_iterator(end());
   }
 
   /*
@@ -183,34 +150,6 @@ class bit_array_ref
       throw std::invalid_argument("Cannot swap bit_array_ref of different sizes");
     }
     swap_ranges(begin(), end(), other.begin());
-  }
-
-  /**
-   * @brief Slice operations - returns a bit_array_ref
-   */
-  constexpr auto operator()(size_type offset, size_type right) const noexcept {
-    return bit_array_ref<T, W>(bit_pointer<word_type>(const_cast<word_type*>(m_storage.base()), m_storage.position()) + offset, right - offset);
-  }
-
-  constexpr auto operator()(size_type offset, size_type right) noexcept {
-    return bit_array_ref<T, W>(bit_pointer<word_type>(m_storage.base(), m_storage.position()) + offset, right - offset);
-  }
-
-  /**
-   * @brief Explicit conversion to integral types
-   */
-  template <std::integral U>
-  explicit constexpr operator U() const noexcept {
-    assert(size() <= bitsof<U>());
-    U integral;
-    bit_array_ref<> integral_ref(reinterpret_cast<uint8_t*>(&integral), bitsof<U>());
-    copy(begin(), begin() + bitsof<U>(), integral_ref.begin());
-    if constexpr (std::is_signed_v<U>) {
-      fill(integral_ref.begin() + size(), integral_ref.end(), integral_ref[bitsof<U>() - 1]);
-    } else {
-      fill(integral_ref.begin() + size(), integral_ref.end(), bit0);
-    }
-    return integral;
   }
 };
 
