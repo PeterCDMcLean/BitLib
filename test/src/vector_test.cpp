@@ -752,7 +752,7 @@ TEST(BitVectorTest, Slice) {
   uint32_t word = 0xDEADBEEF;
   bit::bit_span span1(word);
   auto vec = bit::bit_vector<uint32_t>(std::from_range, span1);
-  auto span2 = span1[4, 8];
+  auto span2 = span1(4, 8);
   EXPECT_EQ(span2.size(), 4);
   EXPECT_EQ(span2[0], (0xE & (1 << 0)) ? bit::bit1 : bit::bit0);
   EXPECT_EQ(span2[1], (0xE & (1 << 1)) ? bit::bit1 : bit::bit0);

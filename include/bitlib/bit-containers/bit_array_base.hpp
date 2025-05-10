@@ -28,64 +28,10 @@
 #include "bitlib/bit-iterator/bit.hpp"
 
 namespace bit {
+
+template <typename T, typename W>
+class bit_array_ref;
 // ========================================================================== //
-
-/**
- * @brief Common utility functions for bit array implementations
- * @deprecated These functions have been moved to the bit_array_base class and will be removed in a future release
- */
-namespace bit_array_utils {
-
-/**
-     * @brief Generate a string representation of a range of bits
-     *
-     * @tparam Iterator The iterator type
-     * @param first Iterator to the first bit
-     * @param last Iterator past the last bit
-     * @param digits The number of bits in a word
-     * @return A string representation of the bits
-     */
-template <typename Iterator>
-[[deprecated("Use bit_array_base::debug_string instead")]]
-constexpr std::string debug_string_impl(Iterator first, Iterator last, std::size_t digits) {
-  std::string ret = "";
-  auto position = 0;
-  for (auto it = first; it != last; ++it) {
-    if (position % digits == 0 && position != 0) {
-      ret += " ";
-    } else if (position % 8 == 0 && position != 0) {
-      ret += '.';
-    }
-    ret += *it == bit1 ? '1' : '0';
-    ++position;
-  }
-  return ret;
-}
-
-/**
-     * @brief Element access helper for at() method
-     */
-template <typename Container>
-[[deprecated("Use bit_array_base::at instead")]]
-constexpr auto at_impl(Container& container, typename Container::size_type pos)
-    -> decltype(container.begin()[pos]) {
-  if (pos < container.size()) {
-    return container.begin()[pos];
-  } else {
-    throw std::out_of_range("Position is out of range");
-  }
-}
-
-/**
-     * @brief Equality comparison implementation
-     */
-template <typename Container>
-[[deprecated("Use bit_array_base::operator== instead")]]
-constexpr bool equal_impl(const Container& lhs, const Container& rhs) {
-  return equal(lhs.begin(), lhs.end(), rhs.begin());
-}
-
-}  // namespace bit_array_utils
 
 /**
  * @brief Base class template for bit_array implementations
@@ -193,11 +139,11 @@ class bit_array_base {
 
   // Slice operations
   constexpr auto operator()(size_type offset, size_type right) const noexcept {
-    return bit_span<const word_type, std::dynamic_extent>(&this->at(offset), right - offset);
+    return bit_array_ref<bit_value, const word_type>(&this->at(offset), right - offset);
   }
 
   constexpr auto operator()(size_type offset, size_type right) noexcept {
-    return bit_span<word_type, std::dynamic_extent>(&this->at(offset), right - offset);
+    return bit_array_ref<bit_value, word_type>(&this->at(offset), right - offset);
   }
 
   // Common operations
