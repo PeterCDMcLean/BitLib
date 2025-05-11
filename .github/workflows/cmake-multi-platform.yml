@@ -76,8 +76,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-      with:
-        clean: true
 
     - name: "Install Clang 19"
       if: matrix.os == 'linux' && matrix.c_compiler == 'clang-19'
@@ -100,12 +98,16 @@ jobs:
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: >
-        cmake -B ${{ steps.strings.outputs.build-output-dir }} -S ${{ github.workspace }}
-        --preset=${{ matrix.preset }}_${{ matrix.os }}_${{ matrix.compiler }}_${{ matrix.stdlib }}
-        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
-        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+      run: |
+        # Configure
+        cmake -B ${{ steps.strings.outputs.build-output-dir }} -S ${{ github.workspace }} \
+        --preset=${{ matrix.preset }}_${{ matrix.os }}_${{ matrix.compiler }}_${{ matrix.stdlib }} \
+        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} \
+        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+
+        # Delete any coverage files created from CMake probing
+        find ${{ github.workspace }} -name '*.gcno' -delete
 
     - name: Register Compiler Problem Matcher
       run: echo "::add-matcher::.github/problem_matchers/${{ matrix.compiler}}_problem_matcher.json"
