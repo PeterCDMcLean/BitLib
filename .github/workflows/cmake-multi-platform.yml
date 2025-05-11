@@ -108,6 +108,7 @@ jobs:
 
         # Delete any coverage files created from CMake probing
         find ${{ github.workspace }} \( -name '*.gcno' -o -name '*.gcda' \) -delete
+        find ${{ steps.strings.outputs.build-output-dir }} \( -name '*.gcno' -o -name '*.gcda' \) -delete
 
     - name: Register Compiler Problem Matcher
       run: echo "::add-matcher::.github/problem_matchers/${{ matrix.compiler}}_problem_matcher.json"
