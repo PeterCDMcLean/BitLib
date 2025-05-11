@@ -199,3 +199,12 @@ TEST(BitArrayRef, OffsetBitPointerConstructor) {
   // Verify the original was modified at the correct offset
   EXPECT_EQ(original[8], bit::bit1);  // 3 + 5 = 8
 }
+
+TEST(BitArrayRef, Throws) {
+  bit::bit_array<> original(64, bit::bit0);
+  bit::bit_array_ref<> ref(original, 32);
+  bit::bit_array<> right_side(33, bit::bit0);
+  EXPECT_THROW(ref = right_side, std::invalid_argument);
+  bit::bit_array_ref<> ref2(&original[31], 33);
+  EXPECT_THROW(ref = ref2, std::invalid_argument);
+}

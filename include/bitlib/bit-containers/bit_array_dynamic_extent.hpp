@@ -180,10 +180,6 @@ class bit_array<T, std::dynamic_extent, V, W>
     for (; i < Words(m_size) && it != init.end(); ++i, ++it) {
       new (storage.get() + i) word_type(*it);
     }
-    // Initialize remaining words if any
-    for (; i < Words(m_size); ++i) {
-      new (storage.get() + i) word_type();
-    }
   }
 
   constexpr bit_array(const std::string_view s)

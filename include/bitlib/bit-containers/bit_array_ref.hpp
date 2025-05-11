@@ -83,14 +83,28 @@ class bit_array_ref
       : m_storage(storage),
         m_size(size) {
   }
+
   /**
    * @brief Constructs a non-owning reference to a bit array from a bit_sized_range
    *
    * @param other bit_sized_range
    */
-  constexpr bit_array_ref(const bit_sized_range auto& other)
-      : m_storage(other.begin()),
-        m_size(other.size()) {
+  constexpr bit_array_ref(bit_range auto& other, size_type size)
+      : m_storage(&(*other.begin())),
+        m_size(size) {
+    assert(size <= (other.end() - other.begin()));
+  }
+
+  /**
+   * @brief Constructs a non-owning reference to a bit array from a bit_sized_range
+   *
+   * @param other bit_sized_range
+   */
+  constexpr bit_array_ref(const bit_range auto& other, size_type size)
+    requires(std::is_const_v<W>)
+      : m_storage(&(*other.begin())),
+        m_size(size) {
+    assert(size <= (other.end() - other.begin()));
   }
 
   /**

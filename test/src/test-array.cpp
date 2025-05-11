@@ -147,6 +147,8 @@ TEST(ArrayTest, ComparisonOperators) {
   EXPECT_EQ(ba1, ba2);
   ba2[2] = bit::bit_value(true);  // Change one element
   EXPECT_NE(ba1, ba2);
+  bit::bit_array<bit::bit_value, std::dynamic_extent> ba3{bit::bit1, bit::bit1, bit::bit1, bit::bit0, bit::bit0, bit::bit1};
+  EXPECT_NE(ba1, ba3);
 }
 
 // Test the data() method to access the underlying storage.
@@ -211,8 +213,16 @@ TEST(ArrayTest, MoveSemantics) {
 }
 
 TEST(ArrayTest, Throws) {
-  bit::bit_array<bit::bit_value, 5> ba1 = {bit::bit1, bit::bit0, bit::bit1, bit::bit0, bit::bit1};
+  bit::bit_array<bit::bit_value, 5> ba1{bit::bit1, bit::bit0, bit::bit1, bit::bit0, bit::bit1};
   EXPECT_THROW(ba1.at(5), std::out_of_range);
+  bit::bit_array<bit::bit_value, std::dynamic_extent> ba2{bit::bit1, bit::bit0, bit::bit1, bit::bit0, bit::bit1};
+  bit::bit_array<bit::bit_value, 5> ba3(ba2);
+  EXPECT_EQ(ba1, ba3);
+  EXPECT_EQ(ba1, ba2);
+  bit::bit_array<bit::bit_value, std::dynamic_extent> ba4{bit::bit1, bit::bit1, bit::bit0, bit::bit1, bit::bit0, bit::bit1};
+
+  using barr5 = bit::bit_array<bit::bit_value, 5>;  // command in template messes up gtest macro
+  EXPECT_THROW(barr5{ba4}, std::invalid_argument);
 }
 
 TEST(BitArrayDynamicTest, Throws) {
@@ -475,6 +485,17 @@ TEST(BitArrayDynamicTest, TwoDBitArraySizeConstructor) {
       bit::bit_array<>(4));
   EXPECT_EQ(arr.size(), 16);
   EXPECT_EQ(arr[0].size(), 4);
+}
+
+// Test comparison operators (== and !=).
+TEST(BitArrayDynamicTest, ComparisonOperators) {
+  bit::bit_array<bit::bit_value, std::dynamic_extent> ba1{bit::bit1, bit::bit1, bit::bit0, bit::bit0, bit::bit1};
+  bit::bit_array<bit::bit_value, std::dynamic_extent> ba2{bit::bit1, bit::bit1, bit::bit0, bit::bit0, bit::bit1};
+  EXPECT_EQ(ba1, ba2);
+  ba2[2] = bit::bit_value(true);  // Change one element
+  EXPECT_NE(ba1, ba2);
+  bit::bit_array<bit::bit_value, std::dynamic_extent> ba3{bit::bit0, bit::bit1, bit::bit1, bit::bit0, bit::bit0, bit::bit1};
+  EXPECT_NE(ba1, ba3);
 }
 
 TEST(BitArrayTest, Slice) {
