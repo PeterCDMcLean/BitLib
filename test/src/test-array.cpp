@@ -210,6 +210,22 @@ TEST(ArrayTest, MoveSemantics) {
   EXPECT_TRUE(ba2[4]);
 }
 
+TEST(ArrayTest, Throws) {
+  bit::bit_array<bit::bit_value, 5> ba1 = {bit::bit1, bit::bit0, bit::bit1, bit::bit0, bit::bit1};
+  EXPECT_THROW(ba1.at(5), std::out_of_range);
+}
+
+TEST(BitArrayDynamicTest, Throws) {
+  bit::bit_array<> ba1(5);
+  ba1 = {bit::bit1, bit::bit0, bit::bit1, bit::bit0, bit::bit1};
+  EXPECT_THROW(ba1.at(5), std::out_of_range);
+  bit::bit_array<> ba2(6);
+  ba2 = {bit::bit0, bit::bit1, bit::bit0, bit::bit1, bit::bit0, bit::bit1};
+  EXPECT_THROW(ba1 = ba2, std::invalid_argument);
+  EXPECT_THROW(ba1 = std::move(ba2), std::invalid_argument);
+  EXPECT_NO_THROW(ba1 = ba2(0, 5));
+}
+
 //
 // Test Suite for bit::bit_array<>
 //

@@ -27,6 +27,7 @@
 #include "bitlib/bit-containers/bit_bitsof.hpp"
 #include "bitlib/bit-containers/bit_span.hpp"
 #include "bitlib/bit-iterator/bit.hpp"
+#include "bitlib/bit_concepts.hpp"
 
 namespace bit {
 // ========================================================================== //
@@ -114,6 +115,13 @@ class bit_array : public bit_array_base<bit_array<T, N, V, W>, T, W, detail::bit
 
   constexpr bit_array(const bit_array<T, N, V, W>&& other) noexcept
       : storage(other.storage) {}
+
+  constexpr bit_array(const bit_range auto& other) {
+    if (other.size() != bitsof(*this)) [[unlikely]] {
+      throw std::invalid_argument("other bit_range contains an invalid number of bits for bit_array.");
+    }
+    ::bit::copy(other.begin(), other.end(), this->begin());
+  };
 
   constexpr bit_array(const std::initializer_list<value_type> init)
     requires(!std::is_same_v<value_type, word_type>)

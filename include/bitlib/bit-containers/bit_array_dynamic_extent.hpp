@@ -24,6 +24,7 @@
 #include "bitlib/bit-containers/bit_bitsof.hpp"
 #include "bitlib/bit-containers/bit_span.hpp"
 #include "bitlib/bit-iterator/bit.hpp"
+#include "bitlib/bit_concepts.hpp"
 
 namespace bit {
 namespace detail {
@@ -135,6 +136,12 @@ class bit_array<T, std::dynamic_extent, V, W>
     for (size_type i = 0; i < Words(m_size); ++i) {
       new (storage.get() + i) word_type(*(other.storage.get() + i));
     }
+  }
+
+  constexpr bit_array(const bit_sized_range auto& other)
+      : m_size(other.size()),
+        storage(static_cast<word_type*>(::operator new(AlignedBytes(m_size), V)), deleter{Words(m_size)}) {
+    ::bit::copy(other.begin(), other.end(), this->begin());
   }
 
   constexpr bit_array(const bit_array<T, std::dynamic_extent, V, W>&& other)
