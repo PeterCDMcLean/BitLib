@@ -186,7 +186,7 @@ class bit_vector {
         /*
           * Slice
         */
-        constexpr bit_span<WordType, std::dynamic_extent> operator[](size_type begin, size_type end) const noexcept;
+        constexpr bit_array_ref<> operator()(size_type begin, size_type end) const noexcept;
 
         /*
          * Helper functions
@@ -658,8 +658,8 @@ constexpr void bit_vector<WordType, Allocator>::append_range(R&& range) {
   * Slice
 */
 template <class WordType, class Allocator>
-constexpr bit_span<WordType, std::dynamic_extent> bit_vector<WordType, Allocator>::operator[](size_type begin, size_type end) const noexcept {
-  return bit_span<WordType, std::dynamic_extent>(&this->at(begin), end - begin);
+constexpr bit_array_ref<> bit_vector<WordType, Allocator>::operator()(size_type begin, size_type end) const noexcept {
+  return bit_array_ref<>(&this->at(begin), end - begin);
 }
 
 // ------------------------ BIT VECTOR: DEBUGGING -------------------------- //
