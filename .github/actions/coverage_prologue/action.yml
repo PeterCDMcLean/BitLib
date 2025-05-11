@@ -1,0 +1,24 @@
+name: "Coverage Prologue"
+description: "Installs lcov and generates the baseline coverage"
+inputs:
+  build-output-dir:
+    required: true
+    description: 'Build output directory'
+
+runs:
+  using: "composite"
+  steps:
+    - name: "Install lcov"
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y lcov
+
+    - name: "Initialize 0% coverage baseline"
+      shell: bash
+      run: |
+        lcov --capture --initial \
+             --base-directory "$GITHUB_WORKSPACE" \
+             --directory "${{ inputs.build-output-dir }}" \
+             --output-file coverage.baseline \
+             --ignore-errors mismatch

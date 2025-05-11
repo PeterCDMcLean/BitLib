@@ -10,18 +10,32 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: "Install lcov"
-      shell: bash
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y lcov
-
     - name: Generate Coverage Report
       shell: bash
       run: |
-        lcov --capture --directory ${{ inputs.build-output-dir }} --output-file coverage.info --ignore-errors mismatch
-        lcov --remove coverage.info '/usr/*' '*/_deps/*' '*/include/bitlib/bit-algorithms/libpopcnt.h' '*/test/inc/*' '*/test/src/*' --output-file coverage.info
+        # Capture actual coverage data after tests
+        lcov --capture \
+             --directory "${{ inputs.build-output-dir }}" \
+             --output-file coverage.info \
+             --ignore-errors mismatch
+
+        # Combine with baseline
+        lcov --add-tracefile coverage.baseline \
+             --add-tracefile coverage.info\
+             --output-file coverage.info
+
+        # Clean the coverage report from system and external deps
+        lcov --remove coverage.info \
+             '/usr/*' \
+             '*/_deps/*' \
+             '*/include/bitlib/bit-algorithms/libpopcnt.h' \
+             '*/test/inc/*' \
+             '*/test/src/*' \
+             --output-file coverage.info
+
+        # Show a summary in the logs
         lcov --list coverage.info
+
         # Generate an HTML report
         genhtml coverage.info --output-directory out/coverage
 
@@ -31,6 +45,7 @@ runs:
         name: coverage-report
         path: |
           out/coverage
+          coverage.baseline
           coverage.info
 
     - name: Coveralls
