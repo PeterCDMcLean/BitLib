@@ -180,7 +180,7 @@ class bit_array_ref
   /*
    * Operations
    */
-  constexpr void swap(bit_array_ref& other) noexcept {
+  constexpr void swap(bit_array_ref& other) {
     if (m_size != other.m_size) {
       throw std::invalid_argument("Cannot swap bit_array_ref of different sizes");
     }
