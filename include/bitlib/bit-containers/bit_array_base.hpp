@@ -145,14 +145,6 @@ class bit_array_base {
     return ret;
   }
 
-  // Comparison
-  constexpr bool operator==(const Derived& other) const noexcept {
-    if (derived().size() != other.size()) {
-      return false;
-    }
-    return equal(derived().begin(), derived().end(), other.begin());
-  }
-
   /**
    * @brief Slice operations - returns a bit_array_ref
    */
@@ -198,6 +190,12 @@ class bit_array_base {
     return static_cast<const Derived&>(*this);
   }
 };
+constexpr bool operator==(const bit_sized_range auto& lhs, const bit_sized_range auto& rhs) {
+  if (lhs.size() != rhs.size()) {
+    return false;
+  }
+  return ::bit::equal(lhs.begin(), lhs.end(), rhs.begin());
+}
 
 }  // namespace bit
 
