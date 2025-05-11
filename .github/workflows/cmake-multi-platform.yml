@@ -76,6 +76,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        clean: true
 
     - name: "Install Clang 19"
       if: matrix.os == 'linux' && matrix.c_compiler == 'clang-19'
