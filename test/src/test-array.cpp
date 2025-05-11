@@ -469,6 +469,8 @@ TEST(BitArrayTest, Slice) {
   EXPECT_EQ(span2[1], (0xE & (1 << 1)) ? bit::bit1 : bit::bit0);
   EXPECT_EQ(span2[2], (0xE & (1 << 2)) ? bit::bit1 : bit::bit0);
   EXPECT_EQ(span2[3], (0xE & (1 << 3)) ? bit::bit1 : bit::bit0);
+  span2 = 0x4'A_b;
+  EXPECT_EQ(arr, 0x20'DEADBEAF_b);
 }
 
 TEST(BitArrayTest, SliceModify) {
@@ -481,4 +483,5 @@ TEST(BitArrayTest, SliceModify) {
   EXPECT_EQ(span2[3], (0xE & (1 << 3)) ? bit::bit1 : bit::bit0);
   span2[3] = bit::bit0;
   EXPECT_EQ(span2[3], bit::bit0);
+  EXPECT_EQ(arr, 0x24'DEADBE6F_b);
 }

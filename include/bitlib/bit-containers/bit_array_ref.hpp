@@ -23,6 +23,7 @@
 #include "bitlib/bit-containers/bit_bitsof.hpp"
 #include "bitlib/bit-containers/bit_span.hpp"
 #include "bitlib/bit-iterator/bit.hpp"
+#include "bitlib/bit_concepts.hpp"
 
 namespace bit {
 
@@ -96,6 +97,14 @@ class bit_array_ref
   /**
    * @brief Assignment operator - copies content but doesn't rebind
    */
+  constexpr bit_array_ref& operator=(const bit_range auto& other) {
+    if (m_size != other.size()) {
+      throw std::invalid_argument("Cannot assign from bit_array_ref of different size");
+    }
+    ::bit::copy(other.begin(), other.end(), this->begin());
+    return *this;
+  }
+
   constexpr bit_array_ref& operator=(const bit_array_ref& other) {
     if (this != &other) {
       if (m_size != other.m_size) {
@@ -111,7 +120,7 @@ class bit_array_ref
    */
   constexpr bit_array_ref& operator=(bit_array_ref&& other) {
     if (this != &other) {
-      if (m_size != other.m_size) {
+      if (m_size != other.size()) {
         throw std::invalid_argument("Cannot assign from bit_array_ref of different size");
       }
       ::bit::copy(other.begin(), other.end(), this->begin());
