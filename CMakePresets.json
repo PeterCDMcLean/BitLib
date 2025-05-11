@@ -41,8 +41,8 @@
       "name": "gnu_base",
       "hidden": true,
       "cacheVariables": {
-        "CMAKE_C_FLAGS_DEBUG": "-DPOPCNT_NO_UNALIGNED -g3 -fno-omit-frame-pointer -fstack-protector-all -fsanitize=address -fsanitize=undefined -finstrument-functions -fno-inline",
-        "CMAKE_CXX_FLAGS_DEBUG": "-DPOPCNT_NO_UNALIGNED -g3 -fno-omit-frame-pointer -DPOPCNT_NO_UNALIGNED -fstack-protector-all -fsanitize=address -fsanitize=undefined -finstrument-functions -fno-inline",
+        "CMAKE_C_FLAGS_DEBUG": "-DPOPCNT_NO_UNALIGNED -g3 -fno-omit-frame-pointer -fstack-protector-all -fsanitize=address -fsanitize=undefined -finstrument-functions -fno-inline -fno-inline-small-functions -fno-default-inline -fkeep-inline-functions",
+        "CMAKE_CXX_FLAGS_DEBUG": "-DPOPCNT_NO_UNALIGNED -g3 -fno-omit-frame-pointer -DPOPCNT_NO_UNALIGNED -fstack-protector-all -fsanitize=address -fsanitize=undefined -finstrument-functions -fno-inline -fno-inline-small-functions -fno-default-inline -fkeep-inline-functions",
         "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG -march=native",
         "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG -march=native"
       }
