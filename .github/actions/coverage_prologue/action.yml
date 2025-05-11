@@ -20,4 +20,5 @@ runs:
         lcov --capture --initial \
              --base-directory "$GITHUB_WORKSPACE" \
              --directory "${{ inputs.build-output-dir }}" \
-             --output-file coverage.baseline
+             --output-file coverage.baseline \
+             --ignore-errors mismatch
