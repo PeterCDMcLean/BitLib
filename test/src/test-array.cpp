@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include <string_view>
 #include <utility>
 
 #include "bitlib/bit-containers/bit_array.hpp"
@@ -147,6 +148,8 @@ TEST(ArrayTest, ComparisonOperators) {
   EXPECT_EQ(ba1, ba2);
   ba2[2] = bit::bit_value(true);  // Change one element
   EXPECT_NE(ba1, ba2);
+  bit::bit_array<bit::bit_value, std::dynamic_extent> ba3{bit::bit1, bit::bit1, bit::bit1, bit::bit0, bit::bit0, bit::bit1};
+  EXPECT_NE(ba1, ba3);
 }
 
 // Test the data() method to access the underlying storage.
@@ -210,6 +213,34 @@ TEST(ArrayTest, MoveSemantics) {
   EXPECT_TRUE(ba2[4]);
 }
 
+TEST(ArrayTest, Throws) {
+  bit::bit_array<bit::bit_value, 5> ba1{bit::bit1, bit::bit0, bit::bit1, bit::bit0, bit::bit1};
+  EXPECT_THROW(ba1.at(5), std::out_of_range);
+  bit::bit_array<bit::bit_value, std::dynamic_extent> ba2{bit::bit1, bit::bit0, bit::bit1, bit::bit0, bit::bit1};
+  bit::bit_array<bit::bit_value, 5> ba3(ba2);
+  EXPECT_EQ(ba1, ba3);
+  EXPECT_EQ(ba1, ba2);
+  bit::bit_array<bit::bit_value, std::dynamic_extent> ba4{bit::bit1, bit::bit1, bit::bit0, bit::bit1, bit::bit0, bit::bit1};
+
+  using barr5 = bit::bit_array<bit::bit_value, 5>;  // command in template messes up gtest macro
+  EXPECT_THROW(barr5{ba4}, std::invalid_argument) << "Copy constructor must take the same size";
+  EXPECT_THROW(barr5{bit::bit0}, std::invalid_argument) << "Initializer list must be the correct size";
+
+  using namespace std::literals;
+  EXPECT_THROW(barr5{"010101"sv}, std::invalid_argument) << "String view constructor must be the correct size";
+}
+
+TEST(BitArrayDynamicTest, Throws) {
+  bit::bit_array<> ba1(5);
+  ba1 = {bit::bit1, bit::bit0, bit::bit1, bit::bit0, bit::bit1};
+  EXPECT_THROW(ba1.at(5), std::out_of_range);
+  bit::bit_array<> ba2(6);
+  ba2 = {bit::bit0, bit::bit1, bit::bit0, bit::bit1, bit::bit0, bit::bit1};
+  EXPECT_THROW(ba1 = ba2, std::invalid_argument);
+  EXPECT_THROW(ba1 = std::move(ba2), std::invalid_argument);
+  EXPECT_NO_THROW(ba1 = ba2(0, 5));
+}
+
 //
 // Test Suite for bit::bit_array<>
 //
@@ -243,6 +274,17 @@ TEST(BitArrayDynamicTest, CopyConstructorCopiesContent) {
   bit::bit_array<> original(size, bit::bit_value(true));
   bit::bit_array<> copy(original);
   EXPECT_TRUE(copy == original);
+}
+
+// Test copy constructor and copy assignment operator.
+TEST(BitArrayDynamicTest, CopyAndAssignment) {
+  bit::bit_array<bit::bit_value, std::dynamic_extent> ba1{bit::bit1, bit::bit0, bit::bit1, bit::bit0, bit::bit1};
+  bit::bit_array<bit::bit_value, std::dynamic_extent> ba_copy(ba1);
+  EXPECT_EQ(ba1, ba_copy);
+
+  bit::bit_array<bit::bit_value, std::dynamic_extent> ba2{bit::bit1, bit::bit1, bit::bit0, bit::bit1, bit::bit0, bit::bit1};
+  EXPECT_THROW(ba1 = ba2, std::invalid_argument) << "Copy assignment from invalid size should throw";
+  EXPECT_THROW(ba1 = ba2(0, 6), std::invalid_argument) << "Assign from bit_sized_range (bit_array_ref) of unequal size should throw";
 }
 
 TEST(BitArrayDynamicTest, MoveConstructorMovesContent) {
@@ -415,36 +457,6 @@ TEST(BitArrayDynamicTest, StringConstructor) {
   EXPECT_EQ(arr[0], bit::bit0);
 }
 
-TEST(BitArrayDynamicTest, UserDefinedLiteral) {
-  auto arr = 0b01001101_b;
-  EXPECT_EQ(arr.size(), 8);
-  EXPECT_EQ(arr[7], bit::bit0);
-  EXPECT_EQ(arr[0], bit::bit1);
-  auto arr2 = 0b1'01001101_b;
-  EXPECT_EQ(arr2.size(), 1);
-}
-
-TEST(BitArrayDynamicTest, UserDefinedHexLiteral) {
-  auto arr = 0x010A110A_b;
-  EXPECT_EQ(arr.size(), 32);
-  EXPECT_EQ(arr[0], bit::bit0);
-  EXPECT_EQ(arr[1], bit::bit1);
-  EXPECT_EQ(arr[2], bit::bit0);
-  EXPECT_EQ(arr[3], bit::bit1);
-  EXPECT_EQ(arr[7], bit::bit0);
-  auto arr2 = 0x19'010A110A_b;
-  EXPECT_EQ(arr2.size(), 25);
-}
-
-TEST(BitArrayDynamicTest, UserDefinedDecLiteral) {
-  auto arr = 16'12345_b;
-  EXPECT_EQ(arr.size(), 16);
-  auto arr2 = 0x3039_b;
-  EXPECT_EQ(arr, arr2);
-  auto arr3 = 16'123'45_b;
-  EXPECT_EQ(arr, arr3);
-}
-
 TEST(BitArrayDynamicTest, TwoDBitArraySizeValueConstructor) {
   bit::bit_array<bit::bit_array<>> arr(
       16,
@@ -461,6 +473,17 @@ TEST(BitArrayDynamicTest, TwoDBitArraySizeConstructor) {
   EXPECT_EQ(arr[0].size(), 4);
 }
 
+// Test comparison operators (== and !=).
+TEST(BitArrayDynamicTest, ComparisonOperators) {
+  bit::bit_array<bit::bit_value, std::dynamic_extent> ba1{bit::bit1, bit::bit1, bit::bit0, bit::bit0, bit::bit1};
+  bit::bit_array<bit::bit_value, std::dynamic_extent> ba2{bit::bit1, bit::bit1, bit::bit0, bit::bit0, bit::bit1};
+  EXPECT_EQ(ba1, ba2);
+  ba2[2] = bit::bit_value(true);  // Change one element
+  EXPECT_NE(ba1, ba2);
+  bit::bit_array<bit::bit_value, std::dynamic_extent> ba3{bit::bit0, bit::bit1, bit::bit1, bit::bit0, bit::bit0, bit::bit1};
+  EXPECT_NE(ba1, ba3);
+}
+
 TEST(BitArrayTest, Slice) {
   auto arr = 0x20'DEADBEEF_b;
   auto span2 = arr(4, 8);
@@ -469,6 +492,8 @@ TEST(BitArrayTest, Slice) {
   EXPECT_EQ(span2[1], (0xE & (1 << 1)) ? bit::bit1 : bit::bit0);
   EXPECT_EQ(span2[2], (0xE & (1 << 2)) ? bit::bit1 : bit::bit0);
   EXPECT_EQ(span2[3], (0xE & (1 << 3)) ? bit::bit1 : bit::bit0);
+  span2 = 0x4'A_b;
+  EXPECT_EQ(arr, 0x20'DEADBEAF_b);
 }
 
 TEST(BitArrayTest, SliceModify) {
@@ -481,4 +506,5 @@ TEST(BitArrayTest, SliceModify) {
   EXPECT_EQ(span2[3], (0xE & (1 << 3)) ? bit::bit1 : bit::bit0);
   span2[3] = bit::bit0;
   EXPECT_EQ(span2[3], bit::bit0);
+  EXPECT_EQ(arr, 0x24'DEADBE6F_b);
 }

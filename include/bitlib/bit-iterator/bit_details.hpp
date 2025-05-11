@@ -68,6 +68,7 @@ template <class T>
 constexpr std::size_t binary_digits_v = binary_digits<T>::value;
 /* ************************************************************************** */
 
+#if 0
 template <typename T>
 using smallest_integral = std::conditional_t<
     (sizeof(T) <= sizeof(std::uint8_t)),
@@ -82,6 +83,7 @@ using smallest_integral = std::conditional_t<
                 (sizeof(T) <= sizeof(std::uint64_t)),
                 std::uint64_t,
                 T>>>>;
+#endif
 
 /* *************** IMPLEMENTATION DETAILS: CV ITERATOR TRAITS *************** */
 // Cv iterator traits structure definition

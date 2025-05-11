@@ -31,6 +31,7 @@ target_sources(bitlib-tests PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-equal.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-fill.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-find.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-literal.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-move.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-reverse.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-rotate.cpp
@@ -39,6 +40,7 @@ target_sources(bitlib-tests PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-swap_ranges.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-transform.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-usecase.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-array_ref.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/vector_test.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/inc/test_utils.hpp
 )
