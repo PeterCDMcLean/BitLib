@@ -25,7 +25,7 @@ runs:
              --output-file coverage.info
 
         # Clean the coverage report from system and external deps
-        lcov --remove coverage.merged.info \
+        lcov --remove coverage.info \
              '/usr/*' \
              '*/_deps/*' \
              '*/include/bitlib/bit-algorithms/libpopcnt.h' \
