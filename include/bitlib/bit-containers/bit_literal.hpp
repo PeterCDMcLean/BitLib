@@ -23,7 +23,9 @@ template <char Bit>
 constexpr void _parameter_pack_base_bits_prefix_len(size_t& base, size_t& bits, size_t& prefix_len, uint64_t& num) {
   if ('\'' == Bit) {
     if (0 != bits) {
-      return;  //skip. Should we, though? It seems like it will be confusing
+      // This happens when there are more than one apostrophe in the sequence.
+      // We ignore this apostrophe, it should be part of the 'data', not the width.
+      return;
     }
     bits = num;
     num = 0;
@@ -37,9 +39,6 @@ constexpr void _parameter_pack_base_bits_prefix_len(size_t& base, size_t& bits, 
       num = 0;
     } else if (Bit == 'x' || Bit == 'X') {
       base = 16;
-      num = 0;
-    } else if (Bit == 'd' || Bit == 'D') {
-      base = 10;
       num = 0;
     } else {
       num = (num * 10) + (Bit - '0');
