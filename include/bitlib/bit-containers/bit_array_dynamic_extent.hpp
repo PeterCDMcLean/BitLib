@@ -216,6 +216,14 @@ class bit_array<T, std::dynamic_extent, V, W>
     return *this;
   }
 
+  constexpr bit_array<T, std::dynamic_extent, V, W>& operator=(const bit_sized_range auto& other) {
+    if (other.size() != this->size()) [[unlikely]] {
+      throw std::invalid_argument("other bit_range contains an invalid number of bits for bit_array.");
+    }
+    ::bit::copy(other.begin(), other.end(), this->begin());
+    return *this;
+  };
+
   constexpr bit_array<T, std::dynamic_extent, V, W>& operator=(bit_array<T, std::dynamic_extent, V, W>&& other) {
     if (nullptr == storage.get() || m_size != other.m_size) {
       throw std::invalid_argument("Cannot reassign bit_array<std::dynamic_extent,V,W> size");

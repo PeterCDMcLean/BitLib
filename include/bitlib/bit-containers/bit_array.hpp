@@ -116,8 +116,8 @@ class bit_array : public bit_array_base<bit_array<T, N, V, W>, T, W, detail::bit
   constexpr bit_array(const bit_array<T, N, V, W>&& other) noexcept
       : storage(other.storage) {}
 
-  constexpr bit_array(const bit_range auto& other) {
-    if (other.size() != bitsof(*this)) [[unlikely]] {
+  constexpr bit_array(const bit_sized_range auto& other) {
+    if (other.size() != this->size()) [[unlikely]] {
       throw std::invalid_argument("other bit_range contains an invalid number of bits for bit_array.");
     }
     ::bit::copy(other.begin(), other.end(), this->begin());
@@ -168,6 +168,14 @@ class bit_array : public bit_array_base<bit_array<T, N, V, W>, T, W, detail::bit
     * Assignment
     */
   constexpr bit_array& operator=(const bit_array<T, N, V, W>& other) = default;
+
+  constexpr bit_array& operator=(const bit_sized_range auto& other) {
+    if (other.size() != this->size()) [[unlikely]] {
+      throw std::invalid_argument("other bit_sized_range contains an invalid number of bits for bit_array.");
+    }
+    ::bit::copy(other.begin(), other.end(), this->begin());
+    return *this;
+  };
 
   constexpr bit_array& operator=(bit_array<T, N, V, W>&& other) noexcept {
     std::copy(other.storage.begin(), other.storage.end(), storage.begin());
