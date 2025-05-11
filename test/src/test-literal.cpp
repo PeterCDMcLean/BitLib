@@ -26,18 +26,31 @@ TEST(BitLiteral, dec_base) {
   EXPECT_EQ(three.size(), 2);
   EXPECT_EQ(three[0], bit::bit1);
   EXPECT_EQ(three[1], bit::bit1);
-  three = 2'10_b;
-  EXPECT_EQ(three.size(), 2);
-  EXPECT_EQ(three[0], bit::bit0);
-  EXPECT_EQ(three[1], bit::bit1);
+  auto ten = 4'10_b;
+  EXPECT_EQ(ten.size(), 4);
+  EXPECT_EQ(ten[0], bit::bit0);
+  EXPECT_EQ(ten[1], bit::bit1);
+  EXPECT_EQ(ten[2], bit::bit0);
+  EXPECT_EQ(ten[3], bit::bit1);
+  auto ten_2 = 10_b;
+  EXPECT_EQ(ten_2.size(), 4);
+  EXPECT_EQ(ten_2[0], bit::bit0);
+  EXPECT_EQ(ten_2[1], bit::bit1);
+  EXPECT_EQ(ten_2[2], bit::bit0);
+  EXPECT_EQ(ten_2[3], bit::bit1);
 }
 
 TEST(BitLiteral, hex_base) {
-    auto fifteen = 0xF'1234_b;
-    EXPECT_EQ(fifteen.size(), 15);
-    EXPECT_EQ(fifteen[0], bit::bit0);
-    EXPECT_EQ(fifteen[1], bit::bit0);
-    EXPECT_EQ(fifteen[2], bit::bit1);
+  auto fifteen = 0xF'1234_b;
+  EXPECT_EQ(fifteen.size(), 15);
+  EXPECT_EQ(fifteen[0], bit::bit0);
+  EXPECT_EQ(fifteen[1], bit::bit0);
+  EXPECT_EQ(fifteen[2], bit::bit1);
+  auto unsized = 0x1234_b;
+  EXPECT_EQ(unsized.size(), 16);
+  EXPECT_EQ(unsized[0], bit::bit0);
+  EXPECT_EQ(unsized[1], bit::bit0);
+  EXPECT_EQ(unsized[2], bit::bit1);
 }
 
 TEST(BitLiteral, bin_base) {
@@ -46,6 +59,11 @@ TEST(BitLiteral, bin_base) {
   EXPECT_EQ(fifteen[0], bit::bit0);
   EXPECT_EQ(fifteen[1], bit::bit0);
   EXPECT_EQ(fifteen[2], bit::bit1);
+  auto unsized = 0b01101_b;
+  EXPECT_EQ(unsized.size(), 5);
+  EXPECT_EQ(unsized[0], bit::bit1);
+  EXPECT_EQ(unsized[1], bit::bit0);
+  EXPECT_EQ(unsized[2], bit::bit1);
 }
 
 TEST(BitLiteral, UserDefinedLiteral) {

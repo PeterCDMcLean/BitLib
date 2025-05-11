@@ -176,6 +176,18 @@ TEST(BitArrayRef, BitPointerConstructor) {
   EXPECT_EQ(original[30], bit::bit1);
 }
 
+TEST(BitArrayRef, MoveAssignment) {
+  bit::bit_array<> original(64, bit::bit0);
+  original[3] = bit::bit1;
+  original[13] = bit::bit1;
+  original[33] = bit::bit1;
+  original[43] = bit::bit1;
+  bit::bit_array_ref<> ref1(original, 32);
+  bit::bit_array_ref<> ref2(&original[32], 32);
+  ref1 = ref2;
+  EXPECT_EQ(ref1, original(32, 64));
+}
+
 TEST(BitArrayRef, OffsetBitPointerConstructor) {
   // Prepare original bit array
   bit::bit_array<> original(64, bit::bit0);
@@ -207,4 +219,5 @@ TEST(BitArrayRef, Throws) {
   EXPECT_THROW(ref = right_side, std::invalid_argument);
   bit::bit_array_ref<> ref2(&original[31], 33);
   EXPECT_THROW(ref = ref2, std::invalid_argument);
+  EXPECT_THROW(ref.swap(ref2), std::invalid_argument);
 }

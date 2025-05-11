@@ -1,4 +1,5 @@
 #include <stdexcept>
+#include <string_view>
 #include <utility>
 
 #include "bitlib/bit-containers/bit_array.hpp"
@@ -222,7 +223,11 @@ TEST(ArrayTest, Throws) {
   bit::bit_array<bit::bit_value, std::dynamic_extent> ba4{bit::bit1, bit::bit1, bit::bit0, bit::bit1, bit::bit0, bit::bit1};
 
   using barr5 = bit::bit_array<bit::bit_value, 5>;  // command in template messes up gtest macro
-  EXPECT_THROW(barr5{ba4}, std::invalid_argument);
+  EXPECT_THROW(barr5{ba4}, std::invalid_argument) << "Copy constructor must take the same size";
+  EXPECT_THROW(barr5{bit::bit0}, std::invalid_argument) << "Initializer list must be the correct size";
+
+  using namespace std::literals;
+  EXPECT_THROW(barr5{"010101"sv}, std::invalid_argument) << "String view constructor must be the correct size";
 }
 
 TEST(BitArrayDynamicTest, Throws) {
@@ -269,6 +274,17 @@ TEST(BitArrayDynamicTest, CopyConstructorCopiesContent) {
   bit::bit_array<> original(size, bit::bit_value(true));
   bit::bit_array<> copy(original);
   EXPECT_TRUE(copy == original);
+}
+
+// Test copy constructor and copy assignment operator.
+TEST(BitArrayDynamicTest, CopyAndAssignment) {
+  bit::bit_array<bit::bit_value, std::dynamic_extent> ba1{bit::bit1, bit::bit0, bit::bit1, bit::bit0, bit::bit1};
+  bit::bit_array<bit::bit_value, std::dynamic_extent> ba_copy(ba1);
+  EXPECT_EQ(ba1, ba_copy);
+
+  bit::bit_array<bit::bit_value, std::dynamic_extent> ba2{bit::bit1, bit::bit1, bit::bit0, bit::bit1, bit::bit0, bit::bit1};
+  EXPECT_THROW(ba1 = ba2, std::invalid_argument) << "Copy assignment from invalid size should throw";
+  EXPECT_THROW(ba1 = ba2(0, 6), std::invalid_argument) << "Assign from bit_sized_range (bit_array_ref) of unequal size should throw";
 }
 
 TEST(BitArrayDynamicTest, MoveConstructorMovesContent) {
