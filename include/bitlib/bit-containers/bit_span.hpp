@@ -13,6 +13,7 @@
 #include "bitlib/bit-algorithms/bit_algorithm.hpp"
 #include "bitlib/bit-containers/bit_bitsof.hpp"
 #include "bitlib/bit-iterator/bit.hpp"
+#include "bitlib/bit_concepts.hpp"
 
 namespace bit {
 
@@ -87,6 +88,8 @@ class bit_span : private bit_span_storage<WordType, Extent> {
     requires(std::is_scalar_v<WordType>);
   constexpr bit_span(WordType* s)
     requires(std::is_scalar_v<WordType>);
+
+  constexpr bit_span(bit_range auto& other);
 
   // --- Observers ---
 
@@ -213,6 +216,16 @@ template <typename WordType, std::size_t Extent>
 constexpr bit_span<WordType, Extent>::bit_span(WordType& word_ref)
   requires(std::is_scalar_v<WordType>)
     : bit_span(&word_ref) {
+}
+
+template <typename WordType, std::size_t Extent>
+constexpr bit_span<WordType, Extent>::bit_span(bit_range auto& other) {
+  if constexpr (Extent == std::dynamic_extent) {
+    this->size_ = other.size();
+  } else {
+    assert(other.size() == Extent);
+  }
+  this->data_ = &(*other.begin());
 }
 
 // --- Observers ---
