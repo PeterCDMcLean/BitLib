@@ -38,212 +38,205 @@
       }
     },
     {
+      "name": "tests_base",
+      "hidden": true,
+      "cacheVariables": {
+        "BITLIB_TEST": "ON"
+      }
+    },
+    {
+      "name": "benchmark_base",
+      "hidden": true,
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BITLIB_BENCHMARK": "ON"
+      }
+    },
+    {
+      "name": "warnings_base",
+      "hidden": true,
+      "environment": {
+        "TARGET_FLAGS": "-Wall -Wextra -Wpedantic -Wold-style-cast -Wconversion -Wshadow -Wno-error"
+      }
+    },
+    {
       "name": "gnu_base",
       "hidden": true,
+      "environment": {
+        "GNU_FLAGS_DEBUG": "-DPOPCNT_NO_UNALIGNED -g3 -fno-omit-frame-pointer -fstack-protector-all -fsanitize=address -fsanitize=undefined -finstrument-functions -fno-inline",
+        "GNU_FLAGS_RELEASE": "-O3 -DNDEBUG -march=native"
+      },
       "cacheVariables": {
-        "CMAKE_C_FLAGS_DEBUG": "-DPOPCNT_NO_UNALIGNED -g3 -fno-omit-frame-pointer -fstack-protector-all -fsanitize=address -fsanitize=undefined -finstrument-functions -fno-inline",
-        "CMAKE_CXX_FLAGS_DEBUG": "-DPOPCNT_NO_UNALIGNED -g3 -fno-omit-frame-pointer -DPOPCNT_NO_UNALIGNED -fstack-protector-all -fsanitize=address -fsanitize=undefined -finstrument-functions -fno-inline",
-        "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG -march=native",
-        "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG -march=native"
-      }
-    },
-    {
-      "name": "clang_libcxx_base",
-      "hidden": true,
-      "cacheVariables": {
-        "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_COMPILER": "clang++",
-        "CMAKE_CXX_FLAGS": "-stdlib=libc++",
-        "CMAKE_EXE_LINKER_FLAGS": "-stdlib=libc++"
-      }
-    },
-    {
-      "name": "clang_libstdcxx_base",
-      "hidden": true,
-      "cacheVariables": {
-        "CMAKE_C_COMPILER": "clang",
-        "CMAKE_CXX_COMPILER": "clang++",
-        "CMAKE_CXX_FLAGS": "-stdlib=libstdc++",
-        "CMAKE_EXE_LINKER_FLAGS": "-stdlib=libstdc++"
+        "CMAKE_C_FLAGS": "$env{GNU_FLAGS} $env{CC_FLAGS} $env{TARGET_FLAGS}",
+        "CMAKE_CXX_FLAGS": "$env{GNU_FLAGS} $env{CC_FLAGS} $env{STDLIB_FLAGS} $env{TARGET_FLAGS}",
+        "CMAKE_EXE_LINKER_FLAGS": "$env{STDLIB_FLAGS}",
+        "CMAKE_C_FLAGS_DEBUG": "$env{GNU_FLAGS_DEBUG} $env{CC_FLAGS_DEBUG} $env{TARGET_FLAGS_DEBUG}",
+        "CMAKE_CXX_FLAGS_DEBUG": "$env{GNU_FLAGS_DEBUG} $env{CC_FLAGS_DEBUG} $env{TARGET_FLAGS_DEBUG}",
+        "CMAKE_C_FLAGS_RELEASE": "$env{GNU_FLAGS_RELEASE} $env{CC_FLAGS_RELEASE} $env{TARGET_FLAGS_RELEASE}",
+        "CMAKE_CXX_FLAGS_RELEASE": "$env{GNU_FLAGS_RELEASE} $env{CC_FLAGS_RELEASE} $env{TARGET_FLAGS_RELEASE}"
       }
     },
     {
       "name": "gcc_base",
       "hidden": true,
+      "inherits": "gnu_base",
       "cacheVariables": {
         "CMAKE_C_COMPILER": "gcc",
-        "CMAKE_CXX_COMPILER": "g++",
-        "CMAKE_C_FLAGS_DEBUG": "-fno-inline-small-functions -fno-default-inline",
-        "CMAKE_CXX_FLAGS_DEBUG": "-fno-inline-small-functions -fno-default-inline"
+        "CMAKE_CXX_COMPILER": "g++"
+      },
+      "environment": {
+        "CC_FLAGS_DEBUG": "-fno-inline-small-functions -fno-default-inline",
+        "STDLIB_FLAGS": ""
       }
     },
     {
-      "name": "tests_msvc_base",
+      "name": "libcxx_base",
       "hidden": true,
-      "inherits": "msvc_base",
-      "cacheVariables": {
-        "BITLIB_TEST": "ON"
+      "environment": {
+        "STDLIB_FLAGS": "-stdlib=libc++"
       }
     },
     {
-      "name": "benchmark_msvc_base",
+      "name": "libstdcxx_base",
       "hidden": true,
-      "inherits": "msvc_base",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "BITLIB_BENCHMARK": "ON"
+      "environment": {
+        "STDLIB_FLAGS": "-stdlib=libc++"
       }
     },
     {
-      "name": "tests_gnu_base",
-      "hidden": true,
-      "inherits": "gnu_base",
-      "cacheVariables": {
-        "BITLIB_TEST": "ON",
-        "CMAKE_C_FLAGS": "-DPOPCNT_NO_UNALIGNED -fstack-protector-strong -fsanitize=undefined -fsanitize=address -fsanitize=bounds -D_FORTIFY_SOURCE=2",
-        "CMAKE_CXX_FLAGS": "-DPOPCNT_NO_UNALIGNED -fstack-protector-strong -fsanitize=undefined -fsanitize=address -fsanitize=bounds -D_FORTIFY_SOURCE=2"
-      }
-    },
-    {
-      "name": "coverage_gnu_base",
+      "name": "clang_base",
       "hidden": true,
       "inherits": "gnu_base",
       "cacheVariables": {
-        "CMAKE_C_FLAGS_RELEASE": "-O2 -g",
-        "CMAKE_CXX_FLAGS_RELEASE": "-O2 -g",
-        "BITLIB_TEST": "ON"
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++"
       }
     },
     {
-      "name": "benchmark_gnu_base",
+      "name": "coverage_gcc_base",
       "hidden": true,
-      "inherits": "gnu_base",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_C_FLAGS": "-O3 -DNDEBUG -march=native",
-        "CMAKE_CXX_FLAGS": "-O3 -DNDEBUG -march=native",
-        "BITLIB_BENCHMARK": "ON"
+      "environment": {
+        "TARGET_FLAGS": "--coverage",
+        "TARGET_FLAGS_RELEASE": "-O2 -g"
+      }
+    },
+    {
+      "name": "coverage_clang_base",
+      "hidden": true,
+      "environment": {
+        "TARGET_FLAGS": "-fprofile-instr-generate -fcoverage-mapping",
+        "TARGET_FLAGS_RELEASE": "-O2 -g"
       }
     },
     {
       "name": "profile_gnu_base",
       "hidden": true,
-      "inherits": "gnu_base",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_C_FLAGS": "-pg -fno-omit-frame-pointer",
-        "CMAKE_CXX_FLAGS": "-pg -fno-omit-frame-pointer",
-        "CMAKE_C_FLAGS_RELEASE": "-O2 -DNDEBUG -march=native -pg -ggdb",
-        "CMAKE_CXX_FLAGS_RELEASE": "-O2 -DNDEBUG -march=native -pg -ggdb",
-        "BITLIB_TEST": "ON",
-        "BITLIB_BENCHMARK": "ON"
+      "environment": {
+        "TARGET_FLAGS_RELEASE": "-pg -fno-omit-frame-pointer -O2 -DNDEBUG -march=native -pg -ggdb"
       }
     },
     {
       "name": "tests_windows_msvc_msvcstl",
       "inherits": [
-        "windows_base",
-        "tests_msvc_base"
+        "tests_base",
+        "windows_base"
       ]
     },
     {
       "name": "benchmark_windows_msvc_msvcstl",
       "inherits": [
-        "windows_base",
-        "benchmark_msvc_base"
-      ]
+        "benchmark_base",
+        "windows_base"
+      ],
+      "cacheVariables": {
+        "CMAKE_C_FLAGS": "$env{MSVC_FLAGS}",
+        "CMAKE_CXX_FLAGS": "$env{MSVC_FLAGS}"
+      }
     },
     {
       "name": "tests_linux_gcc_libstdcxx",
       "inherits": [
+        "tests_base",
         "linux_base",
-        "gcc_base",
-        "tests_gnu_base"
-      ]
-    },
-    {
-      "name": "coverage_linux_gcc_libstdcxx",
-      "inherits": [
-        "linux_base",
-        "gcc_base",
-        "coverage_gnu_base"
-      ],
-      "cacheVariables": {
-        "CMAKE_C_FLAGS": "--coverage",
-        "CMAKE_CXX_FLAGS": "--coverage"
-      }
-    },
-    {
-      "name": "benchmark_linux_gcc_libstdcxx",
-      "inherits": [
-        "linux_base",
-        "gcc_base",
-        "benchmark_gnu_base"
+        "gcc_base"
       ]
     },
     {
       "name": "tests_linux_clang_libcxx",
       "inherits": [
+        "tests_base",
         "linux_base",
-        "clang_libcxx_base",
-        "tests_gnu_base"
+        "clang_base",
+        "libcxx_base"
+      ]
+    },
+    {
+      "name": "tests_linux_clang_libstdcxx",
+      "inherits": [
+        "tests_base",
+        "linux_base",
+        "clang_base",
+        "libstdcxx_base"
+      ]
+    },
+    {
+      "name": "coverage_linux_gcc_libstdcxx",
+      "inherits": [
+        "tests_base",
+        "linux_base",
+        "gcc_base",
+        "coverage_gcc_base"
       ]
     },
     {
       "name": "coverage_linux_clang_libcxx",
       "inherits": [
+        "tests_base",
         "linux_base",
-        "clang_libcxx_base",
-        "coverage_gnu_base"
-      ],
-      "cacheVariables": {
-        "CMAKE_C_FLAGS": "-fprofile-instr-generate -fcoverage-mapping",
-        "CMAKE_CXX_FLAGS": "-fprofile-instr-generate -fcoverage-mapping"
-      }
+        "clang_base",
+        "coverage_clang_base",
+        "libstdcxx_base"
+      ]
+    },
+    {
+      "name": "benchmark_linux_gcc_libstdcxx",
+      "inherits": [
+        "benchmark_base",
+        "linux_base",
+        "gcc_base"
+      ]
     },
     {
       "name": "benchmark_linux_clang_libcxx",
       "inherits": [
+        "benchmark_base",
         "linux_base",
-        "clang_libcxx_base",
-        "benchmark_gnu_base"
+        "clang_base",
+        "libcxx_base"
+      ]
+    },
+    {
+      "name": "benchmark_linux_clang_libstdcxx",
+      "inherits": [
+        "benchmark_base",
+        "linux_base",
+        "clang_base",
+        "libstdcxx_base"
       ]
     },
     {
       "name": "warnings_linux_gcc_libstdcxx",
       "inherits": [
-        "linux_base",
-        "gcc_base",
-        "tests_gnu_base"
-      ],
-      "cacheVariables": {
-        "CMAKE_C_FLAGS": "-Wall -Wextra -Wpedantic -Wold-style-cast -Wconversion -Wshadow -Wno-error",
-        "CMAKE_CXX_FLAGS": "-Wall -Wextra -Wpedantic -Wold-style-cast -Wconversion -Wshadow -Wno-error"
-      }
+        "tests_linux_gcc_libstdcxx",
+        "warnings_base"
+      ]
     },
     {
       "name": "warnings_linux_clang_libcxx",
       "inherits": [
-        "linux_base",
-        "clang_libcxx_base",
-        "tests_gnu_base"
-      ],
-      "cacheVariables": {
-        "CMAKE_C_FLAGS": "-Wall -Wextra -Wpedantic -Wold-style-cast -Wconversion -Wshadow -Wno-error",
-        "CMAKE_CXX_FLAGS": "-Wall -Wextra -Wpedantic -Wold-style-cast -Wconversion -Wshadow -Wno-error"
-      }
-    },
-    {
-      "name": "warnings_linux_clang_libstdcxx",
-      "inherits": [
-        "linux_base",
-        "clang_libstdcxx_base",
-        "tests_gnu_base"
-      ],
-      "cacheVariables": {
-        "CMAKE_C_FLAGS": "-Wall -Wextra -Wpedantic -Wold-style-cast -Wconversion -Wshadow -Wno-error",
-        "CMAKE_CXX_FLAGS": "-Wall -Wextra -Wpedantic -Wold-style-cast -Wconversion -Wshadow -Wno-error"
-      }
+        "tests_linux_clang_libcxx",
+        "warnings_base"
+      ]
     }
   ],
   "buildPresets": [
@@ -285,17 +278,6 @@
     {
       "name": "warnings_linux_gcc_libstdcxx",
       "configurePreset": "warnings_linux_gcc_libstdcxx",
-      "targets": "bitlib-tests",
-      "jobs": 0,
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      }
-    },
-    {
-      "name": "warnings_linux_clang_libstdcxx",
-      "configurePreset": "warnings_linux_clang_libstdcxx",
       "targets": "bitlib-tests",
       "jobs": 0,
       "condition": {
