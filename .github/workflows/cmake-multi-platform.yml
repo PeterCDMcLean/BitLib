@@ -91,6 +91,15 @@ jobs:
             preset: coverage
             target: bitlib-tests
             build_type: Debug
+          - distro: ubuntu-latest
+            os: linux
+            compiler: clang
+            cpp_compiler: clang++-19
+            c_compiler: clang-19
+            stdlib: libcxx
+            preset: coverage
+            target: bitlib-tests
+            build_type: Debug
 
     steps:
     - uses: actions/checkout@v4
@@ -141,6 +150,7 @@ jobs:
     - uses: ./.github/actions/coverage_prologue
       if: matrix.preset == 'coverage'
       with:
+        compiler: ${{ matrix.compiler }}
         build-output-dir: ${{ steps.strings.outputs.build-output-dir }}
 
     - name: Test
@@ -152,6 +162,7 @@ jobs:
     - uses: ./.github/actions/coverage_epilogue
       if: matrix.preset == 'coverage'
       with:
+        compiler: ${{ matrix.compiler }}
         build-output-dir: ${{ steps.strings.outputs.build-output-dir }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

@@ -4,17 +4,22 @@ inputs:
   build-output-dir:
     required: true
     description: 'Build output directory'
+  compiler:
+    required: true
+    description: 'Compiler in use'
 
 runs:
   using: "composite"
   steps:
     - name: "Install lcov"
+      if: ${{ inputs.compiler }} == 'gcc'
       shell: bash
       run: |
         sudo apt-get update
         sudo apt-get install -y lcov
 
     - name: "Initialize 0% coverage baseline"
+      if: ${{ inputs.compiler }} == 'gcc'
       shell: bash
       run: |
         lcov --capture --initial \
@@ -22,3 +27,8 @@ runs:
              --directory "${{ inputs.build-output-dir }}" \
              --output-file coverage.baseline \
              --ignore-errors mismatch
+
+    - name: "LLVM profile env var"
+      if: ${{ inputs.compiler }} == 'clang'
+      shell: bash
+      run: echo "LLVM_PROFILE_FILE=coverage.profraw" >> $GITHUB_ENV

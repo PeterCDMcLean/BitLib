@@ -41,8 +41,8 @@
       "name": "gnu_base",
       "hidden": true,
       "cacheVariables": {
-        "CMAKE_C_FLAGS_DEBUG": "-DPOPCNT_NO_UNALIGNED -g3 -fno-omit-frame-pointer -fstack-protector-all -fsanitize=address -fsanitize=undefined -finstrument-functions -fno-inline -fno-inline-small-functions -fno-default-inline",
-        "CMAKE_CXX_FLAGS_DEBUG": "-DPOPCNT_NO_UNALIGNED -g3 -fno-omit-frame-pointer -DPOPCNT_NO_UNALIGNED -fstack-protector-all -fsanitize=address -fsanitize=undefined -finstrument-functions -fno-inline -fno-inline-small-functions -fno-default-inline",
+        "CMAKE_C_FLAGS_DEBUG": "-DPOPCNT_NO_UNALIGNED -g3 -fno-omit-frame-pointer -fstack-protector-all -fsanitize=address -fsanitize=undefined -finstrument-functions -fno-inline",
+        "CMAKE_CXX_FLAGS_DEBUG": "-DPOPCNT_NO_UNALIGNED -g3 -fno-omit-frame-pointer -DPOPCNT_NO_UNALIGNED -fstack-protector-all -fsanitize=address -fsanitize=undefined -finstrument-functions -fno-inline",
         "CMAKE_C_FLAGS_RELEASE": "-O3 -DNDEBUG -march=native",
         "CMAKE_CXX_FLAGS_RELEASE": "-O3 -DNDEBUG -march=native"
       }
@@ -72,7 +72,9 @@
       "hidden": true,
       "cacheVariables": {
         "CMAKE_C_COMPILER": "gcc",
-        "CMAKE_CXX_COMPILER": "g++"
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_C_FLAGS_DEBUG": "-fno-inline-small-functions -fno-default-inline",
+        "CMAKE_CXX_FLAGS_DEBUG": "-fno-inline-small-functions -fno-default-inline"
       }
     },
     {
@@ -107,8 +109,6 @@
       "hidden": true,
       "inherits": "gnu_base",
       "cacheVariables": {
-        "CMAKE_C_FLAGS": "--coverage",
-        "CMAKE_CXX_FLAGS": "--coverage",
         "CMAKE_C_FLAGS_RELEASE": "-O2 -g",
         "CMAKE_CXX_FLAGS_RELEASE": "-O2 -g",
         "BITLIB_TEST": "ON"
@@ -167,7 +167,11 @@
         "linux_base",
         "gcc_base",
         "coverage_gnu_base"
-      ]
+      ],
+      "cacheVariables": {
+        "CMAKE_C_FLAGS": "--coverage",
+        "CMAKE_CXX_FLAGS": "--coverage"
+      }
     },
     {
       "name": "benchmark_linux_gcc_libstdcxx",
@@ -191,7 +195,11 @@
         "linux_base",
         "clang_libcxx_base",
         "coverage_gnu_base"
-      ]
+      ],
+      "cacheVariables": {
+        "CMAKE_C_FLAGS": "-fprofile-instr-generate -fcoverage-mapping",
+        "CMAKE_CXX_FLAGS": "-fprofile-instr-generate -fcoverage-mapping"
+      }
     },
     {
       "name": "benchmark_linux_clang_libcxx",

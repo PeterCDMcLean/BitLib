@@ -4,13 +4,17 @@ inputs:
   build-output-dir:
     required: true
     description: 'Build output directory'
+  compiler:
+    required: true
+    description: 'Compiler in use'
   GITHUB_TOKEN:
     required: true
 
 runs:
   using: "composite"
   steps:
-    - name: Generate Coverage Report
+    - name: Generate Coverage Report (gcc)
+      if: ${{ inputs.compiler }} == 'gcc'
       shell: bash
       run: |
         # Capture actual coverage data after tests
@@ -38,6 +42,25 @@ runs:
 
         # Generate an HTML report
         genhtml coverage.info --output-directory out/coverage
+
+    - name: Generate Coverage Report (clang)
+      if: ${{ inputs.compiler }} == 'clang'
+      shell: bash
+      run: |
+        # Merge raw coverage into .profdata
+        llvm-profdata merge -sparse coverage.profraw -o coverage.info
+
+        # Show summary coverage report
+        llvm-cov report ${{ inputs.build-output-dir }}/test/bitlib-tests \
+            -instr-profile=coverage.info \
+            -ignore-filename-regex='/usr/|_deps/|libpopcnt\.h|test/inc/|test/src/'
+
+        # Generate HTML report
+        llvm-cov show ${{ inputs.build-output-dir }}/test/bitlib-tests \
+            -instr-profile=coverage.info \
+            -format=html \
+            -output-dir=out/coverage \
+            -ignore-filename-regex='/usr/|_deps/|libpopcnt\.h|test/inc/|test/src/'
 
     - name: Upload coverage artifact
       uses: actions/upload-artifact@v4
