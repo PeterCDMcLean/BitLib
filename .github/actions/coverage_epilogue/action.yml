@@ -14,7 +14,7 @@ runs:
   using: "composite"
   steps:
     - name: Generate Coverage Report (gcc)
-      if: ${{ inputs.compiler }} == 'gcc'
+      if: ${{ inputs.compiler == 'gcc' }}
       shell: bash
       run: |
         # Capture actual coverage data after tests
@@ -44,7 +44,7 @@ runs:
         genhtml coverage.info --output-directory out/coverage
 
     - name: Generate Coverage Report (clang)
-      if: ${{ inputs.compiler }} == 'clang'
+      if: ${{ inputs.compiler == 'clang' }}
       shell: bash
       run: |
         # Merge raw coverage into .profdata

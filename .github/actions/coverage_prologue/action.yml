@@ -12,14 +12,14 @@ runs:
   using: "composite"
   steps:
     - name: "Install lcov"
-      if: ${{ inputs.compiler }} == 'gcc'
+      if: ${{ inputs.compiler == 'gcc' }}
       shell: bash
       run: |
         sudo apt-get update
         sudo apt-get install -y lcov
 
     - name: "Initialize 0% coverage baseline"
-      if: ${{ inputs.compiler }} == 'gcc'
+      if: ${{ inputs.compiler == 'gcc' }}
       shell: bash
       run: |
         lcov --capture --initial \
@@ -29,6 +29,6 @@ runs:
              --ignore-errors mismatch
 
     - name: "LLVM profile env var"
-      if: ${{ inputs.compiler }} == 'clang'
+      if: ${{ inputs.compiler == 'clang' }}
       shell: bash
       run: echo "LLVM_PROFILE_FILE=coverage.profraw" >> $GITHUB_ENV
