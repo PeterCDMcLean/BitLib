@@ -4,6 +4,8 @@ inputs:
   build-output-dir:
     required: true
     description: 'Build output directory'
+  GITHUB_TOKEN:
+    required: true
 
 runs:
   using: "composite"

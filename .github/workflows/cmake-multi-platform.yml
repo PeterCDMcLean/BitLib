@@ -157,12 +157,14 @@ jobs:
       uses: ./.github/actions/coverage_clang
       with:
         build-output-dir: ${{ steps.strings.outputs.build-output-dir }}
+        GITHUB_TOKEN: ${{ secrets.github_token }}
 
     - name: Run coverage for GCC
       if: matrix.preset == 'coverage' && matrix.compiler == 'gcc'
       uses: ./.github/actions/coverage_gcc
       with:
         build-output-dir: ${{ steps.strings.outputs.build-output-dir }}
+        GITHUB_TOKEN: ${{ secrets.github_token }}
 
     - name: Test
       if: matrix.preset != 'coverage'
