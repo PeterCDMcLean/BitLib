@@ -152,24 +152,23 @@ jobs:
     - name: Unregister Compiler Problem Matcher
       run: echo "::remove-matcher owner=${{ matrix.compiler}}::"
 
-    - uses: ./.github/actions/coverage_prologue
-      if: matrix.preset == 'coverage'
+    - name: Run coverage for Clang
+      if: matrix.preset == 'coverage' && matrix.compiler == 'clang'
+      uses: ./.github/actions/coverage_clang
       with:
-        compiler: ${{ matrix.compiler }}
+        build-output-dir: ${{ steps.strings.outputs.build-output-dir }}
+
+    - name: Run coverage for GCC
+      if: matrix.preset == 'coverage' && matrix.compiler == 'gcc'
+      uses: ./.github/actions/coverage_gcc
+      with:
         build-output-dir: ${{ steps.strings.outputs.build-output-dir }}
 
     - name: Test
-      if: matrix.preset != 'warnings'
+      if: matrix.preset != 'coverage'
       # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest --test-dir ${{ steps.strings.outputs.build-output-dir }} --build-config ${{ matrix.build_type }} --output-on-failure --parallel
-
-    - uses: ./.github/actions/coverage_epilogue
-      if: matrix.preset == 'coverage'
-      with:
-        compiler: ${{ matrix.compiler }}
-        build-output-dir: ${{ steps.strings.outputs.build-output-dir }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - uses: ./.github/actions/benchmark_epilogue
       if: matrix.preset == 'benchmark'

@@ -1,0 +1,47 @@
+name: "Coverage Clang"
+description: "enerates the baseline coverage"
+inputs:
+  build-output-dir:
+    required: true
+    description: 'Build output directory'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Test
+      shell: bash
+      run:
+        LLVM_PROFILE_FILE=coverage.profraw ${{ inputs.build-output-dir }}/test/bitlib-tests
+
+    - name: Generate Coverage Report
+      shell: bash
+      run: |
+        # Merge raw coverage into .profdata
+        llvm-profdata merge -sparse coverage.profraw -o coverage.prof
+
+        # Show summary coverage report
+        llvm-cov report ${{ inputs.build-output-dir }}/test/bitlib-tests \
+            -instr-profile=coverage.prof \
+            -ignore-filename-regex='/usr/|_deps/|libpopcnt\.h|test/inc/|test/src/'
+
+        # Generate HTML report
+        llvm-cov show ${{ inputs.build-output-dir }}/test/bitlib-tests \
+            -instr-profile=coverage.prof \
+            -format=html \
+            -output-dir=out/coverage \
+            -ignore-filename-regex='/usr/|_deps/|libpopcnt\.h|test/inc/|test/src/'
+
+    - name: Upload coverage artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: |
+          out/coverage
+          coverage.prof
+
+    - name: Upload to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        files: coverage.prof
+        flags: unittests
+        name: codecov-coverage-report

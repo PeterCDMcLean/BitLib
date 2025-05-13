@@ -1,20 +1,33 @@
-name: "Coverage Epilogue"
-description: "Processes coverage information with lcov and uploads it to coveralls/codecov"
+name: "Coverage GCC"
+description: "Installs lcov, generates the baseline coverage, runs tests, processes coverage and uploads reports"
 inputs:
   build-output-dir:
     required: true
     description: 'Build output directory'
-  compiler:
-    required: true
-    description: 'Compiler in use'
-  GITHUB_TOKEN:
-    required: true
 
 runs:
   using: "composite"
   steps:
-    - name: Generate Coverage Report (gcc)
-      if: ${{ inputs.compiler == 'gcc' }}
+    - name: "Install lcov"
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y lcov
+
+    - name: "Initialize 0% coverage baseline"
+      shell: bash
+      run: |
+        lcov --capture --initial \
+             --base-directory "$GITHUB_WORKSPACE" \
+             --directory "${{ inputs.build-output-dir }}" \
+             --output-file coverage.baseline \
+             --ignore-errors mismatch
+
+    - name: Test
+      shell: bash
+      run: ${{ inputs.build-output-dir }}/test/bitlib-tests
+
+    - name: Generate Coverage Report
       shell: bash
       run: |
         # Capture actual coverage data after tests
@@ -43,25 +56,6 @@ runs:
         # Generate an HTML report
         genhtml coverage.info --output-directory out/coverage
 
-    - name: Generate Coverage Report (clang)
-      if: ${{ inputs.compiler == 'clang' }}
-      shell: bash
-      run: |
-        # Merge raw coverage into .profdata
-        llvm-profdata merge -sparse coverage.profraw -o coverage.info
-
-        # Show summary coverage report
-        llvm-cov report ${{ inputs.build-output-dir }}/test/bitlib-tests \
-            -instr-profile=coverage.info \
-            -ignore-filename-regex='/usr/|_deps/|libpopcnt\.h|test/inc/|test/src/'
-
-        # Generate HTML report
-        llvm-cov show ${{ inputs.build-output-dir }}/test/bitlib-tests \
-            -instr-profile=coverage.info \
-            -format=html \
-            -output-dir=out/coverage \
-            -ignore-filename-regex='/usr/|_deps/|libpopcnt\.h|test/inc/|test/src/'
-
     - name: Upload coverage artifact
       uses: actions/upload-artifact@v4
       with:
@@ -72,7 +66,6 @@ runs:
           coverage.info
 
     - name: Coveralls
-      if: ${{ inputs.compiler != 'clang' }}
       uses: coverallsapp/github-action@master
       with:
         github-token: ${{ inputs.GITHUB_TOKEN }}
