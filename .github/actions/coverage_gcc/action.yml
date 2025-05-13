@@ -61,7 +61,7 @@ runs:
     - name: Upload coverage artifact
       uses: actions/upload-artifact@v4
       with:
-        name: coverage-report
+        name: coverage_gcc_report
         path: |
           out/coverage_gcc
           coverage.baseline
