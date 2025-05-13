@@ -33,47 +33,47 @@ runs:
         # Capture actual coverage data after tests
         lcov --capture \
              --directory "${{ inputs.build-output-dir }}" \
-             --output-file coverage.info \
+             --output-file coverage_gcc.info \
              --ignore-errors mismatch
 
         # Combine with baseline
         lcov --add-tracefile coverage.baseline \
-             --add-tracefile coverage.info\
-             --output-file coverage.info
+             --add-tracefile coverage_gcc.info\
+             --output-file coverage_gcc.info
 
         # Clean the coverage report from system and external deps
-        lcov --remove coverage.info \
+        lcov --remove coverage_gcc.info \
              '/usr/*' \
              '*/_deps/*' \
              '*/include/bitlib/bit-algorithms/libpopcnt.h' \
              '*/test/inc/*' \
              '*/test/src/*' \
-             --output-file coverage.info
+             --output-file coverage_gcc.info
 
         # Show a summary in the logs
-        lcov --list coverage.info
+        lcov --list coverage_gcc.info
 
         # Generate an HTML report
-        genhtml coverage.info --output-directory out/coverage
+        genhtml coverage_gcc.info --output-directory out/coverage_gcc
 
     - name: Upload coverage artifact
       uses: actions/upload-artifact@v4
       with:
         name: coverage-report
         path: |
-          out/coverage
+          out/coverage_gcc
           coverage.baseline
-          coverage.info
+          coverage_gcc.info
 
     - name: Coveralls
       uses: coverallsapp/github-action@master
       with:
         github-token: ${{ inputs.GITHUB_TOKEN }}
-        path-to-lcov: coverage.info
+        path-to-lcov: coverage_gcc.info
 
     - name: Upload to Codecov
       uses: codecov/codecov-action@v5
       with:
-        files: coverage.info
+        files: coverage_gcc.info
         flags: unittests
         name: codecov-coverage-report
