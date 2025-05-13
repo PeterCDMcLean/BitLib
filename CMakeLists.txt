@@ -10,6 +10,7 @@ option(BITLIB_HWY "Build with google highway SIMD extensions" OFF)
 option(BITLIB_BENCHMARK "Build bitlib benchmarks" OFF)
 option(BITLIB_EXAMPLE "Build bitlib examples" OFF)
 option(BITLIB_TEST "Build bitlib tests" OFF)
+option(BITLIB_TEST_WERROR "Build bitlib tests with -Werror" OFF)
 option(BITLIB_MDSPAN "Accessor Support for mdspan" ON)
 
 add_library(bitlib INTERFACE)

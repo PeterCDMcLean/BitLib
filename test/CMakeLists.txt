@@ -4,6 +4,7 @@
 ###########
 
 include(FetchContent)
+include(GoogleTest)
 
 if (NOT TARGET GTest::gtest)
   find_package(GTest)
@@ -16,7 +17,6 @@ if (NOT TARGET GTest::gtest)
     # For Windows: Prevent overriding the parent project's compiler/linker settings
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest)
-    include(GoogleTest)
   endif()
 endif()
 
@@ -50,6 +50,13 @@ endif()
 
 target_include_directories(bitlib-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/inc)
 
+if (BITLIB_TEST_WERROR)
+  if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+    target_compile_options(bitlib-tests PRIVATE -Werror)
+  elseif (MSVC)
+    target_compile_options(bitlib-tests PRIVATE /WX)
+  endif()
+endif()
 
 # specify test-specific libraries
 target_link_libraries(bitlib-tests PRIVATE bitlib GTest::gtest GTest::gtest_main)

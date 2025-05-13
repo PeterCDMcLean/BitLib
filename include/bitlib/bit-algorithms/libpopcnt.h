@@ -204,15 +204,14 @@ static inline uint64_t popcnt64(uint64_t x)
 
 static inline uint64_t popcnt64(uint64_t x)
 {
-  return _mm_popcnt_u32((uint32_t) x) + 
+  return _mm_popcnt_u32((uint32_t)x) +
          _mm_popcnt_u32((uint32_t)(x >> 32));
 }
 
 /* non x86 CPUs */
 #elif defined(HAVE_BUILTIN_POPCOUNT)
 
-static inline uint64_t popcnt64(uint64_t x)
-{
+static inline uint64_t popcnt64(uint64_t x) {
   return __builtin_popcountll(x);
 }
 
@@ -220,8 +219,7 @@ static inline uint64_t popcnt64(uint64_t x)
  * use pure integer algorithm */
 #else
 
-static inline uint64_t popcnt64(uint64_t x)
-{
+static inline uint64_t popcnt64(uint64_t x) {
   return popcount64(x);
 }
 
@@ -230,15 +228,15 @@ static inline uint64_t popcnt64(uint64_t x)
 #if defined(HAVE_CPUID)
 
 #if defined(_MSC_VER)
-  #include <intrin.h>
-  #include <immintrin.h>
+#include <immintrin.h>
+#include <intrin.h>
 #endif
 
 /* %ecx bit flags */
 #define bit_POPCNT (1 << 23)
 
 /* %ebx bit flags */
-#define bit_AVX2   (1 << 5)
+#define bit_AVX2 (1 << 5)
 #define bit_AVX512 (1 << 30)
 
 /* xgetbv bit flags */
@@ -246,31 +244,31 @@ static inline uint64_t popcnt64(uint64_t x)
 #define XSTATE_YMM (1 << 2)
 #define XSTATE_ZMM (7 << 5)
 
-static inline void run_cpuid(int eax, int ecx, int* abcd)
-{
+static inline void run_cpuid(int eax, int ecx, int* abcd) {
 #if defined(_MSC_VER)
   __cpuidex(abcd, eax, ecx);
 #else
   int ebx = 0;
   int edx = 0;
 
-  #if defined(__i386__) && \
-      defined(__PIC__)
-    /* in case of PIC under 32-bit EBX cannot be clobbered */
-    __asm__ ("movl %%ebx, %%edi;"
-             "cpuid;"
-             "xchgl %%ebx, %%edi;"
-             : "=D" (ebx),
-               "+a" (eax),
-               "+c" (ecx),
-               "=d" (edx));
-  #else
-    __asm__ ("cpuid;"
-             : "+b" (ebx),
-               "+a" (eax),
-               "+c" (ecx),
-               "=d" (edx));
-  #endif
+#if defined(__i386__) && \
+    defined(__PIC__)
+  /* in case of PIC under 32-bit EBX cannot be clobbered */
+  __asm__(
+      "movl %%ebx, %%edi;"
+      "cpuid;"
+      "xchgl %%ebx, %%edi;"
+      : "=D"(ebx),
+        "+a"(eax),
+        "+c"(ecx),
+        "=d"(edx));
+#else
+  __asm__("cpuid;"
+          : "+b"(ebx),
+            "+a"(eax),
+            "+c"(ecx),
+            "=d"(edx));
+#endif
 
   abcd[0] = eax;
   abcd[1] = ebx;
@@ -282,14 +280,13 @@ static inline void run_cpuid(int eax, int ecx, int* abcd)
 #if defined(HAVE_AVX2) || \
     defined(HAVE_AVX512)
 
-static inline int get_xcr0()
-{
+static inline int get_xcr0() {
   int xcr0;
 
 #if defined(_MSC_VER)
-  xcr0 = (int) _xgetbv(0);
+  xcr0 = (int)_xgetbv(0);
 #else
-  __asm__ ("xgetbv" : "=a" (xcr0) : "c" (0) : "%edx" );
+  __asm__("xgetbv" : "=a"(xcr0) : "c"(0) : "%edx");
 #endif
 
   return xcr0;
@@ -297,15 +294,15 @@ static inline int get_xcr0()
 
 #endif
 
-static inline int get_cpuid()
-{
+static inline int get_cpuid() {
   int flags = 0;
   int abcd[4];
 
   run_cpuid(1, 0, abcd);
 
-  if ((abcd[2] & bit_POPCNT) == bit_POPCNT)
+  if ((abcd[2] & bit_POPCNT) == bit_POPCNT) {
     flags |= bit_POPCNT;
+  }
 
 #if defined(HAVE_AVX2) || \
     defined(HAVE_AVX512)
@@ -313,25 +310,26 @@ static inline int get_cpuid()
   int osxsave_mask = (1 << 27);
 
   /* ensure OS supports extended processor state management */
-  if ((abcd[2] & osxsave_mask) != osxsave_mask)
+  if ((abcd[2] & osxsave_mask) != osxsave_mask) {
     return 0;
+  }
 
   int ymm_mask = XSTATE_SSE | XSTATE_YMM;
   int zmm_mask = XSTATE_SSE | XSTATE_YMM | XSTATE_ZMM;
 
   int xcr0 = get_xcr0();
 
-  if ((xcr0 & ymm_mask) == ymm_mask)
-  {
+  if ((xcr0 & ymm_mask) == ymm_mask) {
     run_cpuid(7, 0, abcd);
 
-    if ((abcd[1] & bit_AVX2) == bit_AVX2)
+    if ((abcd[1] & bit_AVX2) == bit_AVX2) {
       flags |= bit_AVX2;
+    }
 
-    if ((xcr0 & zmm_mask) == zmm_mask)
-    {
-      if ((abcd[1] & bit_AVX512) == bit_AVX512)
+    if ((xcr0 & zmm_mask) == zmm_mask) {
+      if ((abcd[1] & bit_AVX512) == bit_AVX512) {
         flags |= bit_AVX512;
+      }
     }
   }
 
@@ -347,33 +345,31 @@ static inline int get_cpuid()
 #include <immintrin.h>
 
 #if !defined(_MSC_VER)
-  __attribute__ ((target ("avx2")))
+__attribute__((target("avx2")))
 #endif
-static inline void CSA256(__m256i* h, __m256i* l, __m256i a, __m256i b, __m256i c)
-{
+static inline void
+CSA256(__m256i* h, __m256i* l, __m256i a, __m256i b, __m256i c) {
   __m256i u = _mm256_xor_si256(a, b);
   *h = _mm256_or_si256(_mm256_and_si256(a, b), _mm256_and_si256(u, c));
   *l = _mm256_xor_si256(u, c);
 }
 
 #if !defined(_MSC_VER)
-  __attribute__ ((target ("avx2")))
+__attribute__((target("avx2")))
 #endif
-static inline __m256i popcnt256(__m256i v)
-{
+static inline __m256i
+popcnt256(__m256i v) {
   __m256i lookup1 = _mm256_setr_epi8(
       4, 5, 5, 6, 5, 6, 6, 7,
       5, 6, 6, 7, 6, 7, 7, 8,
       4, 5, 5, 6, 5, 6, 6, 7,
-      5, 6, 6, 7, 6, 7, 7, 8
-  );
+      5, 6, 6, 7, 6, 7, 7, 8);
 
   __m256i lookup2 = _mm256_setr_epi8(
       4, 3, 3, 2, 3, 2, 2, 1,
       3, 2, 2, 1, 2, 1, 1, 0,
       4, 3, 3, 2, 3, 2, 2, 1,
-      3, 2, 2, 1, 2, 1, 1, 0
-  );
+      3, 2, 2, 1, 2, 1, 1, 0);
 
   __m256i low_mask = _mm256_set1_epi8(0x0f);
   __m256i lo = _mm256_and_si256(v, low_mask);
@@ -392,10 +388,10 @@ static inline __m256i popcnt256(__m256i v)
  * @see https://arxiv.org/abs/1611.07612
  */
 #if !defined(_MSC_VER)
-  __attribute__ ((target ("avx2")))
+__attribute__((target("avx2")))
 #endif
-static inline uint64_t popcnt_avx2(const __m256i* ptr, uint64_t size)
-{
+static inline uint64_t
+popcnt_avx2(const __m256i* ptr, uint64_t size) {
   __m256i cnt = _mm256_setzero_si256();
   __m256i ones = _mm256_setzero_si256();
   __m256i twos = _mm256_setzero_si256();
@@ -408,8 +404,7 @@ static inline uint64_t popcnt_avx2(const __m256i* ptr, uint64_t size)
   uint64_t limit = size - size % 16;
   uint64_t* cnt64;
 
-  for(; i < limit; i += 16)
-  {
+  for (; i < limit; i += 16) {
     CSA256(&twosA, &ones, ones, _mm256_loadu_si256(ptr + i + 0), _mm256_loadu_si256(ptr + i + 1));
     CSA256(&twosB, &ones, ones, _mm256_loadu_si256(ptr + i + 2), _mm256_loadu_si256(ptr + i + 3));
     CSA256(&foursA, &twos, twos, twosA, twosB);
@@ -435,10 +430,11 @@ static inline uint64_t popcnt_avx2(const __m256i* ptr, uint64_t size)
   cnt = _mm256_add_epi64(cnt, _mm256_slli_epi64(popcnt256(twos), 1));
   cnt = _mm256_add_epi64(cnt, popcnt256(ones));
 
-  for(; i < size; i++)
+  for (; i < size; i++) {
     cnt = _mm256_add_epi64(cnt, popcnt256(_mm256_loadu_si256(ptr + i)));
+  }
 
-  cnt64 = (uint64_t*) &cnt;
+  cnt64 = (uint64_t*)&cnt;
 
   return cnt64[0] +
          cnt64[1] +
@@ -453,10 +449,10 @@ static inline uint64_t popcnt_avx2(const __m256i* ptr, uint64_t size)
 #include <immintrin.h>
 
 #if !defined(_MSC_VER)
-  __attribute__ ((target ("avx512bw")))
+__attribute__((target("avx512bw")))
 #endif
-static inline __m512i popcnt512(__m512i v)
-{
+static inline __m512i
+popcnt512(__m512i v) {
   __m512i m1 = _mm512_set1_epi8(0x55);
   __m512i m2 = _mm512_set1_epi8(0x33);
   __m512i m4 = _mm512_set1_epi8(0x0F);
@@ -472,10 +468,10 @@ static inline __m512i popcnt512(__m512i v)
 }
 
 #if !defined(_MSC_VER)
-  __attribute__ ((target ("avx512bw")))
+__attribute__((target("avx512bw")))
 #endif
-static inline void CSA512(__m512i* h, __m512i* l, __m512i a, __m512i b, __m512i c)
-{
+static inline void
+CSA512(__m512i* h, __m512i* l, __m512i a, __m512i b, __m512i c) {
   *l = _mm512_ternarylogic_epi32(c, b, a, 0x96);
   *h = _mm512_ternarylogic_epi32(c, b, a, 0xe8);
 }
@@ -488,10 +484,10 @@ static inline void CSA512(__m512i* h, __m512i* l, __m512i a, __m512i b, __m512i 
  * @see https://arxiv.org/abs/1611.07612
  */
 #if !defined(_MSC_VER)
-  __attribute__ ((target ("avx512bw")))
+__attribute__((target("avx512bw")))
 #endif
-static inline uint64_t popcnt_avx512(const __m512i* ptr, const uint64_t size)
-{
+static inline uint64_t
+popcnt_avx512(const __m512i* ptr, const uint64_t size) {
   __m512i cnt = _mm512_setzero_si512();
   __m512i ones = _mm512_setzero_si512();
   __m512i twos = _mm512_setzero_si512();
@@ -504,8 +500,7 @@ static inline uint64_t popcnt_avx512(const __m512i* ptr, const uint64_t size)
   uint64_t limit = size - size % 16;
   uint64_t* cnt64;
 
-  for(; i < limit; i += 16)
-  {
+  for (; i < limit; i += 16) {
     CSA512(&twosA, &ones, ones, _mm512_loadu_si512(ptr + i + 0), _mm512_loadu_si512(ptr + i + 1));
     CSA512(&twosB, &ones, ones, _mm512_loadu_si512(ptr + i + 2), _mm512_loadu_si512(ptr + i + 3));
     CSA512(&foursA, &twos, twos, twosA, twosB);
@@ -531,10 +526,11 @@ static inline uint64_t popcnt_avx512(const __m512i* ptr, const uint64_t size)
   cnt = _mm512_add_epi64(cnt, _mm512_slli_epi64(popcnt512(twos), 1));
   cnt = _mm512_add_epi64(cnt, popcnt512(ones));
 
-  for(; i < size; i++)
+  for (; i < size; i++) {
     cnt = _mm512_add_epi64(cnt, popcnt512(_mm512_loadu_si512(ptr + i)));
+  }
 
-  cnt64 = (uint64_t*) &cnt;
+  cnt64 = (uint64_t*)&cnt;
 
   return cnt64[0] +
          cnt64[1] +
@@ -556,11 +552,10 @@ static inline uint64_t popcnt_avx512(const __m512i* ptr, const uint64_t size)
  * @data: An array
  * @size: Size of data in bytes
  */
-static inline uint64_t popcnt(const void* data, uint64_t size)
-{
+static inline uint64_t popcnt(const void* data, uint64_t size) {
   uint64_t i = 0;
   uint64_t cnt = 0;
-  const uint8_t* ptr = (const uint8_t*) data;
+  const uint8_t* ptr = (const uint8_t*)data;
 
 /*
  * CPUID runtime checks are only enabled if this is needed.
@@ -568,86 +563,80 @@ static inline uint64_t popcnt(const void* data, uint64_t size)
  * code using -march=native on a CPU with AVX512.
  */
 #if defined(HAVE_CPUID)
-  #if defined(__cplusplus)
-    /* C++11 thread-safe singleton */
-    static const int cpuid = get_cpuid();
-  #else
-    static int cpuid_ = -1;
-    int cpuid = cpuid_;
-    if (cpuid == -1)
-    {
-      cpuid = get_cpuid();
+#if defined(__cplusplus)
+  /* C++11 thread-safe singleton */
+  static const int cpuid = get_cpuid();
+#else
+  static int cpuid_ = -1;
+  int cpuid = cpuid_;
+  if (cpuid == -1) {
+    cpuid = get_cpuid();
 
-      #if defined(_MSC_VER)
-        _InterlockedCompareExchange(&cpuid_, cpuid, -1);
-      #else
-        __sync_val_compare_and_swap(&cpuid_, -1, cpuid);
-      #endif
-    }
-  #endif
+#if defined(_MSC_VER)
+    _InterlockedCompareExchange(&cpuid_, cpuid, -1);
+#else
+    __sync_val_compare_and_swap(&cpuid_, -1, cpuid);
+#endif
+  }
+#endif
 #endif
 
 #if defined(HAVE_AVX512)
-  #if defined(__AVX512__) || defined(__AVX512BW__)
-    /* AVX512 requires arrays >= 1024 bytes */
-    if (i + 1024 <= size)
-  #else
-    if ((cpuid & bit_AVX512) &&
-        i + 1024 <= size)
-  #endif
-    {
-      const __m512i* ptr512 = (const __m512i*)(ptr + i);
-      cnt += popcnt_avx512(ptr512, (size - i) / 64);
-      i = size - size % 64;
-    }
+#if defined(__AVX512__) || defined(__AVX512BW__)
+  /* AVX512 requires arrays >= 1024 bytes */
+  if (i + 1024 <= size)
+#else
+  if ((cpuid & bit_AVX512) &&
+      i + 1024 <= size)
+#endif
+  {
+    const __m512i* ptr512 = (const __m512i*)(ptr + i);
+    cnt += popcnt_avx512(ptr512, (size - i) / 64);
+    i = size - size % 64;
+  }
 #endif
 
 #if defined(HAVE_AVX2)
-  #if defined(__AVX2__)
-    /* AVX2 requires arrays >= 512 bytes */
-    if (i + 512 <= size)
-  #else
-    if ((cpuid & bit_AVX2) &&
-        i + 512 <= size)
-  #endif
-    {
-      const __m256i* ptr256 = (const __m256i*)(ptr + i);
-      cnt += popcnt_avx2(ptr256, (size - i) / 32);
-      i = size - size % 32;
-    }
+#if defined(__AVX2__)
+  /* AVX2 requires arrays >= 512 bytes */
+  if (i + 512 <= size)
+#else
+  if ((cpuid & bit_AVX2) &&
+      i + 512 <= size)
+#endif
+  {
+    const __m256i* ptr256 = (const __m256i*)(ptr + i);
+    cnt += popcnt_avx2(ptr256, (size - i) / 32);
+    i = size - size % 32;
+  }
 #endif
 
 #if defined(HAVE_POPCNT)
-  /* 
+/*
    * The user has compiled without -mpopcnt.
    * Unfortunately the MSVC compiler does not have
    * a POPCNT macro so we cannot get rid of the
    * runtime check for MSVC.
    */
-  #if !defined(__POPCNT__)
-    if (cpuid & bit_POPCNT)
-  #endif
-    {
-      /* We use unaligned memory accesses here to improve performance */
-      for (; i < size - size % 8; i += 8)
-        cnt += popcnt64(*(const uint64_t*)(ptr + i));
-      for (; i < size; i++)
-        cnt += popcnt64(ptr[i]);
+#if !defined(__POPCNT__)
+  if (cpuid & bit_POPCNT)
+#endif
+  {
 #ifdef POPCNT_NO_UNALIGNED
-    // Address sanitizer will complain about unaligned accesses
-    // When we test with ASAN we enable aligned-only accesses
-    for (; ((uintptr_t)(ptr + i) % 8) && (i < size); i++) {
-      cnt += popcnt64(ptr[i]);
-    }
+      // Address sanitizer will complain about unaligned accesses
+      // When we test with ASAN we enable aligned-only accesses
+      for (; ((uintptr_t)(ptr + i) % 8) && (i < size); i++) {
+        cnt += popcnt64(ptr[i]);
+      }
 #endif
 
-    /* We use unaligned memory accesses here to improve performance */
-    for (; (i + 8) <= size; i += 8) {
-      cnt += popcnt64(*(const uint64_t*)(ptr + i));
-    }
-    for (; i < size; i++) {
-      cnt += popcnt64(ptr[i]);
-    }
+      /* We use unaligned memory accesses here to improve performance */
+      for (; (i + 8) <= size; i += 8) {
+        cnt += popcnt64(*(const uint64_t*)(ptr + i));
+      }
+      for (; i < size; i++) {
+        cnt += popcnt64(ptr[i]);
+      }
 
     return cnt;
   }
@@ -726,7 +715,7 @@ static inline uint64_t popcnt(const void* data, uint64_t size)
        * and 31 * 8 bits = 248 which is OK.
        */
       uint64_t limit = (i + 31 < iters) ? i + 31 : iters;
-  
+
       /* Each iteration processes 64 bytes */
       for (; i < limit; i++)
       {
