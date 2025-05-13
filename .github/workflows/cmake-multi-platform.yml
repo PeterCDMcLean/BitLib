@@ -114,8 +114,11 @@ jobs:
         sudo ./llvm.sh 19
         # Install libc++ and libc++abi for Clang 19
         sudo apt-get install -y libc++-19-dev libc++abi-19-dev
-        sudo ln -s /usr/bin/llvm-cov-19 /usr/local/bin/llvm-cov
-        sudo ln -s /usr/bin/llvm-profdata-19 /usr/local/bin/llvm-profdata
+        sudo ln -sf /usr/bin/llvm-cov-19 /usr/local/bin/llvm-cov
+        sudo ln -sf /usr/bin/llvm-profdata-19 /usr/local/bin/llvm-profdata
+        sudo ln -sf /usr/bin/clang-19 /usr/local/bin/clang
+        sudo ln -sf /usr/bin/clang++-19 /usr/local/bin/clang++
+        sudo ln -sf /usr/bin/clang-format-19 /usr/local/bin/clang-format
 
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.

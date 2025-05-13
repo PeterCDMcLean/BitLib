@@ -31,4 +31,4 @@ runs:
     - name: "LLVM profile env var"
       if: ${{ inputs.compiler == 'clang' }}
       shell: bash
-      run: echo "LLVM_PROFILE_FILE=coverage.profraw" >> $GITHUB_ENV
+      run: echo "LLVM_PROFILE_FILE=${GITHUB_WORKSPACE}/coverage.profraw" >> $GITHUB_ENV

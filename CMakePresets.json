@@ -100,7 +100,7 @@
       "name": "libstdcxx_base",
       "hidden": true,
       "environment": {
-        "STDLIB_FLAGS": "-stdlib=libc++"
+        "STDLIB_FLAGS": "-stdlib=libstdc++"
       }
     },
     {
@@ -190,6 +190,16 @@
     },
     {
       "name": "coverage_linux_clang_libcxx",
+      "inherits": [
+        "tests_base",
+        "linux_base",
+        "clang_base",
+        "coverage_clang_base",
+        "libcxx_base"
+      ]
+    },
+    {
+      "name": "coverage_linux_clang_libstdcxx",
       "inherits": [
         "tests_base",
         "linux_base",
@@ -342,6 +352,17 @@
       }
     },
     {
+      "name": "coverage_linux_clang_libstdcxx",
+      "configurePreset": "coverage_linux_clang_libstdcxx",
+      "targets": "bitlib-tests",
+      "jobs": 0,
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
       "name": "benchmark_linux_clang_libcxx",
       "configurePreset": "benchmark_linux_clang_libcxx",
       "targets": "bitlib-bench",
@@ -425,6 +446,15 @@
     {
       "name": "coverage_linux_clang_libcxx",
       "configurePreset": "coverage_linux_clang_libcxx",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "coverage_linux_clang_libstdcxx",
+      "configurePreset": "coverage_linux_clang_libstdcxx",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",

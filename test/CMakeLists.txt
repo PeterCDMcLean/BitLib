@@ -4,6 +4,7 @@
 ###########
 
 include(FetchContent)
+include(GoogleTest)
 
 if (NOT TARGET GTest::gtest)
   find_package(GTest)
@@ -16,7 +17,6 @@ if (NOT TARGET GTest::gtest)
     # For Windows: Prevent overriding the parent project's compiler/linker settings
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest)
-    include(GoogleTest)
   endif()
 endif()
 
