@@ -11,25 +11,29 @@ runs:
     - name: Test
       shell: bash
       run:
-        LLVM_PROFILE_FILE=coverage.profraw ${{ inputs.build-output-dir }}/test/bitlib-tests
+        LLVM_PROFILE_FILE=coverage.profdataraw ${{ inputs.build-output-dir }}/test/bitlib-tests
 
     - name: Generate Coverage Report
       shell: bash
       run: |
         # Merge raw coverage into .profdata
-        llvm-profdata merge -sparse coverage.profraw -o coverage.prof
+        llvm-profdata merge -sparse coverage.profdataraw -o coverage.profdata
 
         # Show summary coverage report
         llvm-cov report ${{ inputs.build-output-dir }}/test/bitlib-tests \
-            -instr-profile=coverage.prof \
+            -instr-profile=coverage.profdata \
             -ignore-filename-regex='/usr/|_deps/|libpopcnt\.h|test/inc/|test/src/'
 
         # Generate HTML report
         llvm-cov show ${{ inputs.build-output-dir }}/test/bitlib-tests \
-            -instr-profile=coverage.prof \
+            -instr-profile=coverage.profdata \
             -format=html \
             -output-dir=out/coverage \
             -ignore-filename-regex='/usr/|_deps/|libpopcnt\.h|test/inc/|test/src/'
+
+        llvm-cov export ${{ inputs.build-output-dir }}/test/bitlib-tests \
+            -instr-profile=coverage.profdata \
+            -format=lcov > coverage.info
 
     - name: Upload coverage artifact
       uses: actions/upload-artifact@v4
@@ -37,11 +41,18 @@ runs:
         name: coverage-report
         path: |
           out/coverage
-          coverage.prof
+          coverage.profdata
+          coverage.info
+
+    - name: Coveralls
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ inputs.GITHUB_TOKEN }}
+        path-to-lcov: coverage.info
 
     - name: Upload to Codecov
       uses: codecov/codecov-action@v5
       with:
-        files: coverage.prof
+        files: coverage.info
         flags: unittests
         name: codecov-coverage-report
