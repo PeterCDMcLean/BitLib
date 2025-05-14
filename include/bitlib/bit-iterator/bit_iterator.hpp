@@ -69,6 +69,7 @@ class bit_iterator
  public:
   template <class T>
   constexpr bit_iterator& operator=(const bit_iterator<T>& other);
+  constexpr bit_iterator& operator=(const bit_iterator& other);
 
   // Access
  public:
@@ -162,6 +163,14 @@ template <class Iterator>
 template <class T>
 constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator=(
     const bit_iterator<T>& other) {
+  _current = other._current;
+  _position = other._position;
+  assert(_position < bitsof<word_type>());
+  return *this;
+}
+template <class Iterator>
+constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator=(
+    const bit_iterator<Iterator>& other) {
   _current = other._current;
   _position = other._position;
   assert(_position < bitsof<word_type>());
