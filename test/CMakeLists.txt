@@ -25,6 +25,7 @@ add_executable(bitlib-tests)
 target_sources(bitlib-tests PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/src/fixtures.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-array.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-bitwise.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-copy_backward.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-copy.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-count.cpp

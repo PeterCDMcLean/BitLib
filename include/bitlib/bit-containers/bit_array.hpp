@@ -52,9 +52,9 @@ template <typename T = bit_value,
           std::size_t N = std::dynamic_extent,
           std::align_val_t V = std::align_val_t(alignof(T)),
           typename W = std::conditional_t<std::is_same_v<T, bit_value>, uint8_t, T>>
-class bit_array : public bit_array_base<bit_array<T, N, V, W>, T, W, detail::bit_array_d_it<T, W, N>, detail::bit_array_d_cit<T, W, N>> {
+class bit_array : public bit_array_base<bit_array<T, N, V, W>, T, N, W, detail::bit_array_d_it<T, W, N>, detail::bit_array_d_cit<T, W, N>> {
  public:
-  using base = bit_array_base<bit_array<T, N, V, W>, T, W, detail::bit_array_d_it<T, W, N>, detail::bit_array_d_cit<T, W, N>>;
+  using base = bit_array_base<bit_array<T, N, V, W>, T, N, W, detail::bit_array_d_it<T, W, N>, detail::bit_array_d_cit<T, W, N>>;
   using base::end;
   using typename base::const_iterator;
   using typename base::const_pointer;
@@ -85,6 +85,11 @@ class bit_array : public bit_array_base<bit_array<T, N, V, W>, T, W, detail::bit
   * Constructors, copies and moves...
   */
   constexpr bit_array() noexcept : storage{} {}
+
+  /*This constructor is purely to simplify some corners of the API*/
+  constexpr bit_array(size_type size) noexcept : storage{} {
+    assert(size == N);
+  }
 
   constexpr bit_array(value_type bit_val) : storage{} {
     this->fill(bit_val);
