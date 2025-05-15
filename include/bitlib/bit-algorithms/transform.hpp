@@ -31,54 +31,52 @@ namespace bit {
 
     //return d_first;
 //}
-template <class RandomAccessIt, class UnaryOperation>
-constexpr bit_iterator<RandomAccessIt> transform(
-        bit_iterator<RandomAccessIt> first,
-        bit_iterator<RandomAccessIt> last,
-        bit_iterator<RandomAccessIt> d_first,
-        UnaryOperation unary_op) {
-    using word_type = typename bit_iterator<RandomAccessIt>::word_type;
-    using size_type = typename bit_iterator<RandomAccessIt>::size_type;
-    constexpr size_type digits = binary_digits<word_type>::value;
+template <class RandomAccessItIn, class RandomAccessItOut, class UnaryOperation>
+constexpr bit_iterator<RandomAccessItOut> transform(
+    bit_iterator<RandomAccessItIn> first,
+    bit_iterator<RandomAccessItIn> last,
+    bit_iterator<RandomAccessItOut> d_first,
+    UnaryOperation unary_op) {
+  using word_type = typename bit_iterator<RandomAccessItIn>::word_type;
+  using size_type = typename bit_iterator<RandomAccessItIn>::size_type;
+  constexpr size_type digits = binary_digits<word_type>::value;
 
-    // Assertions
-    _assert_range_viability(first, last);
-    if (first == last) return d_first;
+  // Assertions
+  _assert_range_viability(first, last);
+  if (first == last) {
+    return d_first;
+  }
 
+  // Initialization
+  const bool is_d_first_aligned = d_first.position() == 0;
+  size_type total_bits_to_op = distance(first, last);
+  size_type remaining_bits_to_op = total_bits_to_op;
+  auto it = d_first.base();
 
-    // Initialization
-    const bool is_d_first_aligned = d_first.position() == 0;
-    size_type total_bits_to_op = distance(first, last);
-    size_type remaining_bits_to_op = total_bits_to_op;
-    auto it = d_first.base();
-
-    // d_first is not aligned. Copy partial word to align it
-    if (!is_d_first_aligned) {
-        size_type partial_bits_to_op = ::std::min(
-                remaining_bits_to_op,
-                digits - d_first.position()
-                );
-        *it = _bitblend(
-                *it,
-                unary_op(
-                    static_cast<word_type>(
-                      get_word<word_type>(first, partial_bits_to_op)
-                        << static_cast<word_type>(d_first.position())
-                    )
-                ),
-                static_cast<word_type>(d_first.position()),
-                static_cast<word_type>(partial_bits_to_op));
-        remaining_bits_to_op -= partial_bits_to_op;
-        advance(first, partial_bits_to_op);
-        it++;
-    }
-    auto firstIt = first.base();
-    if (remaining_bits_to_op > 0) {
-        const bool is_first_aligned = first.position() == 0;
-        //size_type words_to_op = ::std::ceil(remaining_bits_to_op / static_cast<float>(digits));
-        // d_first will be aligned at this point
-        if (is_first_aligned && remaining_bits_to_op > digits) {
-            auto N = ::std::distance(firstIt, last.base());
+  // d_first is not aligned. Copy partial word to align it
+  if (!is_d_first_aligned) {
+    size_type partial_bits_to_op = ::std::min(
+        remaining_bits_to_op,
+        digits - d_first.position());
+    *it = _bitblend(
+        *it,
+        unary_op(
+            static_cast<word_type>(
+                get_word<word_type>(first, partial_bits_to_op)
+                << static_cast<word_type>(d_first.position()))),
+        static_cast<word_type>(d_first.position()),
+        static_cast<word_type>(partial_bits_to_op));
+    remaining_bits_to_op -= partial_bits_to_op;
+    advance(first, partial_bits_to_op);
+    it++;
+  }
+  auto firstIt = first.base();
+  if (remaining_bits_to_op > 0) {
+    const bool is_first_aligned = first.position() == 0;
+    //size_type words_to_op = ::std::ceil(remaining_bits_to_op / static_cast<float>(digits));
+    // d_first will be aligned at this point
+    if (is_first_aligned && remaining_bits_to_op > digits) {
+      auto N = ::std::distance(firstIt, last.base());
 #ifdef BITLIB_HWY
             if constexpr (std::is_same_v<UnaryOperation, std::bit_not<word_type>>)
             {
@@ -105,72 +103,91 @@ constexpr bit_iterator<RandomAccessIt> transform(
             size_t std_dist = ::std::distance(firstIt, last.base());
             it = std::transform(firstIt, last.base(), it, unary_op);
             firstIt += std_dist;
-            first = bit_iterator<RandomAccessIt>(firstIt);
+            first = bit_iterator<RandomAccessItIn>(firstIt);
             remaining_bits_to_op -= digits * N;
-        } else {
-            while (remaining_bits_to_op >= digits) {
-                *it = unary_op(get_word<word_type>(first, digits));
-                remaining_bits_to_op -= digits;
-                it++;
-                advance(first, digits);
-            }
-        }
+    } else {
+      while (remaining_bits_to_op >= digits) {
+        *it = unary_op(get_word<word_type>(first, digits));
+        remaining_bits_to_op -= digits;
+        it++;
+        advance(first, digits);
+      }
+    }
         if (remaining_bits_to_op > 0) {
           *it = _bitblend(
               *it,
               unary_op(get_word<word_type>(first, remaining_bits_to_op)),
               _mask<word_type>(remaining_bits_to_op));
         }
-    }
+  }
     return d_first + total_bits_to_op;
 }
 
-template <class RandomAccessIt, class BinaryOperation>
-constexpr bit_iterator<RandomAccessIt> transform(
-        bit_iterator<RandomAccessIt> first1,
-        bit_iterator<RandomAccessIt> last1,
-        bit_iterator<RandomAccessIt> first2,
-        bit_iterator<RandomAccessIt> d_first,
-        BinaryOperation binary_op) {
-    using word_type = typename bit_iterator<RandomAccessIt>::word_type;
-    using size_type = typename bit_iterator<RandomAccessIt>::size_type;
-    constexpr size_type digits = binary_digits<word_type>::value;
+template <class RandomAccessItIn, class RandomAccessItOut, class BinaryOperation>
+constexpr bit_iterator<RandomAccessItOut> transform(
+    bit_iterator<RandomAccessItIn> first1,
+    bit_iterator<RandomAccessItIn> last1,
+    bit_iterator<RandomAccessItIn> first2,
+    bit_iterator<RandomAccessItOut> d_first,
+    BinaryOperation binary_op) {
+  using word_type = typename bit_iterator<RandomAccessItIn>::word_type;
+  using size_type = typename bit_iterator<RandomAccessItIn>::size_type;
+  constexpr size_type digits = binary_digits<word_type>::value;
 
-    // Assertions
-    _assert_range_viability(first1, last1);
-    if (first1 == last1) return d_first;
+  // Assertions
+  _assert_range_viability(first1, last1);
+  if (first1 == last1) {
+    return d_first;
+  }
 
+  // Initialization
+  const bool is_d_first_aligned = d_first.position() == 0;
+  size_type total_bits_to_op = distance(first1, last1);
+  size_type remaining_bits_to_op = total_bits_to_op;
+  auto it = d_first.base();
 
-    // Initialization
-    const bool is_d_first_aligned = d_first.position() == 0;
-    size_type total_bits_to_op = distance(first1, last1);
-    size_type remaining_bits_to_op = total_bits_to_op;
-    auto it = d_first.base();
-
-    // d_first is not aligned. Copy partial word to align it
-    if (!is_d_first_aligned) {
-        size_type partial_bits_to_op = ::std::min(
-                remaining_bits_to_op,
-                digits - d_first.position()
-                );
-        *it = _bitblend(
-                *it,
-                binary_op(
-                    static_cast<word_type>(
-                      get_word<word_type>(first1, partial_bits_to_op)
-                        << static_cast<word_type>(d_first.position())
-                    ),
-                    static_cast<word_type>(
-                      get_word<word_type>(first2, partial_bits_to_op)
-                        << static_cast<word_type>(d_first.position())
-                    )
-                ),
-                static_cast<word_type>(d_first.position()),
-                static_cast<word_type>(partial_bits_to_op));
-        remaining_bits_to_op -= partial_bits_to_op;
-        advance(first1, partial_bits_to_op);
-        advance(first2, partial_bits_to_op);
+  // d_first is not aligned. Copy partial word to align it
+  if (!is_d_first_aligned) {
+    size_type partial_bits_to_op = ::std::min(
+        remaining_bits_to_op,
+        digits - d_first.position());
+    *it = _bitblend(
+        *it,
+        binary_op(
+            static_cast<word_type>(
+                get_word<word_type>(first1, partial_bits_to_op)
+                << static_cast<word_type>(d_first.position())),
+            static_cast<word_type>(
+                get_word<word_type>(first2, partial_bits_to_op)
+                << static_cast<word_type>(d_first.position()))),
+        static_cast<word_type>(d_first.position()),
+        static_cast<word_type>(partial_bits_to_op));
+    remaining_bits_to_op -= partial_bits_to_op;
+    advance(first1, partial_bits_to_op);
+    advance(first2, partial_bits_to_op);
+    it++;
+  }
+  if (remaining_bits_to_op > 0) {
+    const bool is_first1_aligned = first1.position() == 0;
+    const bool is_first2_aligned = first2.position() == 0;
+    //size_type words_to_op = ::std::ceil(remaining_bits_to_op / static_cast<float>(digits));
+    // d_first will be aligned at this point
+    if (is_first1_aligned && is_first2_aligned && remaining_bits_to_op > digits) {
+      auto N = ::std::distance(first1.base(), last1.base());
+      it = std::transform(first1.base(), last1.base(), first2.base(), it, binary_op);
+      first1 += digits * N;
+      first2 += digits * N;
+      remaining_bits_to_op -= digits * N;
+    } else {
+      while (remaining_bits_to_op >= digits) {
+        *it = binary_op(
+            get_word<word_type>(first1, digits),
+            get_word<word_type>(first2, digits));
+        remaining_bits_to_op -= digits;
         it++;
+        advance(first1, digits);
+        advance(first2, digits);
+      }
     }
     if (remaining_bits_to_op > 0) {
         const bool is_first1_aligned = first1.position() == 0;
@@ -203,7 +220,8 @@ constexpr bit_iterator<RandomAccessIt> transform(
               _mask<word_type>(remaining_bits_to_op));
         }
     }
-    return d_first + total_bits_to_op;
+  }
+  return d_first + total_bits_to_op;
 }
 
 //template <class RandomAccessIt1, class RandomAccessIt2, class RandomAccessIt3, class BinaryOperation>
