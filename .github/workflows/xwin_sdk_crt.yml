@@ -1,0 +1,34 @@
+# .github/workflows/xwin_sdk_crt.yml
+name: Download & Cache xwin + Windows SDK/CRT
+
+on:
+  workflow_dispatch:
+  push:
+    # re-run whenever this workflow or the composite action changes
+    paths:
+      - '.github/workflows/xwin_sdk_crt.yml'
+      - '.github/actions/xwin_sdk_crt/**'
+
+jobs:
+  setup-windows-sdk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Download & Cache xwin + SDK/CRT
+        uses: ./.github/actions/xwin_sdk_crt
+        with:
+          sdk-version: '10.0.26100'
+          crt-version: '14.44.17.14'
+
+      - name: Verify installs
+        run: |
+          echo "xwin version: $(~/.cargo/bin/xwin --version)"
+          echo "SDK contents:"
+          ls ./.xwin_sdk_crt/sdk
+          ls -R ./.xwin_sdk_crt/sdk
+          echo "CRT contents:"
+          ls ./.xwin_sdk_crt/crt
+          find ./.xwin_sdk_crt -iname '*manifest*' -exec cat {} \;
