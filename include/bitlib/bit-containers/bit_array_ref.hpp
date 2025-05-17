@@ -39,9 +39,9 @@ namespace bit {
  */
 template <typename T = bit_value, typename W = std::uint8_t>
 class bit_array_ref
-    : public bit_array_base<bit_array_ref<T, W>, T, W, bit_iterator<W*>, bit_iterator<const W*>> {
+    : public bit_array_base<bit_array_ref<T, W>, T, std::dynamic_extent, W, bit_iterator<W*>, bit_iterator<const W*>> {
  public:
-  using base = bit_array_base<bit_array_ref<T, W>, T, W, bit_iterator<W*>, bit_iterator<const W*>>;
+  using base = bit_array_base<bit_array_ref<T, W>, T, std::dynamic_extent, W, bit_iterator<W*>, bit_iterator<const W*>>;
   using base::end;
   using typename base::const_iterator;
   using typename base::const_pointer;

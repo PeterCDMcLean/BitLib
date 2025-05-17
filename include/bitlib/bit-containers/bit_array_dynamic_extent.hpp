@@ -39,9 +39,9 @@ using bit_array_cit = typename std::conditional<std::is_same_v<value_type, bit_v
 }  // namespace detail
 template <typename T, std::align_val_t V, typename W>
 class bit_array<T, std::dynamic_extent, V, W>
-    : public bit_array_base<bit_array<T, std::dynamic_extent, V, W>, T, W, detail::bit_array_it<T, W>, detail::bit_array_cit<T, W>> {
+    : public bit_array_base<bit_array<T, std::dynamic_extent, V, W>, T, std::dynamic_extent, W, detail::bit_array_it<T, W>, detail::bit_array_cit<T, W>> {
  public:
-  using base = bit_array_base<bit_array<T, std::dynamic_extent, V, W>, T, W, detail::bit_array_it<T, W>, detail::bit_array_cit<T, W>>;
+  using base = bit_array_base<bit_array<T, std::dynamic_extent, V, W>, T, std::dynamic_extent, W, detail::bit_array_it<T, W>, detail::bit_array_cit<T, W>>;
   using base::end;
   using typename base::const_iterator;
   using typename base::const_pointer;
