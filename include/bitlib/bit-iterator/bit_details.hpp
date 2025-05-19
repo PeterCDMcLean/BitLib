@@ -15,7 +15,7 @@
 
 // ================================ PREAMBLE ================================ //
 // C++ standard library
-#include <x86intrin.h>
+#include <immintrin.h>
 
 #include <algorithm>
 #include <cassert>
@@ -888,7 +888,8 @@ unsigned char ADDCARRYSUBBORROW32(unsigned char c, uint32_t a, uint32_t b, uint3
 }
 template <bool Add>
 unsigned char ADDCARRYSUBBORROW64(unsigned char c, uint64_t a, uint64_t b, uint64_t* out) {
-  return (Add ? _addcarryx_u64(c, a, b, out) : _subborrow_u64(c, a, b, out));
+  static_assert(sizeof(uint64_t) == sizeof(unsigned long long int));
+  return (Add ? _addcarryx_u64(c, a, b, reinterpret_cast<unsigned long long int*>(out)) : _subborrow_u64(c, a, b, reinterpret_cast<unsigned long long int*>(out)));
 }
 #else
 template <bool Add>
@@ -897,7 +898,8 @@ unsigned char ADDCARRYSUBBORROW32(unsigned char c, uint32_t a, uint32_t b, uint3
 }
 template <bool Add>
 unsigned char ADDCARRYSUBBORROW64(unsigned char c, uint64_t a, uint64_t b, uint64_t* out) {
-  return (Add ? _addcarry_u64(c, a, b, out) : _subborrow_u64(c, a, b, out));
+  static_assert(sizeof(uint64_t) == sizeof(unsigned long long int));
+  return (Add ? _addcarry_u64(c, a, b, reinterpret_cast<unsigned long long int*>(out)) : _subborrow_u64(c, a, b, reinterpret_cast<unsigned long long int*>(out)));
 }
 #endif
 
