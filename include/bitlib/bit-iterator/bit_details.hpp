@@ -884,11 +884,11 @@ constexpr T _shrd(T dst, T src, T cnt) noexcept {
 #if defined(__ADX__)
 template <bool Add>
 unsigned char ADDCARRYSUBBORROW32(unsigned char c, uint32_t a, uint32_t b, uint32_t* out) {
-  return (Add ? _addcarryx_u32(c, a, b, out) : _subborrowx_u32(c, a, b, out));
+  return (Add ? _addcarryx_u32(c, a, b, out) : _subborrow_u32(c, a, b, out));
 }
 template <bool Add>
 unsigned char ADDCARRYSUBBORROW64(unsigned char c, uint64_t a, uint64_t b, uint64_t* out) {
-  return (Add ? _addcarryx_u64(c, a, b, out) : _subborrowx_u64(c, a, b, out));
+  return (Add ? _addcarryx_u64(c, a, b, out) : _subborrow_u64(c, a, b, out));
 }
 #else
 template <bool Add>
