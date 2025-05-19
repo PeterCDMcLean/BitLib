@@ -56,7 +56,8 @@ class bit_integer : public bit_array<bit_value, N, std::align_val_t(alignof(W)),
   using typename base_class::word_type;
 
   // Use all of bit_array constructors
-  using base_class::bit_array;
+  using bit_array<bit_value, N, std::align_val_t(alignof(W)), W>::bit_array;
+
   // Must define some of our own constructors
   constexpr bit_integer(const base_class& other) : base_class(other) {}
 

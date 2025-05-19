@@ -18,7 +18,8 @@ TEST(Integer, Constructors) {
 }
 
 TEST(Integer, Increment) {
-  bit::bit_integer<13, false, uint8_t> bitint(13'5894_b);
+  auto bitliteral = 13'5894_b;
+  bit::bit_integer<13, false, uint8_t> bitint(bitliteral);
   EXPECT_EQ(bitint, 13'5894_b);
   EXPECT_EQ(++bitint, 13'5895_b);
   EXPECT_EQ(bitint++, 13'5895_b);

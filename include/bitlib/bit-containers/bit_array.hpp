@@ -116,7 +116,8 @@ class bit_array : public bit_array_base<bit_array<T, N, V, W>, T, N, W, detail::
     }
   }
 
-  constexpr bit_array(const bit_array<T, N, V, W>& other) = default;
+  constexpr bit_array(const bit_array<T, N, V, W>& other) noexcept
+      : storage(other.storage) {}
 
   constexpr bit_array(const bit_array<T, N, V, W>&& other) noexcept
       : storage(other.storage) {}
