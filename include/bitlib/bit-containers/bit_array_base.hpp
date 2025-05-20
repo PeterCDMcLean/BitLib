@@ -25,6 +25,7 @@
 #include "bitlib/bit-algorithms/bit_algorithm.hpp"
 #include "bitlib/bit-containers/bit_bitsof.hpp"
 #include "bitlib/bit-containers/bit_span.hpp"
+#include "bitlib/bit-containers/bounds.hpp"
 #include "bitlib/bit-iterator/bit.hpp"
 
 namespace bit {
@@ -163,15 +164,25 @@ class bit_array_base {
   /**
    * @brief Slice operations - returns a bit_array_ref
    */
-  constexpr auto operator()(size_type offset, size_type right) const noexcept {
+  constexpr auto operator()(const size_type offset, const size_type right) const noexcept {
     return bit_array_ref<bit_value, const word_type>(&this->at(offset), right - offset);
+  }
+
+  template <std::integral U = int>
+  constexpr auto operator()(const bounds<U>& slice) const noexcept {
+    return bit_array_ref<bit_value, const word_type>(&this->at(slice.begin), slice.size());
   }
 
   /**
    * @brief Slice operations - returns a bit_array_ref
    */
-  constexpr auto operator()(size_type offset, size_type right) noexcept {
+  constexpr auto operator()(const size_type offset, const size_type right) noexcept {
     return bit_array_ref<bit_value, word_type>(&this->at(offset), right - offset);
+  }
+
+  template <std::integral U = int>
+  constexpr auto operator()(const bounds<U>& slice) noexcept {
+    return bit_array_ref<bit_value, word_type>(&this->at(slice.begin), slice.size());
   }
 
   // Common operations

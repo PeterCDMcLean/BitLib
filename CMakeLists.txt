@@ -1,7 +1,12 @@
 # specify the C++ standard
 cmake_minimum_required(VERSION 3.14)
-cmake_policy(SET CMP0168 NEW)
-cmake_policy(SET CMP0167 NEW)
+if(POLICY CMP0168)
+  cmake_policy(SET CMP0168 NEW)
+endif()
+
+if(POLICY CMP0167)
+  cmake_policy(SET CMP0167 NEW)
+endif()
 
 # set the project name
 project(BitLib VERSION 0.3.0)
@@ -41,6 +46,7 @@ target_sources(bitlib INTERFACE
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/transform.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/type_traits.hpp
 
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bit_array_base.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bit_array_dynamic_extent.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bit_array.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bit_bitsof.hpp
@@ -48,6 +54,7 @@ target_sources(bitlib INTERFACE
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bit_mdspan_accessor.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bit_span.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bit_vector.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bounds.hpp
 
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-iterator/bit_details.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-iterator/bit.hpp
