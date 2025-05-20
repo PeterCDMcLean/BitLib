@@ -204,9 +204,6 @@ class bit_array_base {
     return result;
   }
 
-  //TODO: This should take a const bit_sized_range, but
-  //      transform has problems with incompatible
-  //      const/non-const word_type iterators
   constexpr compatible_bitarray operator|(const bit_sized_range auto& other) const {
     assert(other.size() == derived().size());
     compatible_bitarray result(derived().size());
