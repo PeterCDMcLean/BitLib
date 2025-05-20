@@ -54,7 +54,6 @@ target_sources(bitlib INTERFACE
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-iterator/bit_iterator.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-iterator/bit_reference.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-iterator/bit_value.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-iterator/linear_overload.hpp
 )
 
 target_compile_features(bitlib INTERFACE cxx_std_23)
