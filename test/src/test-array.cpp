@@ -510,6 +510,10 @@ TEST(BitArrayTest, SliceWithClass) {
   EXPECT_EQ(span3, span2);
   auto span4 = arr(bit::bounds{7} -= 4);
   EXPECT_EQ(span4, span2);
+  bit::bounds bounds({}, 5);
+  EXPECT_EQ(bounds.size(), 5);
+  bit::bounds bounds2{{}, 5};
+  EXPECT_EQ(bounds, bounds2);
 }
 
 TEST(BitArrayTest, SliceModify) {

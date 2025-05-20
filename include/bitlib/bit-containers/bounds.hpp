@@ -7,6 +7,8 @@
 // License:     BSD 3-Clause License
 // ========================================================================== //
 #include <concepts>
+#include <tuple>
+#include <variant>
 
 #ifndef _BIT_SLICE_HPP_INCLUDED
 #define _BIT_SLICE_HPP_INCLUDED
@@ -23,29 +25,55 @@ class bounds {
   private:
     size_type begin;
     size_type end;
-  public:
+    size_type step;
+
+   public:
+    using None = std::tuple<>;
     constexpr bounds() = delete;
     constexpr bounds(const bounds& other) = default;
-    constexpr bounds(const bounds&& other) : begin(other.begin), end(other.end) {
-
+    constexpr bounds(const bounds&& other)
+        : begin(other.begin), end(other.end), step(other.step) {
     }
-    constexpr bounds(const size_type& pos) : begin(pos), end(pos + 1) {
+    constexpr bounds(const size_type& pos)
+        : begin(pos), end(pos + 1), step(1) {
     }
-    constexpr bounds(const size_type& begin, const size_type& end) :
-      begin(begin), end(end) {
+    constexpr bounds(const size_type& begin, const size_type& end, const size_type& step = 1)
+        : begin(begin), end(end), step(step) {
     }
-    constexpr bounds(std::initializer_list<size_type> dims) {
-      if (dims.size() > 2) {
+    constexpr bounds(const None begin, const size_type& end, const size_type& step = 1)
+        : begin(0), end(end), step(step) {
+    }
+    constexpr bounds(std::initializer_list<std::variant<None, size_type>> components) {
+      if (components.size() > 3) {
         throw std::invalid_argument("Initializer list must have at most 2 elements");
       }
-      auto it = dims.begin();
-      if (dims.size() >= 1) {
-        begin = *it;
-        end = begin + 1;
+      auto it = components.begin();
+      begin = 0;
+      end = 1;
+      step = 1;
+      if (components.size() >= 1) {
+        if (std::holds_alternative<size_type>(*it)) {
+          begin = std::get<size_type>(*it);
+          end = begin + 1;
+        } else {
+          std::cout << "None for [0]" << std::endl;
+          begin = 0;
+          end = 1;
+        }
       }
-      if (dims.size() >= 2) {
+      if (components.size() >= 2) {
         it++;
-        end = *it;
+        if (std::holds_alternative<size_type>(*it)) {
+          end = std::get<size_type>(*it);
+        }
+      }
+      if (components.size() >= 3) {
+        it++;
+        if (std::holds_alternative<size_type>(*it)) {
+          step = std::get<size_type>(*it);
+        } else {
+          step = 1;
+        }
       }
     }
 
