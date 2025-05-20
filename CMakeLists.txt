@@ -46,11 +46,13 @@ target_sources(bitlib INTERFACE
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/transform.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/type_traits.hpp
 
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bit-containers.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bit_array.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bit_array_base.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bit_array_dynamic_extent.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bit_array.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bit_array_ref.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bit_bitsof.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bit-containers.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bit_literal.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bit_mdspan_accessor.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bit_span.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-containers/bit_vector.hpp
