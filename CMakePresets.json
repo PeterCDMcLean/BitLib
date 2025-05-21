@@ -341,6 +341,17 @@
       }
     },
     {
+      "name": "tests_linux_clang_libstdcxx",
+      "configurePreset": "tests_linux_clang_libstdcxx",
+      "targets": "bitlib-tests",
+      "jobs": 0,
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
       "name": "coverage_linux_clang_libcxx",
       "configurePreset": "coverage_linux_clang_libcxx",
       "targets": "bitlib-tests",
@@ -437,6 +448,15 @@
     {
       "name": "tests_linux_clang_libcxx",
       "configurePreset": "tests_linux_clang_libcxx",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "tests_linux_clang_libstdcxx",
+      "configurePreset": "tests_linux_clang_libstdcxx",
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
