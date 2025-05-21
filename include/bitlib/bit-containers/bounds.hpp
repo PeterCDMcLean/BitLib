@@ -18,78 +18,129 @@ namespace bit {
 template <typename Derived, typename T, typename W, typename It, typename CIt>
 class bit_array_base;
 
-template <std::integral size_type = uint32_t>
+template <std::signed_integral size_type = int>
 class bounds {
   template <typename Derived, typename T, typename W, typename It, typename CIt>
   friend class bit_array_base;
-  private:
-    size_type begin;
-    size_type end;
-    size_type step;
 
-   public:
-    using None = std::tuple<>;
-    constexpr bounds() = delete;
-    constexpr bounds(const bounds& other) = default;
-    constexpr bounds(const bounds&& other)
-        : begin(other.begin), end(other.end), step(other.step) {
+ public:
+  using None_t = std::tuple<>;
+  static constexpr None_t None = None_t{};
+
+ private:
+  using var_t = std::variant<None_t, size_type>;
+  var_t begin;
+  var_t end;
+
+ public:
+  constexpr bounds() : begin(None), end(None) {
+  }
+  constexpr bounds(const bounds& other) = default;
+  constexpr bounds(const bounds&& other)
+      : begin(other.begin), end(other.end) {
+  }
+  constexpr bounds(const size_type pos)
+      : begin(pos), end(None) {
+  }
+  constexpr bounds(const size_type begin, const size_type end)
+      : begin(begin), end(end) {
+  }
+  constexpr bounds(std::initializer_list<var_t> components) {
+    if (components.size() > 3) {
+      throw std::invalid_argument("Initializer list must have at most 2 elements");
     }
-    constexpr bounds(const size_type& pos)
-        : begin(pos), end(pos + 1), step(1) {
+    auto it = components.begin();
+    begin = None;
+    end = None;
+    if (components.size() >= 1) {
+      begin = *it;
     }
-    constexpr bounds(const size_type& begin, const size_type& end, const size_type& step = 1)
-        : begin(begin), end(end), step(step) {
+    if (components.size() >= 2) {
+      it++;
+      end = *it;
     }
-    constexpr bounds(const None begin, const size_type& end, const size_type& step = 1)
-        : begin(0), end(end), step(step) {
+    if (std::holds_alternative<size_type>(begin)) {
+      std::cout << "pos " << std::get<size_type>(begin) << ", ";
+    } else {
+      std::cout << "None, ";
     }
-    constexpr bounds(std::initializer_list<std::variant<None, size_type>> components) {
-      if (components.size() > 3) {
-        throw std::invalid_argument("Initializer list must have at most 2 elements");
-      }
-      auto it = components.begin();
-      begin = 0;
-      end = 1;
-      step = 1;
-      if (components.size() >= 1) {
-        if (std::holds_alternative<size_type>(*it)) {
-          begin = std::get<size_type>(*it);
-          end = begin + 1;
-        } else {
-          std::cout << "None for [0]" << std::endl;
-          begin = 0;
-          end = 1;
-        }
-      }
-      if (components.size() >= 2) {
-        it++;
-        if (std::holds_alternative<size_type>(*it)) {
-          end = std::get<size_type>(*it);
-        }
-      }
-      if (components.size() >= 3) {
-        it++;
-        if (std::holds_alternative<size_type>(*it)) {
-          step = std::get<size_type>(*it);
-        } else {
-          step = 1;
-        }
-      }
+    if (std::holds_alternative<size_type>(end)) {
+      std::cout << "pos" << std::get<size_type>(end) << std::endl;
+    } else {
+      std::cout << "None" << std::endl;
     }
+  }
 
     constexpr bool operator==(const bounds& other) const = default;
     constexpr auto operator<=>(const bounds& other) const = default;
 
-    constexpr bounds& operator+=(const size_type& size) {
-      end = begin + size;
+    constexpr bounds& operator+=(const size_t& _size) {
+      const size_type size = static_cast<size_type>(_size);
+      if (std::holds_alternative<size_type>(end)) {
+        size_type end_pos = std::get<size_type>(end);
+        if (end_pos >= 0) {
+          end = end_pos + size;
+        } else {
+          end = ((size_type(-1) - size) < end_pos) ? size_type(-1) : (end_pos + size);
+        }
+      } else if (std::holds_alternative<size_type>(begin)) {
+        end = std::get<size_type>(begin) + size;
+      }
       return *this;
     }
-    constexpr bounds& operator-=(const size_type& size) {
-      begin = end - size;
+
+    constexpr bounds& operator-=(const size_t& _size) {
+      const size_type size = static_cast<size_type>(_size);
+      if (std::holds_alternative<size_type>(begin)) {
+        size_type begin_pos = std::get<size_type>(begin);
+        if (!std::holds_alternative<size_type>(end)) {
+          end = begin_pos + 1;
+          begin = begin_pos + 1 - size;
+        } else {
+          if (begin_pos < 0) {
+            begin = begin_pos - size;
+          } else {
+            begin = ((size_type(0) + size) > begin_pos) ? size_type(0) : (begin_pos - size);
+          }
+        }
+      }
       return *this;
     }
-    constexpr size_type size() const {
-      return end - begin;
+
+    constexpr std::pair<size_type, size_type> resolve(size_t _length) const {
+      const size_type length = static_cast<size_type>(_length);
+      // Helper: translate a possibly-negative int into a signed index
+      auto translate_index = [&](size_type idx) -> size_type {
+        size_type x = (idx);
+        if (x < size_type(0)) {
+          x += length;
+        }
+        return x;
+      };
+
+      // 1) Compute raw_start
+      size_type raw_start;
+      if (std::holds_alternative<None_t>(begin)) {
+        raw_start = size_type(0);
+      } else {
+        raw_start = translate_index(std::get<size_type>(begin));
+      }
+
+      // 2) Compute raw_end
+      size_type raw_end;
+      if (std::holds_alternative<None_t>(end)) {
+        raw_end = length;
+      } else {
+        raw_end = translate_index(std::get<size_type>(end));
+      }
+
+      // 3) Clamp into [0..L]
+      return {std::clamp(raw_start,
+                         size_type(0),
+                         length),
+              std::clamp(raw_end,
+                         size_type(0),
+                         length)};
     }
 };
 

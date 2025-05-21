@@ -170,7 +170,10 @@ class bit_array_base {
 
   template <std::integral U = int>
   constexpr auto operator()(const bounds<U>& slice) const noexcept {
-    return bit_array_ref<bit_value, const word_type>(&this->at(slice.begin), slice.size());
+    auto bounds_resolved = slice.resolve(derived().size());
+    assert(bounds_resolved.first <= bounds_resolved.second);
+    auto bounds_size = bounds_resolved.second - bounds_resolved.first;
+    return bit_array_ref<bit_value, const word_type>(&this->at(bounds_resolved.first), bounds_size);
   }
 
   /**
@@ -182,7 +185,10 @@ class bit_array_base {
 
   template <std::integral U = int>
   constexpr auto operator()(const bounds<U>& slice) noexcept {
-    return bit_array_ref<bit_value, word_type>(&this->at(slice.begin), slice.size());
+    auto bounds_resolved = slice.resolve(derived().size());
+    assert(bounds_resolved.first <= bounds_resolved.second);
+    auto bounds_size = bounds_resolved.second - bounds_resolved.first;
+    return bit_array_ref<bit_value, word_type>(&this->at(bounds_resolved.first), bounds_size);
   }
 
   // Common operations
