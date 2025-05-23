@@ -57,6 +57,7 @@ class bit_iterator
   // Lifecycle
  public:
   constexpr bit_iterator();
+  constexpr bit_iterator(const bit_iterator<Iterator>& other);
   template <class T>
   constexpr bit_iterator(const bit_iterator<T>& other)
     requires std::constructible_from<iterator_type, T>;
@@ -67,6 +68,7 @@ class bit_iterator
 
   // Assignment
  public:
+  constexpr bit_iterator& operator=(const bit_iterator<Iterator>& other);
   template <class T>
   constexpr bit_iterator& operator=(const bit_iterator<T>& other);
 
@@ -126,6 +128,12 @@ constexpr bit_iterator<Iterator>::bit_iterator()
 
 // Implicitly constructs a bit iterator from another bit iterator
 template <class Iterator>
+constexpr bit_iterator<Iterator>::bit_iterator(const bit_iterator<Iterator>& other)
+    : _current(other.base()), _position(other.position()) {
+  assert(_position < bitsof<word_type>());
+}
+
+template <class Iterator>
 template <class T>
 constexpr bit_iterator<Iterator>::bit_iterator(const bit_iterator<T>& other)
   requires std::constructible_from<iterator_type, T>
@@ -157,6 +165,16 @@ constexpr bit_iterator<Iterator>::bit_iterator(const pointer& ptr)
 
 
 // ------------------------ BIT ITERATOR: ASSIGNMENT ------------------------ //
+// Assigns a bit iterator to the bit iterator
+template <class Iterator>
+constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator=(
+    const bit_iterator<Iterator>& other) {
+  _current = other._current;
+  _position = other._position;
+  assert(_position < bitsof<word_type>());
+  return *this;
+}
+
 // Assigns a bit iterator to the bit iterator
 template <class Iterator>
 template <class T>
