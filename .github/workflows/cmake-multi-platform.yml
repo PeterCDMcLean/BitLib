@@ -175,6 +175,11 @@ jobs:
     - uses: ./.github/actions/benchmark_epilogue
       if: matrix.preset == 'benchmark'
       with:
+        workspace: ${{ github.workspace }}
+        cpp_compiler: ${{ matrix.cpp_compiler }}
+        c_compiler: ${{ matrix.c_compiler }}
+        build_type: ${{ matrix.build_type }}
+        base_ref: ${{ github.event.pull_request.base.ref }}
         os: ${{ matrix.os }}
         compiler: ${{ matrix.compiler }}
         stdlib: ${{ matrix.stdlib }}

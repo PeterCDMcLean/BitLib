@@ -55,7 +55,7 @@ count(
       iterator_type it = first.base();
 
       if (first.position() != 0) {
-        word_type first_value = *first.base() >> first.position();
+        word_type first_value = lsr(*first.base(), first.position());
         result = _popcnt(first_value);
         ++it;
       }

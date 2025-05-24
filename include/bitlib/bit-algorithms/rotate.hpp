@@ -208,23 +208,20 @@ bit_iterator<ForwardIt> rotate(
     // Within the same word
     if (std::next(first.base(), is_last_aligned) == last.base()) {
         if (is_first_aligned && is_last_aligned) {
-            *first.base() =
-                (*first.base() >> n_first.position())
-                |
-                static_cast<word_type>(
-                        *first.base() << (digits - n_first.position())
-            );
-            return std::next(first, digits - n_first.position());
+          *first.base() =
+              (lsr(*first.base(), n_first.position())) |
+              static_cast<word_type>(
+                  *first.base() << (digits - n_first.position()));
+          return std::next(first, digits - n_first.position());
         } else {
             size_type last_pos = is_last_aligned ? digits : last.position();
             size_type k = n_first.position() - first.position();
             size_type p = last_pos - n_first.position();
             size_type d = last_pos - first.position();
 
-            word_type mask = ((1ULL << d) - 1) << first.position();
+            word_type mask = _mask<word_type>(d) << first.position();
             word_type rotated = *first.base() & mask;
-            rotated = static_cast<word_type>(rotated >> k)
-                | static_cast<word_type>(rotated << p);
+            rotated = static_cast<word_type>(lsr(rotated, k)) | static_cast<word_type>(rotated << p);
             *first.base() = _bitblend<word_type>(
                 *first.base(),
                 rotated,

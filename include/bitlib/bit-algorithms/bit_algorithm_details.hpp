@@ -105,17 +105,17 @@ constexpr bool is_within(
 template <class T, class InputIt>
 T get_word(bit_iterator<InputIt> first, size_t len=binary_digits<T>::value)
 {
-    using native_word_type = typename bit_iterator<InputIt>::word_type;
-    constexpr T digits = binary_digits<native_word_type>::value;
-    assert(digits >= len);
-    using non_const_T = std::remove_cv_t<T>;
-    non_const_T offset = digits - first.position();
-    non_const_T ret_word = *first.base() >> first.position();
+  using native_word_type = typename bit_iterator<InputIt>::word_type;
+  constexpr T digits = binary_digits<native_word_type>::value;
+  assert(digits >= len);
+  using non_const_T = std::remove_cv_t<T>;
+  non_const_T offset = digits - first.position();
+  non_const_T ret_word = lsr(*first.base(), first.position());
 
-    // We've already assigned enough bits
-    if (len <= offset) {
-        return ret_word;
-    }
+  // We've already assigned enough bits
+  if (len <= offset) {
+    return ret_word;
+  }
 
     InputIt it = std::next(first.base());
     len -= offset;
@@ -214,63 +214,57 @@ void write_word(src_type src, bit_iterator<OutputIt> dst_bit_it,
         src_type len=binary_digits<src_type>::value
         )
 {
-    using dst_type = typename bit_iterator<OutputIt>::word_type;
-    constexpr dst_type dst_digits = binary_digits<dst_type>::value;
-    constexpr dst_type src_digits = binary_digits<src_type>::value;
+  using dst_type = typename bit_iterator<OutputIt>::word_type;
+  constexpr dst_type dst_digits = binary_digits<dst_type>::value;
+  constexpr dst_type src_digits = binary_digits<src_type>::value;
 
-    if constexpr (dst_digits >= src_digits) {
-        if (dst_bit_it.position() == 0 && len == dst_digits) {
-            *dst_bit_it.base() = src;
-        }
-        else {
-            *dst_bit_it.base() = _bitblend<src_type>(
-                   *dst_bit_it.base(),
-                   src << dst_bit_it.position(),
-                   dst_bit_it.position(),
-                   std::min<src_type>(
-                       dst_digits - dst_bit_it.position(),
-                       len
-                   )
-            );
-            if (len > dst_digits - dst_bit_it.position()) {
-                OutputIt overflow_dst = std::next(dst_bit_it.base());
-                *overflow_dst = _bitblend<src_type>(
-                        *overflow_dst,
-                        src >> (dst_digits - dst_bit_it.position()),
-                        0,
-                        len - (dst_digits - dst_bit_it.position())
-                    );
-            }
-        }
+  if constexpr (dst_digits >= src_digits) {
+    if (dst_bit_it.position() == 0 && len == dst_digits) {
+      *dst_bit_it.base() = src;
     } else {
-        OutputIt it = dst_bit_it.base();
-        if (dst_bit_it.position() != 0) {
-            *it = _bitblend(
-                    *it,
-                    static_cast<dst_type>(src),
-                    static_cast<dst_type>(-1) << dst_bit_it.position()
-            );
-            len -= dst_digits - dst_bit_it.position();
-            // TODO would it be faster to jsut shift src every time it is
-            // passed as an argument and keep track of how much we need to
-            // shift?
-            src >>= dst_digits - dst_bit_it.position();
-            ++it;
-        }
-        while (len >= dst_digits) {
-            *it = static_cast<dst_type>(src);
-            src >>= dst_digits;
-            len -= dst_digits;
-            ++it;
-        }
-        if (len > 0 ) {
-            *it = _bitblend(
-                    *it,
-                    static_cast<dst_type>(src),
-                    (1 << len) - 1
-            );
-        }
+      *dst_bit_it.base() = _bitblend<src_type>(
+          *dst_bit_it.base(),
+          src << dst_bit_it.position(),
+          dst_bit_it.position(),
+          std::min<src_type>(
+              dst_digits - dst_bit_it.position(),
+              len));
+      if (len > dst_digits - dst_bit_it.position()) {
+        OutputIt overflow_dst = std::next(dst_bit_it.base());
+        *overflow_dst = _bitblend<src_type>(
+            *overflow_dst,
+            lsr(src, (dst_digits - dst_bit_it.position())),
+            0,
+            len - (dst_digits - dst_bit_it.position()));
+      }
     }
+  } else {
+    OutputIt it = dst_bit_it.base();
+    if (dst_bit_it.position() != 0) {
+      *it = _bitblend(
+          *it,
+          static_cast<dst_type>(src),
+          static_cast<dst_type>(-1) << dst_bit_it.position());
+      len -= dst_digits - dst_bit_it.position();
+      // TODO would it be faster to jsut shift src every time it is
+      // passed as an argument and keep track of how much we need to
+      // shift?
+      src = lsr(src, dst_digits - dst_bit_it.position());
+      ++it;
+    }
+    while (len >= dst_digits) {
+      *it = static_cast<dst_type>(src);
+      src = lsr(src, dst_digits);
+      len -= dst_digits;
+      ++it;
+    }
+    if (len > 0) {
+      *it = _bitblend(
+          *it,
+          static_cast<dst_type>(src),
+          _mask<dst_type>(len));
+    }
+  }
     return;
 }
 
@@ -367,56 +361,56 @@ WordType _shift_towards_msb(WordType word, std::size_t n) {
  * is undefined
  */
 template <class It>
+[[deprecated("Unused")]]
 typename bit_iterator<It>::word_type _padded_read(bit_iterator<It> first,
-    bit_iterator<It> last, const bit::bit_value bv) {
+                                                  bit_iterator<It> last, const bit::bit_value bv) {
+  using word_type = typename bit_iterator<It>::word_type;
 
-    using word_type = typename bit_iterator<It>::word_type;
+  constexpr std::size_t num_digits = binary_digits<word_type>::value;
+  const std::size_t first_position = first.position();
+  const std::size_t last_position = last.position();
+  const word_type read = *(first.base());
+  constexpr word_type all_ones = _all_ones();
 
-    constexpr std::size_t num_digits = binary_digits<word_type>::value;
-    const std::size_t first_position = first.position();
-    const std::size_t last_position = last.position();
-    const word_type read = *(first.base());
-    constexpr word_type all_ones = _all_ones();
+  word_type mask;
 
-    word_type mask;
-
-    if (_is_aligned_lsb(first)) {
-        if (_in_same_word(first, last)) {
-            // Case 1
-            if (bv == bit0) {
-                mask = _shift_towards_lsb(all_ones, num_digits - last_position);
-                return read & mask;
-            } else {
-                mask = _shift_towards_msb(all_ones, last_position);
-                return read | mask;
-            }
-        } else {
-            // Case 0
-            return read;
-        }
+  if (_is_aligned_lsb(first)) {
+    if (_in_same_word(first, last)) {
+      // Case 1
+      if (bv == bit0) {
+        mask = _shift_towards_lsb(all_ones, num_digits - last_position);
+        return read & mask;
+      } else {
+        mask = _shift_towards_msb(all_ones, last_position);
+        return read | mask;
+      }
     } else {
-        if (!_in_same_word(first, last)) {
-            // Case 2
-            if (bv == bit0) {
-                mask = _shift_towards_msb(all_ones, first_position);
-                return read & mask;
-            } else {
-                mask = _shift_towards_lsb(all_ones, num_digits - first_position);
-                return read | mask;
-            }
-        } else {
-            // Case 3
-            if (bv == bit0) {
-                mask = _shift_towards_msb(all_ones, first_position);
-                mask &= _shift_towards_lsb(all_ones, num_digits - last_position);
-                return read & mask;
-            } else {
-                mask = _shift_towards_lsb(all_ones, num_digits - first_position);
-                mask |= _shift_towards_msb(all_ones, last_position);
-                return read | mask;
-            }
-        }
+      // Case 0
+      return read;
     }
+  } else {
+    if (!_in_same_word(first, last)) {
+      // Case 2
+      if (bv == bit0) {
+        mask = _shift_towards_msb(all_ones, first_position);
+        return read & mask;
+      } else {
+        mask = _shift_towards_lsb(all_ones, num_digits - first_position);
+        return read | mask;
+      }
+    } else {
+      // Case 3
+      if (bv == bit0) {
+        mask = _shift_towards_msb(all_ones, first_position);
+        mask &= _shift_towards_lsb(all_ones, num_digits - last_position);
+        return read & mask;
+      } else {
+        mask = _shift_towards_lsb(all_ones, num_digits - first_position);
+        mask |= _shift_towards_msb(all_ones, last_position);
+        return read | mask;
+      }
+    }
+  }
 }
 // -------------------------------------------------------------------------- //
 

@@ -101,12 +101,10 @@ constexpr bit_iterator<RandomAccessIt2> copy(bit_iterator<RandomAccessIt1> first
             }
         }
         if (remaining_bits_to_copy > 0) {
-            *it = _bitblend(
-                    *it,
-                    get_word<word_type>(first, remaining_bits_to_copy),
-                    static_cast<word_type>(
-                        (static_cast<word_type>(1) << remaining_bits_to_copy) - 1)
-            );
+          *it = _bitblend(
+              *it,
+              get_word<word_type>(first, remaining_bits_to_copy),
+              _mask<word_type>(remaining_bits_to_copy));
         }
     }
     return d_first + total_bits_to_copy;

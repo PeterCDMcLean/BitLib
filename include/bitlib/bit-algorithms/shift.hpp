@@ -73,21 +73,23 @@ bit_iterator<RandomAccessIt> shift_left(
 
     // Single word case
     // Triggered if all relevant bits are in first.base()
+    // clang-format off
     if (std::next(first.base(), is_last_aligned) == last.base()) {
         *first.base() = _bitblend<word_type>(
                 *first.base(),
-                ((
+                lsr(
                     *first.base() & (
-                        static_cast<word_type>(-1) >> (
+                        lsr(static_cast<word_type>(-1), (
                             digits - (is_last_aligned ? digits : last.position())
-                        )
+                        ))
                     )
-                )) >> n,
+                    , n),
                 first.position(),
                 (is_last_aligned ? digits : last.position()) - first.position()
         );
         return first + d - n;
     }
+    // clang-format on
 
     // Triggered if all remaining bits can fit in a word
     if (d - n <= digits)
@@ -113,7 +115,7 @@ bit_iterator<RandomAccessIt> shift_left(
         const int n2 = digits - first.position() - n1;
         *first.base() = _bitblend<word_type>(
             *first.base(),
-            (*middle.base()) >> (middle.position() - first.position()),
+            lsr(*middle.base(), (middle.position() - first.position())),
             first.position(),
             n1);
         *first.base() = _bitblend<word_type>(
@@ -131,13 +133,12 @@ bit_iterator<RandomAccessIt> shift_left(
         const int bits_left = last.position() - middle.position();
         if (bits_left > 0)
         {
-            *first.base() = _bitblend<word_type>(
-                    *first.base(),
-                    *middle.base() >> middle.position(),
-                    0,
-                    bits_left
-            );
-            first += bits_left;
+          *first.base() = _bitblend<word_type>(
+              *first.base(),
+              lsr(*middle.base(), middle.position()),
+              0,
+              bits_left);
+          first += bits_left;
         }
         // https://en.cppreference.com/w/cpp/algorithm/shift
         // "Elements that are in the original range but not the new range
@@ -205,14 +206,13 @@ bit_iterator<RandomAccessIt> shift_left(
     // If middle is now penultimate word
     if (std::next(middle.base()) == last.base())
     {
-        *first.base() = _bitblend<word_type>(
-                *first.base(),
-                *middle.base() >> offset,
-                0,
-                digits - offset
-        );
-        first += digits - offset;
-        middle += digits - offset;
+      *first.base() = _bitblend<word_type>(
+          *first.base(),
+          lsr(*middle.base(), offset),
+          0,
+          digits - offset);
+      first += digits - offset;
+      middle += digits - offset;
     }
 
     if (!is_last_aligned)

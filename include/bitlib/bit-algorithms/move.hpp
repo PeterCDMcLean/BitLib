@@ -87,12 +87,10 @@ constexpr bit_iterator<RandomAccessIt2> move(bit_iterator<RandomAccessIt1> first
             }
         }
         if (remaining_bits_to_move > 0) {
-            *it = _bitblend(
-                    *it,
-                    get_word<word_type>(first, remaining_bits_to_move),
-                    static_cast<word_type>(
-                        (static_cast<word_type>(1) << remaining_bits_to_move) - 1)
-            );
+          *it = _bitblend(
+              *it,
+              get_word<word_type>(first, remaining_bits_to_move),
+              _mask<word_type>(remaining_bits_to_move));
         }
     }
     return d_first + total_bits_to_move;

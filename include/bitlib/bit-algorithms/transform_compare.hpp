@@ -26,11 +26,12 @@ namespace bit {
 // ---------------------------- Equal Algorithms ----------------------------- //
 
 // Status: Does not work for Input/Output iterators due to distance call
-template <class RandomAccessIt1, class RandomAccessIt2>
-constexpr bool equal(
+template <class RandomAccessIt1, class RandomAccessIt2, class BinaryComparison>
+constexpr bool transform_compare(
         bit_iterator<RandomAccessIt1> first,
         bit_iterator<RandomAccessIt1> last,
-        bit_iterator<RandomAccessIt2> d_first
+        bit_iterator<RandomAccessIt2> first2,
+        BinaryComparison binary_cmp
 )
 {
     // Types and constants
@@ -46,13 +47,41 @@ constexpr bool equal(
     if (first == last) return true;
 
     // Initialization
-    const bool is_d_first_aligned = d_first.position() == 0;
     size_type total_bits_to_check = distance(first, last);
     size_type remaining_bits_to_check = total_bits_to_check;
-    auto it = d_first.base();
 
+    if (remaining_bits_to_check < digits) {
+
+    }
+
+    auto it1 = first1.base() + total_bits_to_check - 1 - digits;
+    auto it2 = first2.base() + total_bits_to_check - 1 - digits;
+    const bool is_d_first_aligned = it1.position() == 0;
+
+
+    bitsof<
     // d_first is not aligned.
     if (!is_d_first_aligned) {
+
+        size_type partial_bits_to_op = ::std::min(
+                remaining_bits_to_op,
+                digits - d_first.position()
+                );
+
+                if (!binary_cmp(
+                    static_cast<word_type>(
+                      get_word<word_type>(it1, partial_bits_to_op)
+                        << static_cast<word_type>(d_first.position())
+                    ),
+                    static_cast<word_type>(
+                      get_word<word_type>(first2, partial_bits_to_op)
+                        << static_cast<word_type>(d_first.position())
+                    )
+                )) { return false;}
+        remaining_bits_to_op -= partial_bits_to_op;
+        advance(first1, partial_bits_to_op);
+        advance(first2, partial_bits_to_op);
+        it++;
         const size_type partial_bits_to_check = ::std::min(
                 remaining_bits_to_check,
                 digits - d_first.position());

@@ -182,7 +182,7 @@ constexpr bit_reference<WordType>& bit_reference<WordType>::assign(word_type val
 template <class WordType>
 constexpr bit_reference<WordType>& bit_reference<WordType>::assign(word_type val, size_type pos) const {
   assert(pos < binary_digits<word_type>::value);
-  val >> pos & 1 ? set() : reset();
+  ((val >> pos) & 1) ? set() : reset();
   return const_cast<bit_reference<WordType>&>(*this);
 }
 // -------------------------------------------------------------------------- //
