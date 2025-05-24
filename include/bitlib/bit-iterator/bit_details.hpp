@@ -403,14 +403,23 @@ constexpr T lsr(const T& val, const size_type shift) {
   return static_cast<T>(static_cast<std::make_unsigned_t<T>>(val) >> shift);
 }
 
-template <std::integral T, typename size_type = size_t>
+enum class _mask_len {
+  unknown,
+  in_range
+};
+
+template <std::integral T, _mask_len len_in_range = _mask_len::in_range, typename size_type = size_t>
 constexpr T _mask(const size_type len) {
   constexpr std::make_unsigned_t<T> one = std::make_unsigned_t<T>(1);
-  // The digits_mask is solely here to prevent Undefined Sanitizer
-  // complaining about shift of len >= digits
-  // Note: on -O1 the (len & digits_mask) is optimized to simply (len)
-  constexpr std::make_unsigned_t<T> digits_mask = bitsof<T>() - one;
-  return static_cast<T>((one << (len & digits_mask)) * (len < bitsof<T>()) - one);
+  if constexpr (len_in_range != _mask_len::unknown) {
+    return static_cast<T>((one << len) - one);
+  } else {
+    // The digits_mask is solely here to prevent Undefined Sanitizer
+    // complaining about shift of len >= digits
+    // Note: on -O1 the (len & digits_mask) is optimized to simply (len)
+    constexpr std::make_unsigned_t<T> digits_mask = bitsof<T>() - one;
+    return static_cast<T>((one << (len & digits_mask)) * (len < bitsof<T>()) - one);
+  }
 }
 
 // ------------- IMPLEMENTATION DETAILS: UTILITIES: ASSERTIONS -------------- //
@@ -752,7 +761,7 @@ template <class T>
 constexpr T _bitblend(T src0, T src1, T start, T len) noexcept {
   static_assert(binary_digits<T>::value, "");
   constexpr T digits = binary_digits<T>::value;
-  const T msk = _mask<T>(len) << start;
+  const T msk = _mask<T, _mask_len::unknown>(len) << start;
   return src0 ^ ((src0 ^ src1) & msk * (start < digits));
 }
 // -------------------------------------------------------------------------- //
@@ -773,7 +782,7 @@ constexpr void _bitexch(T& src0, T& src1, S start, S len) noexcept {
   static_assert(binary_digits<T>::value, "");
   constexpr auto digits = binary_digits<T>::value;
   const T msk = (len < digits)
-                    ? _mask<T>(len) << start
+                    ? _mask<T, _mask_len::unknown>(len) << start
                     : -1;  // TODO: What if start > 0 here?
   src0 = src0 ^ static_cast<T>(src1 & msk);
   src1 = src1 ^ static_cast<T>(src0 & msk);
@@ -790,7 +799,7 @@ constexpr void _bitexch(T& src0, T& src1, S start0, S start1, S len) noexcept
 {
     static_assert(binary_digits<T>::value, "");
     constexpr auto digits = binary_digits<T>::value;
-    const T msk = _mask<T>(len);
+    const T msk = _mask<T, _mask_len::unknown>(len);
     if (start0 >= start1) {
         src0 = src0 ^ (
                 static_cast<T>(src1 << (start0 - start1))
