@@ -1,13 +1,12 @@
 // =============================== FIXTURES ================================= //
 // Project:         The Experimental Bit Algorithms Library
-// Description:     Fixtures for testing 
-// Contributor(s):  Bryce Kille 
+// Description:     Fixtures for testing
+// Contributor(s):  Bryce Kille
 // License:         BSD 3-Clause License
 // ========================================================================== //
 #ifndef _FIXTURES_HPP_INCLUDED
 #define _FIXTURES_HPP_INCLUDED
 // ========================================================================== //
-
 
 // ============================== PREAMBLE ================================== //
 // C++ standard library
@@ -32,51 +31,49 @@
 //TODO tests need a lot of cleanup. We should only copy what we need from random_vec
 //and also refactor the vec generation to reduce duplication
 
-using BaseTypes = ::testing::Types<uint8_t, uint16_t, uint32_t, uint64_t>;
+using BaseTypes = ::testing::Types<uint8_t, uint16_t, uint32_t, uint64_t, int8_t, int16_t, int32_t, int64_t>;
 
-
-template<typename WordType>
+template <typename WordType>
 class VectorTest : public testing::Test {
-    protected:
+ protected:
+  using base_type = WordType;
+  using vec_type = bit::bit_vector<WordType>;
+  vec_type empty_vec;
+  std::vector<bool> empty_vec_bool;
+  vec_type v2_ = vec_type(18);
+  vec_type v3_ = vec_type("010111111");
 
-    using base_type = WordType;
-    using vec_type = bit::bit_vector<WordType>;
-    vec_type empty_vec;
-    std::vector<bool> empty_vec_bool;
-    vec_type v2_ = vec_type(18);
-    vec_type v3_ = vec_type("010111111");
+  std::vector<vec_type> random_bitvecs;
+  std::vector<std::vector<bool>> random_boolvecs;
+  std::vector<WordType> random_vec;
+  const size_t word_size = 4;
+  const size_t digits = bit::binary_digits<WordType>::value;
+  const size_t bit_size = word_size * digits;
 
-    std::vector<vec_type> random_bitvecs;
-    std::vector<std::vector<bool>> random_boolvecs;
-    std::vector<WordType> random_vec;
-    const size_t word_size = 4;
-    const size_t digits = bit::binary_digits<WordType>::value;
-    const size_t bit_size = word_size*digits;
+  void SetUp() override {
+    empty_vec = vec_type();
+    random_vec = get_random_vec<WordType>(word_size);
+    for (size_t cont_size = 1; cont_size < bit_size; ++cont_size) {
+      auto bitvec = vec_type(bit_size);
+      std::memcpy(&(*bitvec.begin().base()), &(random_vec[0]), word_size);
+      bitvec.resize(cont_size);
 
-    void SetUp() override {
-        empty_vec = vec_type(); 
-        random_vec = get_random_vec<WordType>(word_size);
-        for (size_t cont_size = 1; cont_size < bit_size; ++cont_size) {
-            auto bitvec = vec_type(bit_size);
-            std::memcpy(&(*bitvec.begin().base()), &(random_vec[0]), word_size);
-            bitvec.resize(cont_size);
-
-            auto boolvec = boolvec_from_bitvec(bitvec);
-            random_bitvecs.push_back(bitvec);
-            random_boolvecs.push_back(boolvec);
-        }
-        size_t big_size = 64*64*10;
-        for (int i = -4; i < 4; ++i) {
-            size_t cont_size = big_size + i;
-            auto bitvec = vec_type(bit_size);
-            std::memcpy(&(*bitvec.begin().base()), &(random_vec[0]), word_size);
-            bitvec.resize(cont_size);
-
-            auto boolvec = boolvec_from_bitvec(bitvec);
-            random_bitvecs.push_back(bitvec);
-            random_boolvecs.push_back(boolvec);
-        }
+      auto boolvec = boolvec_from_bitvec(bitvec);
+      random_bitvecs.push_back(bitvec);
+      random_boolvecs.push_back(boolvec);
     }
+    size_t big_size = 64 * 64 * 10;
+    for (int i = -4; i < 4; ++i) {
+      size_t cont_size = big_size + i;
+      auto bitvec = vec_type(bit_size);
+      std::memcpy(&(*bitvec.begin().base()), &(random_vec[0]), word_size);
+      bitvec.resize(cont_size);
+
+      auto boolvec = boolvec_from_bitvec(bitvec);
+      random_bitvecs.push_back(bitvec);
+      random_boolvecs.push_back(boolvec);
+    }
+  }
 };
 TYPED_TEST_SUITE(VectorTest, BaseTypes);
 

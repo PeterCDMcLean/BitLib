@@ -101,12 +101,11 @@ constexpr void reverse(
         }
         // Reverse when bit iterators belong to the same underlying word
     } else {
-        *it = _bitblend<word_type>(
-                *it,
-                _bitswap<word_type>(*it >> first.position()) >> gap,
-                first.position(),
-                last.position() - first.position()
-        );
+      *it = _bitblend<word_type>(
+          *it,
+          lsr(_bitswap<word_type>(lsr(*it, first.position())), gap),
+          first.position(),
+          last.position() - first.position());
     }
 }
 

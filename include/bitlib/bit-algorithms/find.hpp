@@ -46,17 +46,17 @@ constexpr bit_iterator<RandomAccessIt> find(
 
 
     if (!is_first_aligned) {
-        word_type shifted_first = *first.base() >> first.position();
-        size_type num_trailing_complementary_bits = (bv == bit0)
-            ? _tzcnt(static_cast<word_type>(~shifted_first))
-            : _tzcnt(static_cast<word_type>(shifted_first));
-        if (std::next(first.base(), is_last_aligned) == last.base()) {
-            return first + std::min(num_trailing_complementary_bits, (size_type) distance(first, last));
-        } else if (num_trailing_complementary_bits + first.position() < digits) {
-            return first + num_trailing_complementary_bits;
-        } else {
-            first += digits - first.position();
-        }
+      word_type shifted_first = lsr(*first.base(), first.position());
+      size_type num_trailing_complementary_bits = (bv == bit0)
+                                                      ? _tzcnt(static_cast<word_type>(~shifted_first))
+                                                      : _tzcnt(static_cast<word_type>(shifted_first));
+      if (std::next(first.base(), is_last_aligned) == last.base()) {
+        return first + std::min(num_trailing_complementary_bits, (size_type)distance(first, last));
+      } else if (num_trailing_complementary_bits + first.position() < digits) {
+        return first + num_trailing_complementary_bits;
+      } else {
+        first += digits - first.position();
+      }
     }
 
     // Initialization
