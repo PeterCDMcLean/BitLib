@@ -59,11 +59,12 @@ runs:
           ${{ inputs.build-output-dir }}/benchmark/benchmark_result_new.json
 
     - name: Compare Benchmarks
+      shell: bash
       run: |
         python3 ${{ inputs.build-output-dir}}/_deps/benchmark-src/tools/compare.py benchmarks \
           ${{ inputs.build-output-dir }}/benchmark/benchmark_result_ref.json \
           ${{ inputs.build-output-dir }}/benchmark/benchmark_result_new.json \
-          --ignore-baseline > comparison.txt
+          | tee comparison.txt
 
     - name: Store benchmark result
       uses: benchmark-action/github-action-benchmark@v1
