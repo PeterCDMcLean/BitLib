@@ -262,7 +262,7 @@ void write_word(src_type src, bit_iterator<OutputIt> dst_bit_it,
       *it = _bitblend(
           *it,
           static_cast<dst_type>(src),
-          (1 << len) - 1);
+          _mask<dst_type>(len));
     }
   }
     return;

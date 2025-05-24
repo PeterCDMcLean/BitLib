@@ -752,12 +752,7 @@ template <class T>
 constexpr T _bitblend(T src0, T src1, T start, T len) noexcept {
   static_assert(binary_digits<T>::value, "");
   constexpr T digits = binary_digits<T>::value;
-  constexpr T one = 1;
-  // The digits_mask is solely here to prevent Undefined Sanitizer
-  // complaining about shift of len >= digits
-  // Note: on -O1 the (len & digits_mask) is optimized to simply (len)
-  constexpr T digits_mask = digits - one;
-  const T msk = ((one << (len & digits_mask)) * (len < digits) - one) << start;
+  const T msk = _mask<T>(len) << start;
   return src0 ^ ((src0 ^ src1) & msk * (start < digits));
 }
 // -------------------------------------------------------------------------- //
@@ -777,10 +772,9 @@ template <class T, class S>
 constexpr void _bitexch(T& src0, T& src1, S start, S len) noexcept {
   static_assert(binary_digits<T>::value, "");
   constexpr auto digits = binary_digits<T>::value;
-  constexpr T one = 1;
   const T msk = (len < digits)
-                    ? ((one << len) - one) << start
-                    : -1;
+                    ? _mask<T>(len) << start
+                    : -1;  // TODO: What if start > 0 here?
   src0 = src0 ^ static_cast<T>(src1 & msk);
   src1 = src1 ^ static_cast<T>(src0 & msk);
   src0 = src0 ^ static_cast<T>(src1 & msk);
@@ -797,8 +791,7 @@ constexpr void _bitexch(T& src0, T& src1, S start0, S start1, S len) noexcept
     static_assert(binary_digits<T>::value, "");
     constexpr auto digits = binary_digits<T>::value;
     constexpr T one = 1;
-    const T msk = (len < digits) ?
-        ((one << len) - one) : -1;
+    const T msk = _mask<T>(len);
     if (start0 >= start1) {
         src0 = src0 ^ (
                 static_cast<T>(src1 << (start0 - start1))

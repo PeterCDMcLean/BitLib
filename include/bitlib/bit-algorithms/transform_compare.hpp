@@ -85,9 +85,7 @@ constexpr bool transform_compare(
         const size_type partial_bits_to_check = ::std::min(
                 remaining_bits_to_check,
                 digits - d_first.position());
-        const word_type mask = static_cast<word_type>(
-                (static_cast<word_type>(1) << partial_bits_to_check) - 1
-        ) << d_first.position();
+        const word_type mask = _mask<word_type>(partial_bits_to_check) << d_first.position();
         const word_type comp = static_cast<word_type>(
               get_word<word_type>(first, partial_bits_to_check)
                 << d_first.position());
@@ -117,11 +115,11 @@ constexpr bool transform_compare(
             }
         }
         if (remaining_bits_to_check > 0) {
-            const word_type mask = static_cast<word_type>(
-                    (static_cast<word_type>(1) << remaining_bits_to_check) - 1
-            );
-            const word_type comp = get_word<word_type>(first, remaining_bits_to_check);
-            if ((mask & *it) != (mask & comp)) { return false; }
+          const word_type mask = _mask<word_type>(remaining_bits_to_check);
+          const word_type comp = get_word<word_type>(first, remaining_bits_to_check);
+          if ((mask & *it) != (mask & comp)) {
+            return false;
+          }
         }
     }
     return true;
