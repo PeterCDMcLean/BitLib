@@ -13,29 +13,65 @@ inputs:
   build-output-dir:
     required: true
     description: 'Build output directory'
+  base_ref:
+    required: true
+    description: 'Base ref for PR/comparison'
+  cpp_compiler:
+    required: true
+    description: 'Cpp compiler to use'
+  c_compiler:
+    required: true
+    description: 'C compiler to use'
+  build_type:
+    required: true
+    description: 'Build type (release/debug)'
+
 runs:
   using: "composite"
   steps:
+    - name: Checkout target branch (BASE)
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.base_ref }}
+
+    - name: Benchmark Workflow
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-pip
+        pip3 install -r ${{ inputs.build-output-dir}}/_deps/benchmark-src/tools/requirements.txt
+        mv ${{ inputs.build-output-dir }}/benchmark/benchmark_result.json ${{ inputs.build-output-dir }}/benchmark/benchmark_result_new.json
+        cmake -B ${{ inputs.build-output-dir}} -S ${{ inputs.workspace }} \
+          --preset benchmark_${{ inputs.os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}
+          -DCMAKE_CXX_COMPILER=${{ inputs.cpp_compiler }} \
+          -DCMAKE_C_COMPILER=${{ inputs.c_compiler }} \
+          -DCMAKE_BUILD_TYPE=${{ inputs.build_type }}
+        cmake --build ${{ inputs.build-output-dir}} --target benchmark --config ${{ inputs.build_type }} --parallel
+        ctest --test-dir ${{ inputs.build-output-dir}} --build-config ${{ inputs.build_type }} --output-on-failure --parallel
+        mv ${{ inputs.build-output-dir }}/benchmark/benchmark_result.json ${{ inputs.build-output-dir }}/benchmark/benchmark_result_ref.json
+
     - name: Archive benchmark results
       uses: actions/upload-artifact@v4
       with:
         name: benchmark_${{ inputs.os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}_json
-        path: ${{ inputs.build-output-dir }}/benchmark/benchmark_result.json
+        path: |
+          ${{ inputs.build-output-dir }}/benchmark/benchmark_result_ref.json
+          ${{ inputs.build-output-dir }}/benchmark/benchmark_result_new.json
 
-    # Download previous benchmark result from cache (if exists)
-    - name: Download previous benchmark data
-      uses: actions/cache@v4
-      with:
-        path: ./cache
-        key: benchmark_${{ inputs.os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}
+    - name: Compare Benchmarks
+      run: |
+        python3 ${{ inputs.build-output-dir}}/_deps/benchmark-src/tools/compare.py benchmarks \
+          ${{ inputs.build-output-dir }}/benchmark/benchmark_result_ref.json \
+          ${{ inputs.build-output-dir }}/benchmark/benchmark_result_new.json \
+          --ignore-baseline > comparison.txt
 
     - name: Store benchmark result
       uses: benchmark-action/github-action-benchmark@v1
       with:
         tool: 'googlecpp'
         # Where the output from the benchmark tool is stored
-        output-file-path: ${{ inputs.build-output-dir }}/benchmark/benchmark_result.json
+        output-file-path: ${{ inputs.build-output-dir }}/benchmark/benchmark_result_new.json
         # Where the previous data file is stored
-        external-data-json-path: ./cache/benchmark_result.json
+        external-data-json-path: ${{ inputs.build-output-dir }}/benchmark/benchmark_result_ref.json
         # Workflow will fail when an alert happens
         fail-on-alert: true
