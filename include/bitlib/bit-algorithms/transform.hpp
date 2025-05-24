@@ -190,35 +190,12 @@ constexpr bit_iterator<RandomAccessItOut> transform(
       }
     }
     if (remaining_bits_to_op > 0) {
-        const bool is_first1_aligned = first1.position() == 0;
-        const bool is_first2_aligned = first2.position() == 0;
-        //size_type words_to_op = ::std::ceil(remaining_bits_to_op / static_cast<float>(digits));
-        // d_first will be aligned at this point
-        if (is_first1_aligned && is_first2_aligned && remaining_bits_to_op > digits) {
-            auto N = ::std::distance(first1.base(), last1.base());
-            it = std::transform(first1.base(), last1.base(), first2.base(), it, binary_op);
-            first1 += digits * N;
-            first2 += digits * N;
-            remaining_bits_to_op -= digits * N;
-        } else {
-            while (remaining_bits_to_op >= digits) {
-                *it = binary_op(
-                        get_word<word_type>(first1, digits),
-                        get_word<word_type>(first2, digits));
-                remaining_bits_to_op -= digits;
-                it++;
-                advance(first1, digits);
-                advance(first2, digits);
-            }
-        }
-        if (remaining_bits_to_op > 0) {
-          *it = _bitblend(
-              *it,
-              binary_op(
-                  get_word<word_type>(first1, remaining_bits_to_op),
-                  get_word<word_type>(first2, remaining_bits_to_op)),
-              _mask<word_type>(remaining_bits_to_op));
-        }
+      *it = _bitblend(
+          *it,
+          binary_op(
+              get_word<word_type>(first1, remaining_bits_to_op),
+              get_word<word_type>(first2, remaining_bits_to_op)),
+          _mask<word_type>(remaining_bits_to_op));
     }
   }
   return d_first + total_bits_to_op;
