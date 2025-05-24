@@ -1,6 +1,9 @@
 name: "Benchmark Epilogue"
 description: "Processes coverage information with lcov and uploads it to coveralls/codecov"
 inputs:
+  workspace:
+    required: True
+    description: "Source code / workspace"
   compiler:
     required: True
     description: 'Compiler used to build benchmark'
@@ -34,21 +37,37 @@ runs:
       with:
         ref: ${{ inputs.base_ref }}
 
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install benchmark compare.py requirements
+      shell: bash
+      run: |
+        pip install --upgrade setuptools
+        pip install -r ${{ inputs.build-output-dir}}/_deps/benchmark-src/tools/requirements.txt
+
     - name: Benchmark Workflow
       shell: bash
       run: |
-        sudo apt-get update
-        sudo apt-get install -y python3-pip
-        pip3 install -r ${{ inputs.build-output-dir}}/_deps/benchmark-src/tools/requirements.txt
         mv ${{ inputs.build-output-dir }}/benchmark/benchmark_result.json ${{ inputs.build-output-dir }}/benchmark/benchmark_result_new.json
         cmake -B ${{ inputs.build-output-dir}} -S ${{ inputs.workspace }} \
-          --preset benchmark_${{ inputs.os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}
+          --preset benchmark_${{ inputs.os }}_${{ inputs.compiler }}_${{ inputs.stdlib }} \
           -DCMAKE_CXX_COMPILER=${{ inputs.cpp_compiler }} \
           -DCMAKE_C_COMPILER=${{ inputs.c_compiler }} \
           -DCMAKE_BUILD_TYPE=${{ inputs.build_type }}
         cmake --build ${{ inputs.build-output-dir}} --target benchmark --config ${{ inputs.build_type }} --parallel
         ctest --test-dir ${{ inputs.build-output-dir}} --build-config ${{ inputs.build_type }} --output-on-failure --parallel
         mv ${{ inputs.build-output-dir }}/benchmark/benchmark_result.json ${{ inputs.build-output-dir }}/benchmark/benchmark_result_ref.json
+
+    - name: Compare Benchmarks
+      shell: bash
+      run: |
+        python3 ${{ inputs.build-output-dir}}/_deps/benchmark-src/tools/compare.py benchmarks \
+          ${{ inputs.build-output-dir }}/benchmark/benchmark_result_ref.json \
+          ${{ inputs.build-output-dir }}/benchmark/benchmark_result_new.json \
+          | tee ${{ inputs.build-output-dir }}/benchmark/comparison.txt
 
     - name: Archive benchmark results
       uses: actions/upload-artifact@v4
@@ -57,22 +76,4 @@ runs:
         path: |
           ${{ inputs.build-output-dir }}/benchmark/benchmark_result_ref.json
           ${{ inputs.build-output-dir }}/benchmark/benchmark_result_new.json
-
-    - name: Compare Benchmarks
-      shell: bash
-      run: |
-        python3 ${{ inputs.build-output-dir}}/_deps/benchmark-src/tools/compare.py benchmarks \
-          ${{ inputs.build-output-dir }}/benchmark/benchmark_result_ref.json \
-          ${{ inputs.build-output-dir }}/benchmark/benchmark_result_new.json \
-          | tee comparison.txt
-
-    - name: Store benchmark result
-      uses: benchmark-action/github-action-benchmark@v1
-      with:
-        tool: 'googlecpp'
-        # Where the output from the benchmark tool is stored
-        output-file-path: ${{ inputs.build-output-dir }}/benchmark/benchmark_result_new.json
-        # Where the previous data file is stored
-        external-data-json-path: ${{ inputs.build-output-dir }}/benchmark/benchmark_result_ref.json
-        # Workflow will fail when an alert happens
-        fail-on-alert: true
+          ${{ inputs.build-output-dir }}/benchmark/comparison.txt

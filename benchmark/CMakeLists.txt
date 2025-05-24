@@ -97,5 +97,5 @@ target_link_libraries(bitlib-bench PRIVATE
 
 add_test(
   NAME BenchmarkTest
-  COMMAND $<TARGET_FILE:bitlib-bench> --benchmark_format=json --benchmark_out=benchmark_result.json
+  COMMAND $<TARGET_FILE:bitlib-bench> --benchmark_format=json --benchmark_out=benchmark_result.json --benchmark_min_warmup_time=0.001 --benchmark_min_time=0.01s
 )
