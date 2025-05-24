@@ -491,7 +491,7 @@ constexpr T _lzcnt(T src, X...) noexcept {
   static_assert(binary_digits<T>::value, "");
   constexpr T digits = binary_digits<T>::value;
   T dst = src != T();
-  while (src = lsr(src, 1)) {
+  while ((src = lsr(src, 1))) {
     ++dst;
   }
   return digits - dst;
