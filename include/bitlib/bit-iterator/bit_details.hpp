@@ -790,7 +790,6 @@ constexpr void _bitexch(T& src0, T& src1, S start0, S start1, S len) noexcept
 {
     static_assert(binary_digits<T>::value, "");
     constexpr auto digits = binary_digits<T>::value;
-    constexpr T one = 1;
     const T msk = _mask<T>(len);
     if (start0 >= start1) {
         src0 = src0 ^ (
