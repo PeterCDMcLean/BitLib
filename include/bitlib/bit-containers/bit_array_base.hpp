@@ -31,6 +31,12 @@ namespace bit {
 
 template <typename T, typename W>
 class bit_array_ref;
+
+template <typename T,
+          std::size_t N,
+          std::align_val_t V,
+          typename W>
+class bit_array;
 // ========================================================================== //
 
 /**
@@ -45,8 +51,17 @@ class bit_array_ref;
  * @tparam It The iterator type for the derived class
  * @tparam CIt The const_iterator type for the derived class
  */
-template <typename Derived, typename T, typename W, typename It, typename CIt>
+template <typename Derived, typename T, size_t N, typename W, typename It, typename CIt>
 class bit_array_base {
+ protected:
+  constexpr Derived& derived() noexcept {
+    return static_cast<Derived&>(*this);
+  }
+
+  constexpr const Derived& derived() const noexcept {
+    return static_cast<const Derived&>(*this);
+  }
+
  public:
   using word_type = W;
   using value_type = T;
@@ -181,13 +196,52 @@ class bit_array_base {
     return integral;
   }
 
- protected:
-  constexpr Derived& derived() noexcept {
-    return static_cast<Derived&>(*this);
+  using compatible_bitarray = bit_array<value_type, N, std::align_val_t(alignof(word_type)), word_type>;
+
+  constexpr compatible_bitarray operator~() {
+    compatible_bitarray result(derived().size());
+    transform(derived().begin(), derived().end(), result.begin(), [](const word_type& bits) -> word_type { return ~bits; });
+    return result;
   }
 
-  constexpr const Derived& derived() const noexcept {
-    return static_cast<const Derived&>(*this);
+  constexpr compatible_bitarray operator|(const bit_sized_range auto& other) const {
+    assert(other.size() == derived().size());
+    compatible_bitarray result(derived().size());
+    transform(derived().begin(), derived().end(), other.begin(), result.begin(),
+              [](const word_type& a, const word_type& b) -> word_type { return a | b; });
+    return result;
+  }
+  constexpr Derived& operator|=(bit_sized_range auto& other) {
+    assert(other.size() == derived().size());
+    transform(derived().begin(), derived().end(), other.begin(), derived().begin(),
+              [](const word_type& a, const word_type& b) -> word_type { return a | b; });
+    return derived();
+  }
+  constexpr compatible_bitarray operator&(const bit_sized_range auto& other) const {
+    assert(other.size() == derived().size());
+    compatible_bitarray result(derived().size());
+    transform(derived().begin(), derived().end(), other.begin(), result.begin(),
+              [](const word_type& a, const word_type& b) -> word_type { return a & b; });
+    return result;
+  }
+  constexpr Derived& operator&=(bit_sized_range auto& other) {
+    assert(other.size() == derived().size());
+    transform(derived().begin(), derived().end(), other.begin(), derived().begin(),
+              [](const word_type& a, const word_type& b) -> word_type { return a & b; });
+    return derived();
+  }
+  constexpr compatible_bitarray operator^(const bit_sized_range auto& other) const {
+    assert(other.size() == derived().size());
+    compatible_bitarray result(derived().size());
+    transform(derived().begin(), derived().end(), other.begin(), result.begin(),
+              [](const word_type& a, const word_type& b) -> word_type { return a ^ b; });
+    return result;
+  }
+  constexpr Derived& operator^=(bit_sized_range auto& other) {
+    assert(other.size() == derived().size());
+    transform(derived().begin(), derived().end(), other.begin(), derived().begin(),
+              [](const word_type& a, const word_type& b) -> word_type { return a ^ b; });
+    return derived();
   }
 };
 constexpr bool operator==(const bit_sized_range auto& lhs, const bit_sized_range auto& rhs) {

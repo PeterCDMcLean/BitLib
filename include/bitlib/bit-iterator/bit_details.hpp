@@ -15,6 +15,8 @@
 
 // ================================ PREAMBLE ================================ //
 // C++ standard library
+#include <immintrin.h>
+
 #include <algorithm>
 #include <cassert>
 #include <concepts>
@@ -877,103 +879,70 @@ constexpr T _shrd(T dst, T src, T cnt) noexcept {
 }
 // -------------------------------------------------------------------------- //
 
-// ------------ IMPLEMENTATION DETAILS: INSTRUCTIONS: ADD CARRY ------------- //
-// Adds src0 and src1 and returns the new carry bit with intrinsics
-template <class C, class T, class>
-constexpr C _addcarry(C carry, T src0, T src1, T* dst) noexcept {
-  static_assert(binary_digits<T>::value, "");
-  using wider_t = typename _wider_type<T>::type;
-  constexpr T digits = binary_digits<T>::value;
-  wider_t tmp = 0;
-  unsigned int udst = 0;
-  unsigned long long int ulldst = 0;
-  if (digits == std::numeric_limits<unsigned int>::digits) {
-    carry = __builtin_ia32_addcarryx_u32(carry, src0, src1, &udst);
-    *dst = udst;
-  } else if (digits == std::numeric_limits<unsigned long long int>::digits) {
-    carry = __builtin_ia32_addcarryx_u64(carry, src0, src1, &ulldst);
-    *dst = ulldst;
-  } else if (digits < binary_digits<wider_t>::value) {
-    tmp = static_cast<wider_t>(src0) + static_cast<wider_t>(src1);
-    tmp += static_cast<wider_t>(static_cast<bool>(carry));
-    *dst = tmp;
-    carry = static_cast<bool>(tmp >> digits);
+#if defined(__ADX__)
+template <bool Add>
+unsigned char ADDCARRYSUBBORROW32(unsigned char c, uint32_t a, uint32_t b, uint32_t* out) {
+  return (Add ? _addcarryx_u32(c, a, b, out) : _subborrow_u32(c, a, b, out));
+}
+template <bool Add>
+unsigned char ADDCARRYSUBBORROW64(unsigned char c, uint64_t a, uint64_t b, uint64_t* out) {
+  static_assert(sizeof(uint64_t) == sizeof(unsigned long long int));
+  return (Add ? _addcarryx_u64(c, a, b, reinterpret_cast<unsigned long long int*>(out)) : _subborrow_u64(c, a, b, reinterpret_cast<unsigned long long int*>(out)));
+}
+#else
+template <bool Add>
+unsigned char ADDCARRYSUBBORROW32(unsigned char c, uint32_t a, uint32_t b, uint32_t* out) {
+  return (Add ? _addcarry_u32(c, a, b, out) : _subborrow_u32(c, a, b, out));
+}
+template <bool Add>
+unsigned char ADDCARRYSUBBORROW64(unsigned char c, uint64_t a, uint64_t b, uint64_t* out) {
+  static_assert(sizeof(uint64_t) == sizeof(unsigned long long int));
+  return (Add ? _addcarry_u64(c, a, b, reinterpret_cast<unsigned long long int*>(out)) : _subborrow_u64(c, a, b, reinterpret_cast<unsigned long long int*>(out)));
+}
+#endif
+
+template <bool Add, std::integral U>
+static inline unsigned char add_carry_sub_borrow(unsigned char c_in, U a, U b, U* out) noexcept {
+  if constexpr (32 > bitsof<U>()) {
+    // a       [aaaaaaaa111111111111111111111111111]
+    // b     + [bbbbbbbb000000000000000000000000000]
+    // carry +                            [0000000c]
+    const uint8_t shift = (32 - bitsof<U>());
+    uint32_t carry_propagation = Add ? ((1 << shift) - 1) : 0;
+    uint32_t tmp_out;
+    unsigned char carry = ADDCARRYSUBBORROW32<Add>(
+        c_in,
+        (static_cast<uint32_t>(a) << shift) | carry_propagation,
+        (static_cast<uint32_t>(b) << shift),
+        &tmp_out);
+    *out = static_cast<U>(tmp_out >> shift);
+    return carry;
+  } else if constexpr (32 == bitsof<U>()) {
+    return ADDCARRYSUBBORROW32<Add>(c_in, static_cast<uint32_t>(a), static_cast<uint32_t>(b), reinterpret_cast<uint32_t>(out));
+  } else if constexpr (64 == bitsof<U>()) {
+    return ADDCARRYSUBBORROW64<Add>(c_in, static_cast<uint64_t>(a), static_cast<uint64_t>(b), reinterpret_cast<uint64_t>(out));
+  } else if constexpr (0 == (bitsof<U>() % 64)) {
+    using t64 = std::conditional<std::is_signed_v<U>, int64_t, uint64_t>;
+    unsigned char carry;
+    for (int i = 0; i < (bitsof<U>() / 64); i++) {
+      carry = ADDCARRYSUBBORROW64<Add>(c_in, static_cast<t64>(a >> (i * 64)), static_cast<t64>(b >> (i * 64)), reinterpret_cast<t64>(out) + i);
+    }
+    return carry;
   } else {
-    carry = _addcarry(carry, src0, src1, dst, std::ignore);
+    assert(((void)"add carry intrinsics support only support powers of 2 bits", false));
   }
-  return carry;
 }
 
-// Adds src0 and src1 and returns the new carry bit without intrinsics
-template <class C, class T, class... X>
-constexpr C _addcarry(C carry, T src0, T src1, T* dst, X...) noexcept {
-  static_assert(binary_digits<T>::value, "");
-  *dst = src0 + src1 + static_cast<T>(static_cast<bool>(carry));
-  return carry ? *dst <= src0 || *dst <= src1 : *dst < src0 || *dst < src1;
-}
-// -------------------------------------------------------------------------- //
-
-// ------------ IMPLEMENTATION DETAILS: INSTRUCTIONS: SUB BORROW ------------ //
-// Subtracts src1 to src0 and returns the new borrow bit with intrinsics
-template <class B, class T, class>
-constexpr B _subborrow(B borrow, T src0, T src1, T* dst) noexcept {
-  static_assert(binary_digits<T>::value, "");
-  using wider_t = typename _wider_type<T>::type;
-  constexpr T digits = binary_digits<T>::value;
-  wider_t tmp = 0;
-  unsigned int udst = 0;
-  unsigned long long int ulldst = 0;
-  if (digits == std::numeric_limits<unsigned int>::digits) {
-    borrow = __builtin_ia32_sbb_u32(borrow, src0, src1, &udst);
-    *dst = udst;
-  } else if (digits == std::numeric_limits<unsigned long long int>::digits) {
-    borrow = __builtin_ia32_sbb_u64(borrow, src0, src1, &ulldst);
-    *dst = ulldst;
-  } else if (digits < binary_digits<wider_t>::value) {
-    tmp = static_cast<wider_t>(src1);
-    tmp += static_cast<wider_t>(static_cast<bool>(borrow));
-    borrow = tmp > static_cast<wider_t>(src0);
-    *dst = static_cast<wider_t>(src0) - tmp;
-  } else {
-    borrow = _subborrow(borrow, src0, src1, dst, std::ignore);
-  }
-  return borrow;
+template <std::integral U>
+static inline unsigned char add_carry(unsigned char c_in, U a, U b, U* out) noexcept {
+  return add_carry_sub_borrow<true, U>(c_in, a, b, out);
 }
 
-// Subtracts src1 to src0 and returns the new borrow bit with other intrinsics
-template <class B, class T, class>
-constexpr B _subborrow(const B& borrow, T src0, T src1, T* dst) noexcept {
-  static_assert(binary_digits<T>::value, "");
-  using wider_t = typename _wider_type<T>::type;
-  constexpr T digits = binary_digits<T>::value;
-  wider_t tmp = 0;
-  unsigned int udst = 0;
-  unsigned long long int ulldst = 0;
-  B flag = borrow;
-  if (digits == std::numeric_limits<unsigned int>::digits) {
-    flag = __builtin_ia32_subborrow_u32(borrow, src0, src1, &udst);
-    *dst = udst;
-  } else if (digits == std::numeric_limits<unsigned long long int>::digits) {
-    flag = __builtin_ia32_subborrow_u64(borrow, src0, src1, &ulldst);
-    *dst = ulldst;
-  } else if (digits < binary_digits<wider_t>::value) {
-    tmp = static_cast<wider_t>(src1);
-    tmp += static_cast<wider_t>(static_cast<bool>(borrow));
-    flag = tmp > static_cast<wider_t>(src0);
-    *dst = static_cast<wider_t>(src0) - tmp;
-  } else {
-    flag = _subborrow(borrow, src0, src1, dst, std::ignore);
-  }
-  return flag;
+template <std::integral U>
+static inline unsigned char sub_borrow(unsigned char c_in, U a, U b, U* out) noexcept {
+  return add_carry_sub_borrow<false, U>(c_in, a, b, out);
 }
 
-// Subtracts src1 to src0 and returns the new borrow bit without intrinsics
-template <class B, class T, class... X>
-constexpr B _subborrow(B borrow, T src0, T src1, T* dst, X...) noexcept {
-  static_assert(binary_digits<T>::value, "");
-  *dst = src0 - (src1 + static_cast<T>(static_cast<bool>(borrow)));
-  return borrow ? src1 >= src0 : src1 > src0;
-}
 // -------------------------------------------------------------------------- //
 
 // -------- IMPLEMENTATION DETAILS: INSTRUCTIONS: MULTIWORD MULTIPLY -------- //
@@ -1028,7 +997,6 @@ constexpr T _mulx(T src0, T src1, T* hi, X...) noexcept
 
 
 // ========================================================================== //
-} // namespace bit
+}  // namespace bit
 #endif // _BIT_DETAILS_HPP_INCLUDED
 // ========================================================================== //
-
