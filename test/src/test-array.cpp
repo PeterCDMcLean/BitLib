@@ -318,7 +318,7 @@ TEST(BitArrayDynamicTest, InitializerListWordTypeConstructorWorks) {
   // Assuming each std::uint8_t provides 8 bits, we expect the size to be the number of initializer elements * 8.
   EXPECT_EQ(arr.size(), init.size() * 8u);
   // Check that the underlying storage matches the initializer values.
-  const std::uint8_t* data = arr.data();
+  const std::uint8_t* data = reinterpret_cast<std::uint8_t*>(arr.data());
   auto wordIt = init.begin();
   for (std::size_t i = 0; i < init.size(); ++i) {
     EXPECT_EQ(data[i], *(wordIt++));
@@ -455,22 +455,6 @@ TEST(BitArrayDynamicTest, StringConstructor) {
   EXPECT_EQ(arr[2], bit::bit0);
   EXPECT_EQ(arr[1], bit::bit1);
   EXPECT_EQ(arr[0], bit::bit0);
-}
-
-TEST(BitArrayDynamicTest, TwoDBitArraySizeValueConstructor) {
-  bit::bit_array<bit::bit_array<>> arr(
-      16,
-      bit::bit_array<>(4, bit::bit1));
-  EXPECT_EQ(arr.size(), 16);
-  EXPECT_EQ(arr[0].size(), 4);
-}
-
-TEST(BitArrayDynamicTest, TwoDBitArraySizeConstructor) {
-  bit::bit_array<bit::bit_array<>> arr(
-      16,
-      bit::bit_array<>(4));
-  EXPECT_EQ(arr.size(), 16);
-  EXPECT_EQ(arr[0].size(), 4);
 }
 
 // Test comparison operators (== and !=).

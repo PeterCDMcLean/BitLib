@@ -34,7 +34,6 @@ class bit_array_ref;
 
 template <typename T,
           std::size_t N,
-          std::align_val_t V,
           typename W>
 class bit_array;
 // ========================================================================== //
@@ -196,7 +195,7 @@ class bit_array_base {
     return integral;
   }
 
-  using compatible_bitarray = bit_array<value_type, N, std::align_val_t(alignof(word_type)), word_type>;
+  using compatible_bitarray = bit_array<value_type, N, word_type>;
 
   constexpr compatible_bitarray operator~() {
     compatible_bitarray result(derived().size());

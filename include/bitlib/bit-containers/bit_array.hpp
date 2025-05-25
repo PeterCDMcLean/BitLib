@@ -50,11 +50,10 @@ using bit_array_d_cit = typename std::conditional<std::is_same_v<value_type, bit
 
 template <typename T = bit_value,
           std::size_t N = std::dynamic_extent,
-          std::align_val_t V = std::align_val_t(alignof(T)),
-          typename W = std::conditional_t<std::is_same_v<T, bit_value>, uint8_t, T>>
-class bit_array : public bit_array_base<bit_array<T, N, V, W>, T, N, W, detail::bit_array_d_it<T, W, N>, detail::bit_array_d_cit<T, W, N>> {
+          typename W = std::conditional_t<(N == std::dynamic_extent), std::uintptr_t, ceil_integral<T>>>
+class bit_array : public bit_array_base<bit_array<T, N, W>, T, N, W, detail::bit_array_d_it<T, W, N>, detail::bit_array_d_cit<T, W, N>> {
  public:
-  using base = bit_array_base<bit_array<T, N, V, W>, T, N, W, detail::bit_array_d_it<T, W, N>, detail::bit_array_d_cit<T, W, N>>;
+  using base = bit_array_base<bit_array<T, N, W>, T, N, W, detail::bit_array_d_it<T, W, N>, detail::bit_array_d_cit<T, W, N>>;
   using base::end;
   using typename base::const_iterator;
   using typename base::const_pointer;
@@ -75,10 +74,7 @@ class bit_array : public bit_array_base<bit_array<T, N, V, W>, T, N, W, detail::
   }
 
  private:
-  static constexpr std::size_t Words_ = Words(N);
-  static constexpr std::size_t AlignedWords = (((Words_ * sizeof(word_type) + static_cast<size_t>(V) - 1) & ~(static_cast<size_t>(V) - 1)) + sizeof(word_type) - 1) / sizeof(word_type);
-
-  alignas(static_cast<size_t>(V)) std::array<word_type, AlignedWords> storage;
+  std::array<word_type, Words(N)> storage;
 
  public:
   /*
@@ -116,10 +112,10 @@ class bit_array : public bit_array_base<bit_array<T, N, V, W>, T, N, W, detail::
     }
   }
 
-  constexpr bit_array(const bit_array<T, N, V, W>& other) noexcept
+  constexpr bit_array(const bit_array<T, N, W>& other) noexcept
       : storage(other.storage) {}
 
-  constexpr bit_array(const bit_array<T, N, V, W>&& other) noexcept
+  constexpr bit_array(const bit_array<T, N, W>&& other) noexcept
       : storage(other.storage) {}
 
   constexpr bit_array(const bit_sized_range auto& other) {
@@ -148,7 +144,7 @@ class bit_array : public bit_array_base<bit_array<T, N, V, W>, T, N, W, detail::
   constexpr bit_array(const std::initializer_list<word_type> init) : storage{} {
     // Make sure we handle the case where init.size() != Words
     auto it = init.begin();
-    for (size_type i = 0; i < std::min(AlignedWords, init.size()); ++i, ++it) {
+    for (size_type i = 0; i < std::min(Words(N), init.size()); ++i, ++it) {
       storage[i] = *it;
     }
   }
@@ -173,7 +169,7 @@ class bit_array : public bit_array_base<bit_array<T, N, V, W>, T, N, W, detail::
   /*
     * Assignment
     */
-  constexpr bit_array& operator=(const bit_array<T, N, V, W>& other) = default;
+  constexpr bit_array& operator=(const bit_array<T, N, W>& other) = default;
 
   constexpr bit_array& operator=(const bit_sized_range auto& other) {
     if (other.size() != this->size()) [[unlikely]] {
@@ -183,7 +179,7 @@ class bit_array : public bit_array_base<bit_array<T, N, V, W>, T, N, W, detail::
     return *this;
   };
 
-  constexpr bit_array& operator=(bit_array<T, N, V, W>&& other) noexcept {
+  constexpr bit_array& operator=(bit_array<T, N, W>&& other) noexcept {
     std::copy(other.storage.begin(), other.storage.end(), storage.begin());
     return *this;
   }
@@ -217,7 +213,7 @@ class bit_array : public bit_array_base<bit_array<T, N, V, W>, T, N, W, detail::
   /*
     * Operations
     */
-  constexpr void swap(bit_array<T, N, V, W>& other) noexcept {
+  constexpr void swap(bit_array<T, N, W>& other) noexcept {
     std::swap(this->storage, other.storage);
   }
 };

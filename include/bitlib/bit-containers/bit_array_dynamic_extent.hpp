@@ -37,11 +37,11 @@ using bit_array_cit = typename std::conditional<std::is_same_v<value_type, bit_v
                                                 bit_iterator<const word_type*>,
                                                 const word_type*>::type;
 }  // namespace detail
-template <typename T, std::align_val_t V, typename W>
-class bit_array<T, std::dynamic_extent, V, W>
-    : public bit_array_base<bit_array<T, std::dynamic_extent, V, W>, T, std::dynamic_extent, W, detail::bit_array_it<T, W>, detail::bit_array_cit<T, W>> {
+template <typename T, typename W>
+class bit_array<T, std::dynamic_extent, W>
+    : public bit_array_base<bit_array<T, std::dynamic_extent, W>, T, std::dynamic_extent, W, detail::bit_array_it<T, W>, detail::bit_array_cit<T, W>> {
  public:
-  using base = bit_array_base<bit_array<T, std::dynamic_extent, V, W>, T, std::dynamic_extent, W, detail::bit_array_it<T, W>, detail::bit_array_cit<T, W>>;
+  using base = bit_array_base<bit_array<T, std::dynamic_extent, W>, T, std::dynamic_extent, W, detail::bit_array_it<T, W>, detail::bit_array_cit<T, W>>;
   using base::end;
   using typename base::const_iterator;
   using typename base::const_pointer;
@@ -55,25 +55,11 @@ class bit_array<T, std::dynamic_extent, V, W>
   using typename base::word_type;
 
  private:
-  struct deleter {
-    size_type words;
-    void operator()(word_type* const p) const {
-      for (size_type i = 0; i < words; ++i) {
-        (p + i)->~word_type();
-      }
-      ::operator delete(p, V);
-    }
-  };
-
   const size_type m_size;
-  const std::unique_ptr<word_type[], deleter> storage;
+  const std::unique_ptr<word_type[]> storage;
 
   static constexpr size_type Words(size_type N) {
     return (N * bitsof<value_type>() + bitsof<word_type>() - 1) / bitsof<word_type>();
-  };
-
-  static constexpr size_t AlignedBytes(size_t N) {
-    return (Words(N) * sizeof(word_type) + static_cast<size_t>(V) - 1) & ~(static_cast<size_t>(V) - 1);
   };
 
  public:
@@ -84,7 +70,7 @@ class bit_array<T, std::dynamic_extent, V, W>
 
   constexpr bit_array(const size_type size)
       : m_size(size),
-        storage(static_cast<word_type*>(::operator new(AlignedBytes(m_size), V)), deleter{Words(m_size)}) {
+        storage(new word_type[Words(m_size)]) {
     //std::uninitialized_fill_n(this->begin(), Words(m_size), word_type());
     for (size_type i = 0; i < Words(m_size); ++i) {
       new (storage.get() + i) word_type();
@@ -94,7 +80,7 @@ class bit_array<T, std::dynamic_extent, V, W>
   template <std::integral U>
   constexpr bit_array(const size_type size, const U& integral)
       : m_size(size),
-        storage(static_cast<word_type*>(::operator new(AlignedBytes(m_size), V)), deleter{Words(m_size)}) {
+        storage(new word_type[Words(m_size)]) {
     assert(bitsof<U>() <= size);
     for (size_type i = 0; i < Words(m_size); ++i) {
       new (storage.get() + i) word_type();
@@ -117,7 +103,7 @@ class bit_array<T, std::dynamic_extent, V, W>
 
   constexpr bit_array(const size_type size, const value_type bit_val)
       : m_size(size),
-        storage(static_cast<word_type*>(::operator new(AlignedBytes(m_size), V)), deleter{Words(m_size)}) {
+        storage(new word_type[Words(m_size)]) {
     if constexpr (std::is_same<value_type, word_type>::value) {
       for (size_type i = 0; i < Words(m_size); ++i) {
         new (storage.get() + i) word_type(bit_val);
@@ -130,9 +116,9 @@ class bit_array<T, std::dynamic_extent, V, W>
     }
   }
 
-  constexpr bit_array(const bit_array<T, std::dynamic_extent, V, W>& other)
+  constexpr bit_array(const bit_array<T, std::dynamic_extent, W>& other)
       : m_size(other.size()),
-        storage(static_cast<word_type*>(::operator new(AlignedBytes(m_size), V)), deleter{Words(m_size)}) {
+        storage(new word_type[Words(m_size)]) {
     for (size_type i = 0; i < Words(m_size); ++i) {
       new (storage.get() + i) word_type(*(other.storage.get() + i));
     }
@@ -140,13 +126,13 @@ class bit_array<T, std::dynamic_extent, V, W>
 
   constexpr bit_array(const bit_sized_range auto& other)
       : m_size(other.size()),
-        storage(static_cast<word_type*>(::operator new(AlignedBytes(m_size), V)), deleter{Words(m_size)}) {
+        storage(new word_type[Words(m_size)]) {
     ::bit::copy(other.begin(), other.end(), this->begin());
   }
 
-  constexpr bit_array(const bit_array<T, std::dynamic_extent, V, W>&& other)
+  constexpr bit_array(const bit_array<T, std::dynamic_extent, W>&& other)
       : m_size(other.size()),
-        storage(static_cast<word_type*>(::operator new(AlignedBytes(m_size), V)), deleter{Words(m_size)}) {
+        storage(new word_type[Words(m_size)]) {
     for (size_type i = 0; i < Words(m_size); ++i) {
       new (storage.get() + i) word_type(*(other.storage.get() + i));
     }
@@ -155,7 +141,7 @@ class bit_array<T, std::dynamic_extent, V, W>
   constexpr bit_array(const std::initializer_list<value_type> init)
     requires(!std::is_same_v<value_type, word_type>)
       : m_size(init.size()),
-        storage(static_cast<word_type*>(::operator new(AlignedBytes(m_size), V)), deleter{Words(m_size)}) {
+        storage(new word_type[Words(m_size)]) {
     for (size_type i = 0; i < Words(m_size); ++i) {
       new (storage.get() + i) word_type();
     }
@@ -172,20 +158,17 @@ class bit_array<T, std::dynamic_extent, V, W>
   }
 #endif
 
-  constexpr bit_array(const std::initializer_list<word_type> init)
-      : m_size(bitsof<word_type>() * init.size()),
-        storage(static_cast<word_type*>(::operator new(AlignedBytes(m_size), V)), deleter{Words(m_size)}) {
-    size_type i = 0;
-    auto it = init.begin();
-    for (; i < Words(m_size) && it != init.end(); ++i, ++it) {
-      new (storage.get() + i) word_type(*it);
-    }
+  template <typename U>
+  constexpr bit_array(const std::initializer_list<U> init)
+      : m_size(bitsof<U>() * init.size()),
+        storage(new word_type[Words(m_size)]) {
+    std::copy(init.begin(), init.end(), storage.get());
   }
 
   constexpr bit_array(const std::string_view s)
     requires(std::is_same_v<value_type, bit_value>)
       : m_size((std::count(s.begin(), s.end(), '0') + std::count(s.begin(), s.end(), '1'))),
-        storage(static_cast<word_type*>(::operator new(AlignedBytes(m_size), V)), deleter{Words(m_size)}) {
+        storage(new word_type[Words(m_size)]) {
     for (size_type i = 0; i < Words(m_size); ++i) {
       new (storage.get() + i) word_type();
     }
@@ -204,7 +187,7 @@ class bit_array<T, std::dynamic_extent, V, W>
   /*
    * Assignment
    */
-  constexpr bit_array<T, std::dynamic_extent, V, W>& operator=(const bit_array<T, std::dynamic_extent, V, W>& other) {
+  constexpr bit_array<T, std::dynamic_extent, W>& operator=(const bit_array<T, std::dynamic_extent, W>& other) {
     if (nullptr == storage.get() || m_size != other.m_size) {
       throw std::invalid_argument("Cannot reassign bit_array<std::dynamic_extent,V,W> size");
     }
@@ -212,7 +195,7 @@ class bit_array<T, std::dynamic_extent, V, W>
     return *this;
   }
 
-  constexpr bit_array<T, std::dynamic_extent, V, W>& operator=(const bit_sized_range auto& other) {
+  constexpr bit_array<T, std::dynamic_extent, W>& operator=(const bit_sized_range auto& other) {
     if (other.size() != this->size()) [[unlikely]] {
       throw std::invalid_argument("other bit_range contains an invalid number of bits for bit_array.");
     }
@@ -220,7 +203,7 @@ class bit_array<T, std::dynamic_extent, V, W>
     return *this;
   };
 
-  constexpr bit_array<T, std::dynamic_extent, V, W>& operator=(bit_array<T, std::dynamic_extent, V, W>&& other) {
+  constexpr bit_array<T, std::dynamic_extent, W>& operator=(bit_array<T, std::dynamic_extent, W>&& other) {
     if (nullptr == storage.get() || m_size != other.m_size) {
       throw std::invalid_argument("Cannot reassign bit_array<std::dynamic_extent,V,W> size");
     }
@@ -260,7 +243,7 @@ class bit_array<T, std::dynamic_extent, V, W>
   /*
    * Operations
    */
-  constexpr void swap(bit_array<T, std::dynamic_extent, V, W>& other) noexcept {
+  constexpr void swap(bit_array<T, std::dynamic_extent, W>& other) noexcept {
     assert(this->m_size == other.m_size);
     // Cannot just swap storage as it is const.
     W* it1 = this->storage.get();
