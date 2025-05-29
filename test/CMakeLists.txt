@@ -32,6 +32,7 @@ target_sources(bitlib-tests PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-equal.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-fill.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-find.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-iterator_adapter.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-literal.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-move.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-reverse.cpp
@@ -69,3 +70,25 @@ endif()
 gtest_discover_tests(
     bitlib-tests
     EXTRA_ARGS --gtest_repeat=${BITLIB_GTEST_REPEAT})
+
+
+add_executable(iterator_adapter-tests)
+
+target_sources(iterator_adapter-tests PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-iterator_adapter.cpp
+)
+
+target_include_directories(iterator_adapter-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/inc)
+
+if (BITLIB_TEST_WERROR)
+  if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang|AppleClang")
+    target_compile_options(iterator_adapter-tests PRIVATE -Werror)
+  elseif (MSVC)
+    target_compile_options(iterator_adapter-tests PRIVATE /WX)
+  endif()
+endif()
+
+# specify test-specific libraries
+target_link_libraries(iterator_adapter-tests PRIVATE bitlib GTest::gtest GTest::gtest_main)
+
+gtest_discover_tests(iterator_adapter-tests)
