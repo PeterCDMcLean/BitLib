@@ -39,8 +39,12 @@ class bit_iterator_adapter {
   // Assertions
  private:
   using _traits_t = _cv_iterator_traits<Iterator>;
-  static const size_t ratio = sizeof(typename _cv_iterator_traits<BaseIterator>::value_type) /
-                              sizeof(typename _cv_iterator_traits<Iterator>::value_type);
+  static constexpr bool big_to_small = sizeof(typename _cv_iterator_traits<BaseIterator>::value_type) >
+                                       sizeof(typename _cv_iterator_traits<Iterator>::value_type);
+  static constexpr size_t ratio = big_to_small ? (sizeof(typename _cv_iterator_traits<BaseIterator>::value_type) /
+                                                  sizeof(typename _cv_iterator_traits<Iterator>::value_type))
+                                               : (sizeof(typename _cv_iterator_traits<Iterator>::value_type) /
+                                                  sizeof(typename _cv_iterator_traits<BaseIterator>::value_type));
 
   // Types
  public:

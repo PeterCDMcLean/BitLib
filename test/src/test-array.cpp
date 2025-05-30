@@ -37,24 +37,24 @@ TEST(ArrayTest, BitsOf) {
 }
 
 TEST(ArrayTest, BasicIteration) {
-                        //  <-- LSB, apparently 🙄
-                        bit::bit_array<bit::bit_value, 11> barr("0110_0101_110");
-                        int i = 0;
-                        for (const auto& bbit : barr) {
-                          switch (10 - i++) {
-                            case 0: EXPECT_EQ(bit::bit0, bbit); break;
-                            case 1: EXPECT_EQ(bit::bit1, bbit); break;
-                            case 2: EXPECT_EQ(bit::bit1, bbit); break;
-                            case 3: EXPECT_EQ(bit::bit1, bbit); break;
-                            case 4: EXPECT_EQ(bit::bit0, bbit); break;
-                            case 5: EXPECT_EQ(bit::bit1, bbit); break;
-                            case 6: EXPECT_EQ(bit::bit0, bbit); break;
-                            case 7: EXPECT_EQ(bit::bit0, bbit); break;
-                            case 8: EXPECT_EQ(bit::bit1, bbit); break;
-                            case 9: EXPECT_EQ(bit::bit1, bbit); break;
-                            case 10: EXPECT_EQ(bit::bit0, bbit); break;
-                          }
-                        }
+  //  <-- LSB, apparently 🙄
+  bit::bit_array<bit::bit_value, 11> barr("0110_0101_110");
+  int i = 0;
+  for (const auto& bbit : barr) {
+    switch (10 - i++) {
+      case 0: EXPECT_EQ(bit::bit0, bbit); break;
+      case 1: EXPECT_EQ(bit::bit1, bbit); break;
+      case 2: EXPECT_EQ(bit::bit1, bbit); break;
+      case 3: EXPECT_EQ(bit::bit1, bbit); break;
+      case 4: EXPECT_EQ(bit::bit0, bbit); break;
+      case 5: EXPECT_EQ(bit::bit1, bbit); break;
+      case 6: EXPECT_EQ(bit::bit0, bbit); break;
+      case 7: EXPECT_EQ(bit::bit0, bbit); break;
+      case 8: EXPECT_EQ(bit::bit1, bbit); break;
+      case 9: EXPECT_EQ(bit::bit1, bbit); break;
+      case 10: EXPECT_EQ(bit::bit0, bbit); break;
+    }
+  }
 }
 
 TEST(ArrayTest, ZeroSize) {
@@ -443,7 +443,7 @@ TEST(BitArrayDynamicTest, StructOfBitArray) {
 }
 
 TEST(BitArrayDynamicTest, StringConstructor) {
-  bit::bit_array<> arr{"01001101"};
+  bit::bit_array<> arr("01001101");
 
   EXPECT_EQ(arr.size(), 8);
 

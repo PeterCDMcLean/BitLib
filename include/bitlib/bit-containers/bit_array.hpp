@@ -50,7 +50,7 @@ using bit_array_d_cit = typename std::conditional<std::is_same_v<value_type, bit
 
 template <typename T = bit_value,
           std::size_t N = std::dynamic_extent,
-          typename W = std::conditional_t<(N == std::dynamic_extent), std::uintptr_t, ceil_integral<T>>>
+          typename W = std::conditional_t<(N == std::dynamic_extent), std::uintptr_t, ceil_integral<N>>>
 class bit_array : public bit_array_base<bit_array<T, N, W>, T, N, W, detail::bit_array_d_it<T, W, N>, detail::bit_array_d_cit<T, W, N>> {
  public:
   using base = bit_array_base<bit_array<T, N, W>, T, N, W, detail::bit_array_d_it<T, W, N>, detail::bit_array_d_cit<T, W, N>>;

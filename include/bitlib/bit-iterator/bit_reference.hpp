@@ -28,7 +28,7 @@ namespace bit {
 
 /* ***************************** BIT REFERENCE ****************************** */
 // Bit reference class definition
-template <class WordType = uint8_t>
+template <class WordType = uintptr_t>
 class bit_reference {
   // Assertions
   static_assert(binary_digits<WordType>::value, "");

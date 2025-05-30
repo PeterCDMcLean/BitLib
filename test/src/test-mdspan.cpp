@@ -26,7 +26,7 @@ TEST(MdSpanTest, BitDefaultLayout) {
       bit::bit_value,
       std::dextents<size_t, 3>,
       std::layout_right,
-      bit::bit_default_accessor<uint8_t> >
+      bit::bit_default_accessor<uintptr_t> >
       myspan(&dynarr[0], 5, 6, 7);
 
   for (size_t i = 0; i < myspan.extent(0); i++) {

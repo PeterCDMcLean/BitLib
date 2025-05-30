@@ -36,13 +36,24 @@ constexpr bool equal(
     // Types and constants
     using dst_word_type = typename bit_iterator<RandomAccessIt2>::word_type;
     using src_word_type = typename bit_iterator<RandomAccessIt1>::word_type;
+    if constexpr (!std::is_same_v<src_word_type, dst_word_type> && bitsof<src_word_type>() != bitsof<dst_word_type>()) {
+      if constexpr (bitsof<src_word_type>() > bitsof<dst_word_type>()) {
+        bit_iterator<bit_iterator_adapter<RandomAccessIt2, RandomAccessIt1>> adapted_first(first);
+        bit_iterator<bit_iterator_adapter<RandomAccessIt2, RandomAccessIt1>> adapted_last(last);
+        return equal(adapted_first, adapted_last, d_first);
+      } else {
+        bit_iterator<bit_iterator_adapter<RandomAccessIt1, RandomAccessIt2>> adapted_d_first(d_first);
+        return equal(first, last, adapted_d_first);
+      }
+    } else {
+      static_assert(::std::is_same<dst_word_type, src_word_type>::value, "Underlying word types must be equal");
+    }
     using word_type = dst_word_type;
     using size_type = typename bit_iterator<RandomAccessIt2>::size_type;
     constexpr size_type digits = binary_digits<word_type>::value;
 
     // Assertions
     _assert_range_viability(first, last);
-    static_assert(::std::is_same<dst_word_type, src_word_type>::value, "Underlying word types must be equal");
     if (first == last) return true;
 
     // Initialization

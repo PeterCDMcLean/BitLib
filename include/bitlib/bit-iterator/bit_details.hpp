@@ -70,20 +70,20 @@ template <class T>
 constexpr std::size_t binary_digits_v = binary_digits<T>::value;
 /* ************************************************************************** */
 
-template <typename T>
+template <size_t N>
 using ceil_integral = std::conditional_t<
-    (sizeof(T) <= sizeof(std::uint8_t)),
+    (N <= bitsof<std::uint8_t>()),
     std::uint8_t,
     std::conditional_t<
-        (sizeof(T) <= sizeof(std::uint16_t)),
+        (N <= bitsof<std::uint16_t>()),
         std::uint16_t,
         std::conditional_t<
-            (sizeof(T) <= sizeof(std::uint32_t)),
+            (N <= bitsof<std::uint32_t>()),
             std::uint32_t,
             std::conditional_t<
-                (sizeof(T) <= sizeof(std::uint64_t)),
+                (N <= bitsof<std::uint64_t>()),
                 std::uint64_t,
-                T>>>>;
+                std::uint64_t>>>>;
 
 /* *************** IMPLEMENTATION DETAILS: CV ITERATOR TRAITS *************** */
 // Cv iterator traits structure definition
