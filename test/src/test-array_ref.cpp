@@ -156,7 +156,7 @@ TEST(BitArrayRef, BitPointerConstructor) {
   original[63] = bit::bit1;
 
   // Create a bit_pointer to original's storage
-  bit::bit_pointer<std::uint8_t> bit_ptr(original.data());
+  bit::bit_pointer<std::uintptr_t> bit_ptr(original.data());
 
   // Create a bit_array_ref using the bit_pointer
   bit::bit_array_ref<> ref(bit_ptr, original.size());
@@ -195,7 +195,7 @@ TEST(BitArrayRef, OffsetBitPointerConstructor) {
   original[13] = bit::bit1;
 
   // Create an offset bit_pointer (starting from the 3rd bit)
-  bit::bit_pointer<std::uint8_t> bit_ptr(original.data(), 3);
+  bit::bit_pointer<std::uintptr_t> bit_ptr(original.data(), 3);
 
   // Create a bit_array_ref using the offset bit_pointer
   bit::bit_array_ref<> ref(bit_ptr, 32);

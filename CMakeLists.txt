@@ -57,9 +57,25 @@ target_sources(bitlib INTERFACE
 )
 
 target_compile_features(bitlib INTERFACE cxx_std_23)
+include(CheckCXXSourceCompiles)
 
 if (BITLIB_MDSPAN)
   if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    set(USING_LIBSTDCXX 1)
+  endif()
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set(CODE "
+    #include <string>
+    #ifdef __GLIBCXX__
+    int main() { return 0; }
+    #else
+    #error Not using libstdc++
+    #endif
+    ")
+
+    check_cxx_source_compiles("${CODE}" USING_LIBSTDCXX)
+  endif()
+  if (USING_LIBSTDCXX)
     if (NOT TARGET std::mdspan)
       find_package(mdspan CONFIG)
       if (NOT mdspan_DIR OR "${mdspan_DIR}" STREQUAL "mdspan-NOTFOUND")
