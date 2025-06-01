@@ -314,7 +314,7 @@ TEST(BitArrayDynamicTest, InitializerListWordTypeConstructorWorks) {
   // For this test, we assume that the initializer list for WordType initializes the underlying storage.
   // Here we use two bytes as an example.
   std::initializer_list<std::uint8_t> init = {0b10101010, 0b01010101};
-  bit::bit_array<> arr(init);
+  bit::bit_array<bit::bit_value, std::dynamic_extent, std::uint8_t> arr(init);
   // Assuming each std::uint8_t provides 8 bits, we expect the size to be the number of initializer elements * 8.
   EXPECT_EQ(arr.size(), init.size() * 8u);
   // Check that the underlying storage matches the initializer values.
