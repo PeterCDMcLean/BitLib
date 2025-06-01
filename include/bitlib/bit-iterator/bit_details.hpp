@@ -68,7 +68,7 @@ struct binary_digits : binary_digits_impl<std::remove_cv_t<UIntType>> {};
 // Binary digits value
 template <class T>
 constexpr std::size_t binary_digits_v = binary_digits<T>::value;
-/* ************************************************************************** */
+/*************************************************************************** */
 
 template <size_t N>
 using ceil_integral = std::conditional_t<
