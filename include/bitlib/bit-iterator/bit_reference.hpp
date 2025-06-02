@@ -28,8 +28,12 @@ namespace bit {
 
 /* ***************************** BIT REFERENCE ****************************** */
 // Bit reference class definition
-template <class WordType = uintptr_t>
+template <typename WordRef = uintptr_t&>
 class bit_reference {
+ public:
+  using WordType = std::remove_reference_t<WordRef>;
+
+ private:
   // Assertions
   static_assert(binary_digits<WordType>::value, "");
 
@@ -46,11 +50,13 @@ class bit_reference {
   // Lifecycle
  public:
   template <class T>
-  requires (std::is_const_v<WordType> == std::is_const_v<T>)
-  constexpr bit_reference(const bit_reference<T>& other) noexcept;
+    requires(std::is_const_v<std::remove_reference_t<WordRef>> == std::is_const_v<std::remove_reference_t<T>>)
+  constexpr bit_reference(const bit_reference<T>& other) noexcept
+      : _ref(other._ref), _mask(other._mask) {
+  }
   constexpr bit_reference(const bit_reference& other) noexcept;
-  explicit constexpr bit_reference(word_type& ref) noexcept;
-  constexpr bit_reference(word_type& ref, size_type pos);
+  explicit constexpr bit_reference(WordRef ref) noexcept;
+  constexpr bit_reference(WordRef ref, size_type pos);
 
   // Assignment
  public:
@@ -96,7 +102,7 @@ class bit_reference {
 
   // Implementation details: data members
  private:
-  word_type& _ref;
+  WordRef _ref;
   const mask_type _mask;
 };
 static_assert(bit_reference_c<bit_reference<uint8_t>>, "bit_reference does not satisfy bit_reference_c concept!");
@@ -116,31 +122,22 @@ template <class CharT, class Traits, class T>
 std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& os, bit_reference<T> x);
 /* ************************************************************************** */
 
-
-
 // ------------------------ BIT REFERENCE: LIFECYCLE ------------------------ //
-// Implicitly constructs a bit reference from another bit reference
-template <class WordType>
-template <class T>
-requires (std::is_const_v<WordType> == std::is_const_v<T>)
-constexpr bit_reference<WordType>::bit_reference(const bit_reference<T>& other) noexcept
-    : _ref(other._ref), _mask(other._mask) {
-}
 
-template <class WordType>
-constexpr bit_reference<WordType>::bit_reference(const bit_reference<WordType>& other) noexcept
+template <class WordRef>
+constexpr bit_reference<WordRef>::bit_reference(const bit_reference<WordRef>& other) noexcept
     : _ref(other._ref), _mask(other._mask) {
 }
 
 // Explicitly constructs an aligned bit reference
-template <class WordType>
-constexpr bit_reference<WordType>::bit_reference(word_type& ref) noexcept
+template <class WordRef>
+constexpr bit_reference<WordRef>::bit_reference(WordRef ref) noexcept
     : _ref(ref), _mask(1) {
 }
 
 // Explicitly constructs an unaligned bit reference
-template <class WordType>
-constexpr bit_reference<WordType>::bit_reference(word_type& ref, size_type pos)
+template <class WordRef>
+constexpr bit_reference<WordRef>::bit_reference(WordRef ref, size_type pos)
     : _ref(ref), _mask(static_cast<word_type>(1) << pos) {
   assert(pos < binary_digits<word_type>::value);
 }
@@ -150,40 +147,40 @@ constexpr bit_reference<WordType>::bit_reference(word_type& ref, size_type pos)
 
 // ----------------------- BIT REFERENCE: ASSIGNMENT ------------------------ //
 // Copies a bit reference to the bit reference
-template <class WordType>
-constexpr bit_reference<WordType>& bit_reference<WordType>::operator=(const bit_reference& other) const noexcept {
+template <class WordRef>
+constexpr bit_reference<WordRef>& bit_reference<WordRef>::operator=(const bit_reference& other) const noexcept {
   other ? set() : reset();
-  return const_cast<bit_reference<WordType>&>(*this);
+  return const_cast<bit_reference<WordRef>&>(*this);
 }
 
 // Assigns a bit reference to the bit reference
-template <class WordType>
+template <class WordRef>
 template <class T>
-constexpr bit_reference<WordType>& bit_reference<WordType>::operator=(const bit_reference<T>& other) const noexcept {
+constexpr bit_reference<WordRef>& bit_reference<WordRef>::operator=(const bit_reference<T>& other) const noexcept {
   other ? set() : reset();
-  return const_cast<bit_reference<WordType>&>(*this);
+  return const_cast<bit_reference<WordRef>&>(*this);
 }
 
 // Assigns a bit value to the bit reference
-template <class WordType>
-constexpr bit_reference<WordType>& bit_reference<WordType>::operator=(const bit_value val) const noexcept {
+template <class WordRef>
+constexpr bit_reference<WordRef>& bit_reference<WordRef>::operator=(const bit_value val) const noexcept {
   val ? set() : reset();
-  return const_cast<bit_reference<WordType>&>(*this);
+  return const_cast<bit_reference<WordRef>&>(*this);
 }
 
 // Assigns the aligned bit of a value to the bit reference
-template <class WordType>
-constexpr bit_reference<WordType>& bit_reference<WordType>::assign(word_type val) const noexcept {
+template <class WordRef>
+constexpr bit_reference<WordRef>& bit_reference<WordRef>::assign(word_type val) const noexcept {
   val & 1 ? set() : reset();
-  return const_cast<bit_reference<WordType>&>(*this);
+  return const_cast<bit_reference<WordRef>&>(*this);
 }
 
 // Assigns an unaligned bit of a value to the bit reference
-template <class WordType>
-constexpr bit_reference<WordType>& bit_reference<WordType>::assign(word_type val, size_type pos) const {
+template <class WordRef>
+constexpr bit_reference<WordRef>& bit_reference<WordRef>::assign(word_type val, size_type pos) const {
   assert(pos < binary_digits<word_type>::value);
   ((val >> pos) & 1) ? set() : reset();
-  return const_cast<bit_reference<WordType>&>(*this);
+  return const_cast<bit_reference<WordRef>&>(*this);
 }
 // -------------------------------------------------------------------------- //
 
@@ -191,24 +188,24 @@ constexpr bit_reference<WordType>& bit_reference<WordType>::assign(word_type val
 
 // -------------- BIT REFERENCE: BITWISE ASSIGNMENT OPERATORS --------------- //
 // Assigns the value of the referenced bit through a bitwise and operation
-template <class WordType>
-constexpr bit_reference<WordType>& bit_reference<WordType>::operator&=(bit_value other) const noexcept {
+template <class WordRef>
+constexpr bit_reference<WordRef>& bit_reference<WordRef>::operator&=(bit_value other) const noexcept {
   _ref &= ~(_mask * static_cast<word_type>(!other._value));
-  return const_cast<bit_reference<WordType>&>(*this);
+  return const_cast<bit_reference<WordRef>&>(*this);
 }
 
 // Assigns the value of the referenced bit through a bitwise or operation
-template <class WordType>
-constexpr bit_reference<WordType>& bit_reference<WordType>::operator|=(bit_value other) const noexcept {
+template <class WordRef>
+constexpr bit_reference<WordRef>& bit_reference<WordRef>::operator|=(bit_value other) const noexcept {
   _ref |= _mask * static_cast<word_type>(other._value);
-  return const_cast<bit_reference<WordType>&>(*this);
+  return const_cast<bit_reference<WordRef>&>(*this);
 }
 
 // Assigns the value of the referenced bit through a bitwise xor operation
-template <class WordType>
-constexpr bit_reference<WordType>& bit_reference<WordType>::operator^=(bit_value other) const noexcept {
+template <class WordRef>
+constexpr bit_reference<WordRef>& bit_reference<WordRef>::operator^=(bit_value other) const noexcept {
   _ref ^= _mask * static_cast<word_type>(other._value);
-  return const_cast<bit_reference<WordType>&>(*this);
+  return const_cast<bit_reference<WordRef>&>(*this);
 }
 // -------------------------------------------------------------------------- //
 
@@ -216,8 +213,8 @@ constexpr bit_reference<WordType>& bit_reference<WordType>::operator^=(bit_value
 
 // ----------------------- BIT REFERENCE: CONVERSION ------------------------ //
 // Explicitly converts the bit reference to a boolean value
-template <class WordType>
-constexpr bit_reference<WordType>::operator bool() const noexcept {
+template <class WordRef>
+constexpr bit_reference<WordRef>::operator bool() const noexcept {
   return _ref & _mask;
 }
 // -------------------------------------------------------------------------- //
@@ -226,8 +223,8 @@ constexpr bit_reference<WordType>::operator bool() const noexcept {
 
 // ------------------------- BIT REFERENCE: ACCESS -------------------------- //
 // Gets a bit pointer from the bit reference
-template <class WordType>
-constexpr bit_pointer<WordType> bit_reference<WordType>::operator&() const noexcept {
+template <class WordRef>
+constexpr bit_pointer<std::remove_reference_t<WordRef>> bit_reference<WordRef>::operator&() const noexcept {
   return bit_pointer<WordType>(&_ref, _tzcnt(_mask));
 }
 // -------------------------------------------------------------------------- //
@@ -236,9 +233,9 @@ constexpr bit_pointer<WordType> bit_reference<WordType>::operator&() const noexc
 
 // ---------------------- BIT REFERENCE: SWAP MEMBERS ----------------------- //
 // Swaps the value of the referenced bit with another bit reference
-template <class WordType>
+template <class WordRef>
 template <class T>
-void bit_reference<WordType>::swap(bit_reference<T> other) const {
+void bit_reference<WordRef>::swap(bit_reference<T> other) const {
   if (other != *this) {
     flip();
     other.flip();
@@ -246,8 +243,8 @@ void bit_reference<WordType>::swap(bit_reference<T> other) const {
 }
 
 // Swaps the value of the referenced bit with a bit value
-template <class WordType>
-void bit_reference<WordType>::swap(bit_value& other) const {
+template <class WordRef>
+void bit_reference<WordRef>::swap(bit_value& other) const {
   if (other != *this) {
     flip();
     other.flip();
@@ -259,32 +256,32 @@ void bit_reference<WordType>::swap(bit_value& other) const {
 
 // -------------------- BIT REFERENCE: BIT MANIPULATION --------------------- //
 // Sets the value of the referenced bit to the provided boolean value
-template <class WordType>
-constexpr bit_reference<WordType>& bit_reference<WordType>::set(
+template <class WordRef>
+constexpr bit_reference<WordRef>& bit_reference<WordRef>::set(
     bool b) const noexcept {
   b ? set() : reset();
-  return const_cast<bit_reference<WordType>&>(*this);
+  return const_cast<bit_reference<WordRef>&>(*this);
 }
 
 // Sets the value of the referenced bit to 1
-template <class WordType>
-constexpr bit_reference<WordType>& bit_reference<WordType>::set() const noexcept {
+template <class WordRef>
+constexpr bit_reference<WordRef>& bit_reference<WordRef>::set() const noexcept {
   _ref |= _mask;
-  return const_cast<bit_reference<WordType>&>(*this);
+  return const_cast<bit_reference<WordRef>&>(*this);
 }
 
 // Resets the value of the referenced bit to 0
-template <class WordType>
-constexpr bit_reference<WordType>& bit_reference<WordType>::reset() const noexcept {
+template <class WordRef>
+constexpr bit_reference<WordRef>& bit_reference<WordRef>::reset() const noexcept {
   _ref &= ~_mask;
-  return const_cast<bit_reference<WordType>&>(*this);
+  return const_cast<bit_reference<WordRef>&>(*this);
 }
 
 // Flips the value of the referenced bit
-template <class WordType>
-constexpr bit_reference<WordType>& bit_reference<WordType>::flip() const noexcept {
+template <class WordRef>
+constexpr bit_reference<WordRef>& bit_reference<WordRef>::flip() const noexcept {
   _ref ^= _mask;
-  return const_cast<bit_reference<WordType>&>(*this);
+  return const_cast<bit_reference<WordRef>&>(*this);
 }
 // -------------------------------------------------------------------------- //
 
@@ -379,14 +376,14 @@ std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>&
 
 // -------- BIT REFERENCE: IMPLEMENTATION DETAILS: FUNCTION MEMBERS --------- //
 // Privately explicitly constructs an aligned bit reference from a pointer
-template <class WordType>
-constexpr bit_reference<WordType>::bit_reference(word_type* ptr) noexcept
+template <class WordRef>
+constexpr bit_reference<WordRef>::bit_reference(word_type* ptr) noexcept
     : _ref(*ptr), _mask(1) {
 }
 
 // Privately explicitly constructs an unaligned bit reference from a pointer
-template <class WordType>
-constexpr bit_reference<WordType>::bit_reference(word_type* ptr, size_type pos)
+template <class WordRef>
+constexpr bit_reference<WordRef>::bit_reference(word_type* ptr, size_type pos)
     : _ref(*ptr), _mask(static_cast<word_type>(1) << pos) {
   assert(pos < binary_digits<word_type>::value);
 }

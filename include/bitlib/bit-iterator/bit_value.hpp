@@ -48,14 +48,14 @@ class bit_value
 
     // Assignment
     public:
-    template <class T>
-    constexpr bit_value& operator=(bit_reference<T> ref) noexcept;
-    template <class WordType>
-    constexpr bit_value& assign(WordType val) noexcept;
-    template <class WordType>
-    constexpr bit_value& assign(WordType val, size_type pos);
+     template <class T>
+     constexpr bit_value& operator=(bit_reference<T> ref) noexcept;
+     template <class WordType>
+     constexpr bit_value& assign(WordType val) noexcept;
+     template <class WordType>
+     constexpr bit_value& assign(WordType val, size_type pos);
 
-    // Bitwise assignment operators
+     // Bitwise assignment operators
     public:
     constexpr bit_value& operator&=(bit_value other) noexcept;
     constexpr bit_value& operator|=(bit_value other) noexcept;

@@ -50,7 +50,7 @@ class bit_iterator
   using value_type = bit_value;
   using difference_type = std::ptrdiff_t;
   using pointer = bit_pointer<word_type>;
-  using reference = bit_reference<word_type>;
+  using reference = bit_reference<word_type&>;  // typename _traits_t::reference;
   using size_type = std::size_t;
   using mask_type = std::make_unsigned_t<std::remove_cv_t<word_type>>;
 
@@ -366,7 +366,7 @@ operator-(const bit_iterator<T>& lhs, const bit_iterator<U>& rhs) {
 }
 
 static_assert(bit_iterator_c<bit_iterator<uint8_t*>>, "bit_iterator does not satisfy bit_iterator_c concept!");
-static_assert(bit_pointer_c<bit_pointer<uint8_t>, bit_reference<uint8_t>>, "bit_pointer does not satisfy bit_pointer_c concept!");
+static_assert(bit_pointer_c<bit_pointer<uint8_t>, bit_reference<uint8_t&>>, "bit_pointer does not satisfy bit_pointer_c concept!");
 static_assert(bit_iterator_c<bit_pointer<uint8_t>>, "bit_pointer does not satisfy bit_iterator_c concept!");
 
 // ========================================================================== //

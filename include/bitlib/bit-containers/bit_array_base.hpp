@@ -66,8 +66,8 @@ class bit_array_base {
   using value_type = T;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
-  using reference = typename std::conditional<std::is_same_v<T, bit_value>, bit_reference<word_type>, T&>::type;
-  using const_reference = typename std::conditional<std::is_same_v<T, bit_value>, const bit_reference<const word_type>, const T&>::type;
+  using reference = typename std::conditional<std::is_same_v<T, bit_value>, bit_reference<word_type&>, T&>::type;
+  using const_reference = typename std::conditional<std::is_same_v<T, bit_value>, const bit_reference<const word_type&>, const T&>::type;
   using pointer = typename std::conditional<std::is_same_v<T, bit_value>, bit_pointer<word_type>, T&>::type;
   using const_pointer = const pointer;
   using iterator = It;
