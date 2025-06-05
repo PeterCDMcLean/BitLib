@@ -75,12 +75,12 @@ class bit_word_pointer_adapter {
       return reference(*std::next(_source, n*ratio));
     } else {
       const difference_type sum = _index + n;
-      difference_type src_diff = sum / ratio;
+      difference_type src_diff = sum / static_cast<difference_type>(ratio);
       const size_type new_index = sum % ratio;
-      if (new_index > _index) {
+      if (n < 0 && new_index > _index) {
         --src_diff;
       }
-      return reference(*std::next(_source, src_diff), _index);
+      return reference(*std::next(_source, src_diff), new_index);
     }
   }
 
@@ -105,8 +105,7 @@ class bit_word_pointer_adapter {
     if constexpr (is_small_to_big) {
       _source = std::next(_source, -ratio);
     } else {
-      _index--;
-      if (_index < 0) {
+      if ((_index--) == 0) {
         _source = std::prev(_source);
         _index += ratio;
       }
@@ -122,14 +121,26 @@ class bit_word_pointer_adapter {
     if constexpr (is_small_to_big) {
       return bit_word_pointer_adapter(std::next(_source, n*ratio));
     } else {
-      return bit_word_pointer_adapter(_source, _index + n);
+      const difference_type sum = _index + n;
+      difference_type src_diff = sum / static_cast<difference_type>(ratio);
+      const size_type new_index = sum % ratio;
+      if (n < 0 && new_index > _index) {
+        --src_diff;
+      }
+      return bit_word_pointer_adapter(std::next(_source, src_diff), new_index);
     }
   }
   constexpr bit_word_pointer_adapter operator-(difference_type n) const noexcept {
     if constexpr (is_small_to_big) {
       return bit_word_pointer_adapter(std::next(_source, -n*ratio));
     } else {
-      return bit_word_pointer_adapter(_source, _index - n);
+      const difference_type sum = _index - n;
+      difference_type src_diff = sum / static_cast<difference_type>(ratio);
+      const size_type new_index = sum % ratio;
+      if (n > 0 && new_index > _index) {
+        --src_diff;
+      }
+      return bit_word_pointer_adapter(std::next(_source, src_diff), new_index);
     }
   }
   constexpr bit_word_pointer_adapter& operator+=(difference_type n) noexcept {
@@ -137,9 +148,9 @@ class bit_word_pointer_adapter {
       _source = std::next(_source, n * ratio);
     } else {
       const difference_type sum = _index + n;
-      difference_type src_diff = sum / ratio;
+      difference_type src_diff = sum / static_cast<difference_type>(ratio);
       const size_type new_index = sum % ratio;
-      if (new_index > _index) {
+      if (n < 0 && new_index > _index) {
         --src_diff;
       }
       _source = std::next(_source, src_diff);
@@ -152,9 +163,9 @@ class bit_word_pointer_adapter {
       _source = std::next(_source, -n * ratio);
     } else {
       const difference_type sum = _index - n;
-      difference_type src_diff = sum / ratio;
+      difference_type src_diff = sum / static_cast<difference_type>(ratio);
       const size_type new_index = sum % ratio;
-      if (new_index > _index) {
+      if (n > 0 && new_index > _index) {
         --src_diff;
       }
       _source = std::next(_source, src_diff);

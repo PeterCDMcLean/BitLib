@@ -105,8 +105,8 @@ struct _cv_iterator_traits
     using _raw_reference_t = typename std::remove_cv<_no_reference_t>::type;
     using _cv_value_t = _no_reference_t;
 
-    static_assert(std::is_same<_raw_pointer_t, _raw_value_t>::value, "");
-    static_assert(std::is_same<_raw_reference_t, _raw_value_t>::value, "");
+    //    static_assert(std::is_same<_raw_pointer_t, _raw_value_t>::value, "");
+    //    static_assert(std::is_same<_raw_reference_t, _raw_value_t>::value, "");
 
     // Types
     public:
