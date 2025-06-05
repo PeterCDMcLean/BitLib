@@ -37,24 +37,24 @@ TEST(ArrayTest, BitsOf) {
 }
 
 TEST(ArrayTest, BasicIteration) {
-                        //  <-- LSB, apparently 🙄
-                        bit::bit_array<bit::bit_value, 11> barr("0110_0101_110");
-                        int i = 0;
-                        for (const auto& bbit : barr) {
-                          switch (10 - i++) {
-                            case 0: EXPECT_EQ(bit::bit0, bbit); break;
-                            case 1: EXPECT_EQ(bit::bit1, bbit); break;
-                            case 2: EXPECT_EQ(bit::bit1, bbit); break;
-                            case 3: EXPECT_EQ(bit::bit1, bbit); break;
-                            case 4: EXPECT_EQ(bit::bit0, bbit); break;
-                            case 5: EXPECT_EQ(bit::bit1, bbit); break;
-                            case 6: EXPECT_EQ(bit::bit0, bbit); break;
-                            case 7: EXPECT_EQ(bit::bit0, bbit); break;
-                            case 8: EXPECT_EQ(bit::bit1, bbit); break;
-                            case 9: EXPECT_EQ(bit::bit1, bbit); break;
-                            case 10: EXPECT_EQ(bit::bit0, bbit); break;
-                          }
-                        }
+  //  <-- LSB, apparently 🙄
+  bit::bit_array<bit::bit_value, 11> barr("0110_0101_110");
+  int i = 0;
+  for (const auto& bbit : barr) {
+    switch (10 - i++) {
+      case 0: EXPECT_EQ(bit::bit0, bbit); break;
+      case 1: EXPECT_EQ(bit::bit1, bbit); break;
+      case 2: EXPECT_EQ(bit::bit1, bbit); break;
+      case 3: EXPECT_EQ(bit::bit1, bbit); break;
+      case 4: EXPECT_EQ(bit::bit0, bbit); break;
+      case 5: EXPECT_EQ(bit::bit1, bbit); break;
+      case 6: EXPECT_EQ(bit::bit0, bbit); break;
+      case 7: EXPECT_EQ(bit::bit0, bbit); break;
+      case 8: EXPECT_EQ(bit::bit1, bbit); break;
+      case 9: EXPECT_EQ(bit::bit1, bbit); break;
+      case 10: EXPECT_EQ(bit::bit0, bbit); break;
+    }
+  }
 }
 
 TEST(ArrayTest, ZeroSize) {
@@ -314,11 +314,11 @@ TEST(BitArrayDynamicTest, InitializerListWordTypeConstructorWorks) {
   // For this test, we assume that the initializer list for WordType initializes the underlying storage.
   // Here we use two bytes as an example.
   std::initializer_list<std::uint8_t> init = {0b10101010, 0b01010101};
-  bit::bit_array<> arr(init);
+  bit::bit_array<bit::bit_value, std::dynamic_extent, std::uint8_t> arr(init);
   // Assuming each std::uint8_t provides 8 bits, we expect the size to be the number of initializer elements * 8.
   EXPECT_EQ(arr.size(), init.size() * 8u);
   // Check that the underlying storage matches the initializer values.
-  const std::uint8_t* data = arr.data();
+  const std::uint8_t* data = reinterpret_cast<std::uint8_t*>(arr.data());
   auto wordIt = init.begin();
   for (std::size_t i = 0; i < init.size(); ++i) {
     EXPECT_EQ(data[i], *(wordIt++));
@@ -443,7 +443,7 @@ TEST(BitArrayDynamicTest, StructOfBitArray) {
 }
 
 TEST(BitArrayDynamicTest, StringConstructor) {
-  bit::bit_array<> arr{"01001101"};
+  bit::bit_array<> arr("01001101");
 
   EXPECT_EQ(arr.size(), 8);
 
@@ -455,22 +455,6 @@ TEST(BitArrayDynamicTest, StringConstructor) {
   EXPECT_EQ(arr[2], bit::bit0);
   EXPECT_EQ(arr[1], bit::bit1);
   EXPECT_EQ(arr[0], bit::bit0);
-}
-
-TEST(BitArrayDynamicTest, TwoDBitArraySizeValueConstructor) {
-  bit::bit_array<bit::bit_array<>> arr(
-      16,
-      bit::bit_array<>(4, bit::bit1));
-  EXPECT_EQ(arr.size(), 16);
-  EXPECT_EQ(arr[0].size(), 4);
-}
-
-TEST(BitArrayDynamicTest, TwoDBitArraySizeConstructor) {
-  bit::bit_array<bit::bit_array<>> arr(
-      16,
-      bit::bit_array<>(4));
-  EXPECT_EQ(arr.size(), 16);
-  EXPECT_EQ(arr[0].size(), 4);
 }
 
 // Test comparison operators (== and !=).

@@ -41,8 +41,8 @@ class bit_span : private bit_span_storage<WordType, Extent> {
   using word_type = WordType;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
-  using reference = bit_reference<WordType>;
-  using const_reference = const bit_reference<WordType>;
+  using reference = bit_reference<WordType&>;
+  using const_reference = const bit_reference<WordType&>;
   using pointer = bit_pointer<WordType>;
   using const_pointer = const pointer;
   using iterator = bit_iterator<WordType*>;
