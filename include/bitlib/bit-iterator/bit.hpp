@@ -21,9 +21,11 @@
 // Project sources
 #include "bit_details.hpp"
 #include "bit_iterator.hpp"
-#include "bit_iterator_adapter.hpp"
 #include "bit_reference.hpp"
 #include "bit_value.hpp"
+#include "bit_word_pointer_adapter.hpp"
+#include "bit_word_reference_adapter.hpp"
+
 // Third-party libraries
 // Miscellaneous
 // ========================================================================== //

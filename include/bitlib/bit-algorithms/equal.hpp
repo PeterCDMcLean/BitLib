@@ -38,11 +38,11 @@ constexpr bool equal(
     using src_word_type = typename bit_iterator<RandomAccessIt1>::word_type;
     if constexpr (!std::is_same_v<src_word_type, dst_word_type> && bitsof<src_word_type>() != bitsof<dst_word_type>()) {
       if constexpr (bitsof<src_word_type>() > bitsof<dst_word_type>()) {
-        bit_iterator<bit_iterator_adapter<RandomAccessIt2, RandomAccessIt1>> adapted_first(first);
-        bit_iterator<bit_iterator_adapter<RandomAccessIt2, RandomAccessIt1>> adapted_last(last);
+        bit_iterator<bit_word_pointer_adapter<RandomAccessIt2, RandomAccessIt1>> adapted_first(first);
+        bit_iterator<bit_word_pointer_adapter<RandomAccessIt2, RandomAccessIt1>> adapted_last(last);
         return equal(adapted_first, adapted_last, d_first);
       } else {
-        bit_iterator<bit_iterator_adapter<RandomAccessIt1, RandomAccessIt2>> adapted_d_first(d_first);
+        bit_iterator<bit_word_pointer_adapter<RandomAccessIt1, RandomAccessIt2>> adapted_d_first(d_first);
         return equal(first, last, adapted_d_first);
       }
     } else {

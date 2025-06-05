@@ -40,17 +40,17 @@ class bit_iterator
   // Assertions
  private:
   using _traits_t = _cv_iterator_traits<Iterator>;
-  static_assert(binary_digits<typename _traits_t::value_type>::value, "");
+  static_assert(binary_digits<std::iter_value_t<Iterator>>::value, "");
 
   // Types
  public:
   using iterator_type = Iterator;
-  using word_type = typename _traits_t::value_type;
+  using word_type = std::iter_value_t<Iterator>;
   using iterator_category = typename _traits_t::iterator_category;
   using value_type = bit_value;
   using difference_type = std::ptrdiff_t;
   using pointer = bit_pointer<word_type>;
-  using reference = bit_reference<word_type&>;  // typename _traits_t::reference;
+  using reference = bit_reference<typename _traits_t::reference>;  // typename _traits_t::reference;
   using size_type = std::size_t;
   using mask_type = std::make_unsigned_t<std::remove_cv_t<word_type>>;
 

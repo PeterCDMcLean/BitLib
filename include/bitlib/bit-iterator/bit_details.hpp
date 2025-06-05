@@ -104,6 +104,7 @@ struct _cv_iterator_traits
     using _raw_pointer_t = typename std::remove_cv<_no_pointer_t>::type;
     using _raw_reference_t = typename std::remove_cv<_no_reference_t>::type;
     using _cv_value_t = _no_reference_t;
+
     static_assert(std::is_same<_raw_pointer_t, _raw_value_t>::value, "");
     static_assert(std::is_same<_raw_reference_t, _raw_value_t>::value, "");
 
@@ -281,7 +282,35 @@ template <class T>
 using _wider_type_t = typename _wider_type<T>::type;
 /* ************************************************************************** */
 
+// Main template: deduce the first matching integral type
+template <typename T>
+struct floor_integral_convertible {
+ private:
+  using U = std::remove_cvref_t<T>;
 
+ public:
+  using type = std::conditional_t<
+      std::is_convertible_v<U, uint8_t>, uint8_t,
+      std::conditional_t<
+          std::is_convertible_v<U, int8_t>, int8_t,
+          std::conditional_t<
+              std::is_convertible_v<U, uint16_t>, uint16_t,
+              std::conditional_t<
+                  std::is_convertible_v<U, int16_t>, int16_t,
+                  std::conditional_t<
+                      std::is_convertible_v<U, uint32_t>, uint32_t,
+                      std::conditional_t<
+                          std::is_convertible_v<U, int32_t>, int32_t,
+                          std::conditional_t<
+                              std::is_convertible_v<U, uint64_t>, uint64_t,
+                              std::conditional_t<
+                                  std::is_convertible_v<U, int64_t>, int64_t,
+                                  void>>>>>>>>;
+};
+
+// Helper alias
+template <typename T>
+using floor_integral_convertible_t = typename floor_integral_convertible<T>::type;
 
 /* ******************* IMPLEMENTATION DETAILS: UTILITIES ******************** */
 // Assertions
@@ -399,8 +428,15 @@ constexpr T _mulx(T src0, T src1, T* hi, X...) noexcept;
 Logical shift right
 */
 template <std::integral T, typename size_type = size_t>
-constexpr T lsr(const T& val, const size_type shift) {
+constexpr T lsr(const T val, const size_type shift) {
   return static_cast<T>(static_cast<std::make_unsigned_t<T>>(val) >> shift);
+}
+template <typename T, typename size_type = size_t>
+constexpr floor_integral_convertible_t<T> lsr(const T val, const size_type shift)
+//  requires(std::is_convertible_v<T, uint64_t>)
+{
+  //static_assert(std::is_unsigned_v<T>, "T must be an unsigned integral type");
+  return static_cast<floor_integral_convertible_t<T>>(static_cast<std::make_unsigned_t<floor_integral_convertible_t<T>>>(val) >> shift);
 }
 
 enum class _mask_len {
