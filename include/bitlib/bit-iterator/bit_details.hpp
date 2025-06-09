@@ -345,6 +345,7 @@ constexpr T _bextr(T src, T start, T len) noexcept;
 template <class T, class... X>
 constexpr T _bextr(T src, T start, T len, X...) noexcept;
 
+#if 0
 // Parallel bits deposit
 template <class T, class = decltype(_pdep_u64(T()))>
 constexpr T _pdep(T src, T msk) noexcept;
@@ -362,6 +363,8 @@ template <class T, class T128 = decltype(__uint128_t(__builtin_bswap64(T())))>
 constexpr T _byteswap(T src) noexcept;
 template <class T, class... X>
 constexpr T _byteswap(T src, X...) noexcept;
+
+#endif
 
 // Bit swap
 template <class T>
@@ -431,11 +434,9 @@ template <std::integral T, typename size_type = size_t>
 constexpr T lsr(const T val, const size_type shift) {
   return static_cast<T>(static_cast<std::make_unsigned_t<T>>(val) >> shift);
 }
+
 template <typename T, typename size_type = size_t>
-constexpr floor_integral_convertible_t<T> lsr(const T val, const size_type shift)
-//  requires(std::is_convertible_v<T, uint64_t>)
-{
-  //static_assert(std::is_unsigned_v<T>, "T must be an unsigned integral type");
+constexpr floor_integral_convertible_t<T> lsr(const T val, const size_type shift) {
   return static_cast<floor_integral_convertible_t<T>>(static_cast<std::make_unsigned_t<floor_integral_convertible_t<T>>>(val) >> shift);
 }
 
@@ -606,6 +607,7 @@ constexpr T _bextr(T src, T start, T len, X...) noexcept {
 }
 // -------------------------------------------------------------------------- //
 
+#if 0
 // ------- IMPLEMENTATION DETAILS: INSTRUCTIONS: PARALLEL BIT DEPOSIT ------- //
 // Deposits bits according to a mask with compiler instrinsics
 template <class T, class>
@@ -725,6 +727,7 @@ constexpr T _byteswap(T src, X...) noexcept {
   return src;
 }
 // -------------------------------------------------------------------------- //
+#endif
 
 // ------------- IMPLEMENTATION DETAILS: INSTRUCTIONS: BIT SWAP ------------- //
 // Reverses the order of the bits with or without of compiler intrinsics
