@@ -40,9 +40,12 @@ namespace bit {
 class bit_value;
 template <class WordType>
 class bit_reference;
-template <class Iterator> class bit_iterator;
+template <class Iterator>
+class bit_iterator;
 template <class WordType>
 using bit_pointer = bit_iterator<WordType*>;
+template <typename target_word_ptr, typename source_word_ptr>
+class bit_word_pointer_adapter;
 
 // ========================================================================== //
 
@@ -1031,7 +1034,29 @@ constexpr T _mulx(T src0, T src1, T* hi, X...) noexcept
 }
 // -------------------------------------------------------------------------- //
 
-
+template <typename AlgoFunc, typename SrcIt, typename DstIt>
+constexpr auto with_bit_iterator_adapter(
+    AlgoFunc&& algo,
+    bit_iterator<SrcIt> first,
+    bit_iterator<SrcIt> last,
+    bit_iterator<DstIt> d_first)
+    -> decltype(auto)  // Optional; auto would work too
+{
+  using dst_word_type = typename bit_iterator<DstIt>::word_type;
+  using src_word_type = typename bit_iterator<SrcIt>::word_type;
+  if constexpr (!std::is_same_v<src_word_type, dst_word_type> && bitsof<src_word_type>() != bitsof<dst_word_type>()) {
+    if constexpr (bitsof<src_word_type>() > bitsof<dst_word_type>()) {
+      bit_iterator<bit_word_pointer_adapter<DstIt, SrcIt>> adapted_first(first);
+      bit_iterator<bit_word_pointer_adapter<DstIt, SrcIt>> adapted_last(last);
+      return std::forward<AlgoFunc>(algo)(adapted_first, adapted_last, d_first);
+    } else {
+      bit_iterator<bit_word_pointer_adapter<SrcIt, DstIt>> adapted_d_first(d_first);
+      return std::forward<AlgoFunc>(algo)(first, last, adapted_d_first);
+    }
+  } else {
+    return std::forward<AlgoFunc>(algo)(first, last, d_first);
+  }
+}
 
 // ========================================================================== //
 }  // namespace bit
