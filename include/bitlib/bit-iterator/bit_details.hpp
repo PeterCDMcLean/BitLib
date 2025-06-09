@@ -118,8 +118,7 @@ struct _cv_iterator_traits
 };
 /* ************************************************************************** */
 
-
-
+#if 0
 /* *********** IMPLEMENTATION DETAILS: NARROWEST AND WIDEST TYPES *********** */
 // Narrowest type structure declaration
 template <class... T>
@@ -281,6 +280,7 @@ struct _wider_type<T, -1>
 template <class T>
 using _wider_type_t = typename _wider_type<T>::type;
 /* ************************************************************************** */
+#endif
 
 // Main template: deduce the first matching integral type
 template <typename T>
@@ -985,7 +985,7 @@ template <class T, class T128>
 constexpr T _mulx(T src0, T src1, T* hi) noexcept
 {
     static_assert(binary_digits<T>::value, "");
-    using wider_t = typename _wider_type<T>::type;
+    using wider_t = ceil_integral<bitsof<T>() + bitsof<T>()>;
     constexpr T digits = binary_digits<T>::value;
     wider_t tmp = 0;
     T128 tmp128 = 0;
