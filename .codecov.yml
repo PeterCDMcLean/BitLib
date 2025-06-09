@@ -1,5 +1,5 @@
 ignore:
   - "**/libpopcnt.h"
-  - "test/inc/*"
+  - "test/**"
   - "benchmark/**"
   - "example/**"
