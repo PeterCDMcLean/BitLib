@@ -29,23 +29,21 @@ namespace bit {
 // Status: Does not work for Input/Output iterators due to distance call
 template <class RandomAccessIt1, class RandomAccessIt2>
 constexpr bit_iterator<RandomAccessIt2> copy(bit_iterator<RandomAccessIt1> first,
-                            bit_iterator<RandomAccessIt1> last,
-                            bit_iterator<RandomAccessIt2> d_first
-)
-{
-    // Types and constants
-    using dst_word_type = typename bit_iterator<RandomAccessIt2>::word_type;
-    using src_word_type = typename bit_iterator<RandomAccessIt1>::word_type;
+                                             bit_iterator<RandomAccessIt1> last,
+                                             bit_iterator<RandomAccessIt2> d_first) {
+  // Types and constants
+  using dst_word_type = typename bit_iterator<RandomAccessIt2>::word_type;
+  using src_word_type = typename bit_iterator<RandomAccessIt1>::word_type;
 
-    // This checks for differing word types and uses an unoptimized copy in that event
-    if (!::std::is_same<dst_word_type, src_word_type>::value) {
-      while (first != last) {
-        *d_first = *first;
-        first++;
-        d_first++;
-      }
-      return d_first;
+  // This checks for differing word types and uses an unoptimized copy in that event
+  if constexpr (!::std::is_same<dst_word_type, src_word_type>::value) {
+    while (first != last) {
+      *d_first = *first;
+      first++;
+      d_first++;
     }
+    return d_first;
+  } else {
     using word_type = dst_word_type;
     using size_type = typename bit_iterator<RandomAccessIt2>::size_type;
     constexpr size_type digits = binary_digits<word_type>::value;
@@ -108,6 +106,7 @@ constexpr bit_iterator<RandomAccessIt2> copy(bit_iterator<RandomAccessIt1> first
         }
     }
     return d_first + total_bits_to_copy;
+  }
 }
 // -------------------------------------------------------------------------- //
 

@@ -285,35 +285,51 @@ using _wider_type_t = typename _wider_type<T>::type;
 /* ************************************************************************** */
 #endif
 
-// Main template: deduce the first matching integral type
+/*
+exact_ceil_integral is used to determine the exact integral type that a proxy reference
+can be implicitly converted to.
+If the proxy reference supports multiple types, it will pick the largest, preferring unsigned.
+*/
 template <typename T>
-struct floor_integral_convertible {
+struct exact_ceil_integral {
  private:
   using U = std::remove_cvref_t<T>;
 
+  template <typename From, typename To>
+  static constexpr bool is_exactly_convertible() {
+    if constexpr (!std::is_convertible_v<From, To>) {
+      return false;
+    } else {
+      // Try brace-initialization to detect narrowing
+      return requires(From f) {
+        To{f};  // will fail if narrowing
+      };
+    }
+  }
+
  public:
   using type = std::conditional_t<
-      std::is_convertible_v<U, uint8_t>, uint8_t,
+      is_exactly_convertible<U, uint64_t>(), uint64_t,
       std::conditional_t<
-          std::is_convertible_v<U, int8_t>, int8_t,
+          is_exactly_convertible<U, int64_t>(), int64_t,
           std::conditional_t<
-              std::is_convertible_v<U, uint16_t>, uint16_t,
+              is_exactly_convertible<U, uint32_t>(), uint32_t,
               std::conditional_t<
-                  std::is_convertible_v<U, int16_t>, int16_t,
+                  is_exactly_convertible<U, int32_t>(), int32_t,
                   std::conditional_t<
-                      std::is_convertible_v<U, uint32_t>, uint32_t,
+                      is_exactly_convertible<U, uint16_t>(), uint16_t,
                       std::conditional_t<
-                          std::is_convertible_v<U, int32_t>, int32_t,
+                          is_exactly_convertible<U, int16_t>(), int16_t,
                           std::conditional_t<
-                              std::is_convertible_v<U, uint64_t>, uint64_t,
+                              is_exactly_convertible<U, uint8_t>(), uint8_t,
                               std::conditional_t<
-                                  std::is_convertible_v<U, int64_t>, int64_t,
+                                  is_exactly_convertible<U, int8_t>(), int8_t,
                                   void>>>>>>>>;
 };
 
 // Helper alias
 template <typename T>
-using floor_integral_convertible_t = typename floor_integral_convertible<T>::type;
+using exact_ceil_integral_t = typename exact_ceil_integral<T>::type;
 
 /* ******************* IMPLEMENTATION DETAILS: UTILITIES ******************** */
 // Assertions
@@ -439,8 +455,8 @@ constexpr T lsr(const T val, const size_type shift) {
 }
 
 template <typename T, typename size_type = size_t>
-constexpr floor_integral_convertible_t<T> lsr(const T val, const size_type shift) {
-  return static_cast<floor_integral_convertible_t<T>>(static_cast<std::make_unsigned_t<floor_integral_convertible_t<T>>>(val) >> shift);
+constexpr exact_ceil_integral_t<T> lsr(const T val, const size_type shift) {
+  return static_cast<exact_ceil_integral_t<T>>(static_cast<std::make_unsigned_t<exact_ceil_integral_t<T>>>(val) >> shift);
 }
 
 enum class _mask_len {
@@ -1036,25 +1052,25 @@ constexpr T _mulx(T src0, T src1, T* hi, X...) noexcept
 
 template <typename AlgoFunc, typename SrcIt, typename DstIt>
 constexpr auto with_bit_iterator_adapter(
-    AlgoFunc&& algo,
     bit_iterator<SrcIt> first,
     bit_iterator<SrcIt> last,
-    bit_iterator<DstIt> d_first)
-    -> decltype(auto)  // Optional; auto would work too
-{
+    bit_iterator<DstIt> d_first) {
   using dst_word_type = typename bit_iterator<DstIt>::word_type;
   using src_word_type = typename bit_iterator<SrcIt>::word_type;
   if constexpr (!std::is_same_v<src_word_type, dst_word_type> && bitsof<src_word_type>() != bitsof<dst_word_type>()) {
     if constexpr (bitsof<src_word_type>() > bitsof<dst_word_type>()) {
-      bit_iterator<bit_word_pointer_adapter<DstIt, SrcIt>> adapted_first(first);
-      bit_iterator<bit_word_pointer_adapter<DstIt, SrcIt>> adapted_last(last);
-      return std::forward<AlgoFunc>(algo)(adapted_first, adapted_last, d_first);
+      bit_iterator<bit_word_pointer_adapter<DstIt, SrcIt>> adapted_first(
+          bit_word_pointer_adapter<DstIt, SrcIt>(first.base(), first.position() / bitsof<dst_word_type>()), first.position() % bitsof<dst_word_type>());
+      bit_iterator<bit_word_pointer_adapter<DstIt, SrcIt>> adapted_last(
+          bit_word_pointer_adapter<DstIt, SrcIt>(last.base(), last.position() / bitsof<dst_word_type>()), last.position() % bitsof<dst_word_type>());
+      return AlgoFunc{}(adapted_first, adapted_last, d_first);
     } else {
-      bit_iterator<bit_word_pointer_adapter<SrcIt, DstIt>> adapted_d_first(d_first);
-      return std::forward<AlgoFunc>(algo)(first, last, adapted_d_first);
+      bit_iterator<bit_word_pointer_adapter<SrcIt, DstIt>> adapted_d_first(
+          bit_word_pointer_adapter<SrcIt, DstIt>(d_first.base(), d_first.position() / bitsof<src_word_type>()), d_first.position() % bitsof<src_word_type>());
+      return AlgoFunc{}(first, last, adapted_d_first);
     }
   } else {
-    return std::forward<AlgoFunc>(algo)(first, last, d_first);
+    return AlgoFunc{}(first, last, d_first);
   }
 }
 
