@@ -77,13 +77,13 @@ bit_iterator<RandomAccessIt> shift_left(
     if (std::next(first.base(), is_last_aligned) == last.base()) {
         *first.base() = _bitblend<word_type>(
                 *first.base(),
-                lsr(
+                static_cast<word_type>(lsr(
                     *first.base() & (
                         lsr(static_cast<word_type>(-1), (
                             digits - (is_last_aligned ? digits : last.position())
                         ))
                     )
-                    , n),
+                    , n)),
                 first.position(),
                 (is_last_aligned ? digits : last.position()) - first.position()
         );
@@ -107,7 +107,7 @@ bit_iterator<RandomAccessIt> shift_left(
       if (first.position() >= middle.position()) {
         *first.base() = _bitblend<word_type>(
             *first.base(),
-            (*middle.base()) << (first.position() - middle.position()),
+            static_cast<word_type>((*middle.base()) << (first.position() - middle.position())),
             first.position(),
             digits - first.position());
       } else {
@@ -120,7 +120,7 @@ bit_iterator<RandomAccessIt> shift_left(
             n1);
         *first.base() = _bitblend<word_type>(
             *first.base(),
-            (*std::next(middle.base())) << (digits - n2),
+            static_cast<word_type>((*std::next(middle.base())) << (digits - n2)),
             first.position() + n1,
             n2);
       }
@@ -249,17 +249,14 @@ bit_iterator<RandomAccessIt> shift_right(
 
     // Single word case
     if (std::next(first.base(), is_last_aligned) == last.base()) {
-        *first.base() = _bitblend<word_type>(
-                *first.base(),
-                (
-                    *first.base() & (
-                        static_cast<word_type>(-1) << first.position()
-                    )
-                ) << n,
-                first.position(),
-                (is_last_aligned ? digits : last.position()) - first.position()
-        );
-        return first + n;
+      *first.base() = _bitblend<word_type>(
+          *first.base(),
+          static_cast<word_type>(
+              (*first.base() & (static_cast<word_type>(-1) << first.position()))
+              << n),
+          static_cast<word_type>(first.position()),
+          static_cast<word_type>((is_last_aligned ? digits : last.position()) - first.position()));
+      return first + n;
     }
 
     // Align last

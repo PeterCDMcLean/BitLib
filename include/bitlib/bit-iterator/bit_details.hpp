@@ -393,12 +393,6 @@ constexpr T _bitswap(T src) noexcept;
 template <class T, std::size_t N>
 constexpr T _bitswap() noexcept;
 
-// Bit blend
-template <class T>
-constexpr T _bitblend(T src0, T src1, T msk) noexcept;
-template <class T>
-constexpr T _bitblend(T src0, T src1, T start, T len) noexcept;
-
 // Bit exchange
 template <class T>
 constexpr void _bitexch(T& src0, T& src1, T msk) noexcept;
@@ -808,18 +802,34 @@ constexpr T _bitswap() noexcept {
 
 // ------------ IMPLEMENTATION DETAILS: INSTRUCTIONS: BIT BLEND ------------- //
 // Replaces bits of src0 by the ones of src1 where the mask is true
-template <class T>
-constexpr T _bitblend(T src0, T src1, T msk) noexcept {
-  static_assert(binary_digits<T>::value, "");
+
+template <typename T, typename U>
+constexpr exact_ceil_integral_t<T> _bitblend(
+    const T src0_,
+    const U src1_,
+    const exact_ceil_integral_t<T> msk) noexcept
+  requires(std::is_same_v<exact_ceil_integral_t<T>, exact_ceil_integral_t<U>>)
+{
+  static_assert(binary_digits<exact_ceil_integral_t<T>>::value, "");
+  const exact_ceil_integral_t<T> src0 = static_cast<exact_ceil_integral_t<T>>(src0_);
+  const exact_ceil_integral_t<U> src1 = static_cast<exact_ceil_integral_t<U>>(src1_);
   return src0 ^ ((src0 ^ src1) & msk);
 }
 
 // Replaces len bits of src0 by the ones of src1 starting at start
-template <class T>
-constexpr T _bitblend(T src0, T src1, T start, T len) noexcept {
-  static_assert(binary_digits<T>::value, "");
-  constexpr T digits = binary_digits<T>::value;
-  const T msk = _mask<T, _mask_len::unknown>(len) << start;
+template <typename T, typename U>
+constexpr exact_ceil_integral_t<T> _bitblend(
+    const T src0_,
+    const U src1_,
+    const exact_ceil_integral_t<T> start,
+    const exact_ceil_integral_t<T> len) noexcept
+  requires(std::is_same_v<exact_ceil_integral_t<T>, exact_ceil_integral_t<U>>)
+{
+  static_assert(binary_digits<exact_ceil_integral_t<T>>::value, "");
+  constexpr exact_ceil_integral_t<T> digits = bitsof<exact_ceil_integral_t<T>>();
+  const exact_ceil_integral_t<T> src0 = static_cast<exact_ceil_integral_t<T>>(src0_);
+  const exact_ceil_integral_t<U> src1 = static_cast<exact_ceil_integral_t<U>>(src1_);
+  const exact_ceil_integral_t<T> msk = _mask<exact_ceil_integral_t<T>, _mask_len::unknown>(len) << start;
   return src0 ^ ((src0 ^ src1) & msk * (start < digits));
 }
 // -------------------------------------------------------------------------- //
@@ -1050,8 +1060,8 @@ constexpr T _mulx(T src0, T src1, T* hi, X...) noexcept
 }
 // -------------------------------------------------------------------------- //
 
-template <typename AlgoFunc, typename SrcIt, typename DstIt>
-constexpr auto with_bit_iterator_adapter(
+template <typename return_type, typename AlgoFunc, typename SrcIt, typename DstIt>
+constexpr return_type with_bit_iterator_adapter(
     bit_iterator<SrcIt> first,
     bit_iterator<SrcIt> last,
     bit_iterator<DstIt> d_first) {
@@ -1071,6 +1081,27 @@ constexpr auto with_bit_iterator_adapter(
     }
   } else {
     return AlgoFunc{}(first, last, d_first);
+  }
+}
+
+template <typename return_type, typename AlgoFunc, typename SrcIt, typename DstIt>
+constexpr return_type with_bit_iterator_adapter(
+    bit_iterator<SrcIt> first,
+    bit_iterator<DstIt> last) {
+  using dst_word_type = typename bit_iterator<DstIt>::word_type;
+  using src_word_type = typename bit_iterator<SrcIt>::word_type;
+  if constexpr (!std::is_same_v<src_word_type, dst_word_type> && bitsof<src_word_type>() != bitsof<dst_word_type>()) {
+    if constexpr (bitsof<src_word_type>() > bitsof<dst_word_type>()) {
+      bit_iterator<bit_word_pointer_adapter<DstIt, SrcIt>> adapted_first(
+          bit_word_pointer_adapter<DstIt, SrcIt>(first.base(), first.position() / bitsof<dst_word_type>()), first.position() % bitsof<dst_word_type>());
+      return AlgoFunc{}(adapted_first, last);
+    } else {
+      bit_iterator<bit_word_pointer_adapter<SrcIt, DstIt>> adapted_last(
+          bit_word_pointer_adapter<SrcIt, DstIt>(last.base(), last.position() / bitsof<src_word_type>()), last.position() % bitsof<src_word_type>());
+      return AlgoFunc{}(first, adapted_last);
+    }
+  } else {
+    return AlgoFunc{}(first, last);
   }
 }
 

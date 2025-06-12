@@ -14,7 +14,7 @@ class bit_word_reference_adapter {
 
   using source_word = std::remove_reference_t<source_word_ref>;
   using source_word_ptr = std::add_pointer_t<source_word>;
-  using target_word = std::remove_reference_t<target_word_ref>;
+  using target_word = std::remove_cvref_t<target_word_ref>;
   using target_word_ptr = std::add_pointer_t<target_word>;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;

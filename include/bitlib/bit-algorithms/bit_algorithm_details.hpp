@@ -224,7 +224,7 @@ void write_word(src_type src, bit_iterator<OutputIt> dst_bit_it,
     } else {
       *dst_bit_it.base() = _bitblend<src_type>(
           *dst_bit_it.base(),
-          src << dst_bit_it.position(),
+          static_cast<src_type>(src << dst_bit_it.position()),
           dst_bit_it.position(),
           std::min<src_type>(
               dst_digits - dst_bit_it.position(),

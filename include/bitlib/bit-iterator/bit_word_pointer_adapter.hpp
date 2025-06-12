@@ -5,7 +5,7 @@
 
 namespace bit {
 
-template < typename target_word_ref, typename source_word_ref>
+template <typename target_word_ref, typename source_word_ref>
 class bit_word_reference_adapter;
 
 template <typename target_word_ptr, typename source_word_ptr>
@@ -16,7 +16,7 @@ class bit_word_pointer_adapter {
   static_assert(binary_digits<typename _traits_t::value_type>::value, "");
 
  public:
-  using target_word = _traits_t::value_type;
+  using target_word = std::remove_const_t<typename _traits_t::value_type>;
   using target_word_ref = _traits_t::reference;
   using source_word = typename _cv_iterator_traits<source_word_ptr>::value_type;
   using source_word_ref = std::add_lvalue_reference_t<source_word>;
@@ -186,6 +186,14 @@ class bit_word_pointer_adapter {
   friend constexpr auto operator-(
     const bit_word_pointer_adapter<T, U>& lhs,
     const bit_word_pointer_adapter<V, W>& rhs);
+
+  constexpr operator source_word_ptr() const noexcept {
+    if constexpr (is_small_to_big) {
+      return _source;
+    } else {
+      return std::next(_source, _index / ratio);
+    }
+  }
 };
 
 template <typename T, typename U, typename V, typename W>
