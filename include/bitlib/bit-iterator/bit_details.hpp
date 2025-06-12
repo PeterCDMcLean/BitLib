@@ -1060,8 +1060,8 @@ constexpr T _mulx(T src0, T src1, T* hi, X...) noexcept
 }
 // -------------------------------------------------------------------------- //
 
-template <typename return_type, typename AlgoFunc, typename SrcIt, typename DstIt>
-constexpr return_type with_bit_iterator_adapter(
+template <typename AlgoFunc, typename SrcIt, typename DstIt>
+constexpr auto with_bit_iterator_adapter(
     bit_iterator<SrcIt> first,
     bit_iterator<SrcIt> last,
     bit_iterator<DstIt> d_first) {
@@ -1084,8 +1084,8 @@ constexpr return_type with_bit_iterator_adapter(
   }
 }
 
-template <typename return_type, typename AlgoFunc, typename SrcIt, typename DstIt>
-constexpr return_type with_bit_iterator_adapter(
+template <typename AlgoFunc, typename SrcIt, typename DstIt>
+constexpr auto with_bit_iterator_adapter(
     bit_iterator<SrcIt> first,
     bit_iterator<DstIt> last) {
   using dst_word_type = typename bit_iterator<DstIt>::word_type;

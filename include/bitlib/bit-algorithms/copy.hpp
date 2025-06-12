@@ -30,7 +30,7 @@ constexpr bit_iterator<RandomAccessIt2> copy(
     const bit_iterator<RandomAccessIt1>& first,
     const bit_iterator<RandomAccessIt1>& last,
     const bit_iterator<RandomAccessIt2>& d_first) {
-  return with_bit_iterator_adapter<bit_iterator<RandomAccessIt2>, copy_impl>(first, last, d_first);
+  return with_bit_iterator_adapter<copy_impl>(first, last, d_first);
 }
 
 // ---------------------------- Copy Algorithms ----------------------------- //

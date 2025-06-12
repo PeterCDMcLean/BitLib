@@ -27,7 +27,7 @@ constexpr bool equal(
     const bit_iterator<RandomAccessIt1>& first,
     const bit_iterator<RandomAccessIt1>& last,
     const bit_iterator<RandomAccessIt2>& d_first) {
-  return with_bit_iterator_adapter<bool, equal_impl>(first, last, d_first);
+  return with_bit_iterator_adapter<equal_impl>(first, last, d_first);
 }
 
 // ---------------------------- Equal Algorithms ----------------------------- //
