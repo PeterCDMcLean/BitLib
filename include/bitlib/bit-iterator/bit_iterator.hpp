@@ -30,6 +30,10 @@
 namespace bit {
 
 /* ****************************** BIT ITERATOR ****************************** */
+
+template <typename target_word_ptr, typename source_word_ptr>
+class bit_word_pointer_adapter;
+
 // Bit iterator class definition
 template <class Iterator>
 class bit_iterator
@@ -65,6 +69,9 @@ class bit_iterator
   constexpr bit_iterator(iterator_type i, size_type pos);
   explicit constexpr bit_iterator(const pointer& ptr)
     requires std::constructible_from<iterator_type, word_type*>;
+
+  template <typename T>
+  constexpr bit_iterator(const bit_iterator<bit_word_pointer_adapter<T, Iterator>>& other);
 
   // Assignment
  public:
@@ -158,6 +165,13 @@ template <class Iterator>
 constexpr bit_iterator<Iterator>::bit_iterator(const pointer& ptr)
   requires std::constructible_from<iterator_type, word_type*>
     : _current(ptr._current), _position(ptr.position()) {
+  assert(_position < bitsof<word_type>());
+}
+
+template <class Iterator>
+template <typename T>
+constexpr bit_iterator<Iterator>::bit_iterator(const bit_iterator<bit_word_pointer_adapter<T, Iterator>>& other)
+    : _current(other.base().base()), _position(other.base().index() * bitsof<typename bit_word_pointer_adapter<T, Iterator>::value_type>() + other.position()) {
   assert(_position < bitsof<word_type>());
 }
 // -------------------------------------------------------------------------- //

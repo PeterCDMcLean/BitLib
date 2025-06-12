@@ -184,16 +184,8 @@ class bit_word_pointer_adapter {
   }
   template <typename T, typename U, typename V, typename W>
   friend constexpr auto operator-(
-    const bit_word_pointer_adapter<T, U>& lhs,
-    const bit_word_pointer_adapter<V, W>& rhs);
-
-  constexpr operator source_word_ptr() const noexcept {
-    if constexpr (is_small_to_big) {
-      return _source;
-    } else {
-      return std::next(_source, _index / ratio);
-    }
-  }
+      const bit_word_pointer_adapter<T, U>& lhs,
+      const bit_word_pointer_adapter<V, W>& rhs);
 };
 
 template <typename T, typename U, typename V, typename W>
