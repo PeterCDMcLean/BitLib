@@ -29,14 +29,24 @@
 
 namespace bit {
 
-template <typename T, typename W>
+template <typename T, typename W, typename Policy>
 class bit_array_ref;
 
 template <typename T,
           std::size_t N,
-          typename W>
+          typename W,
+          typename Policy>
 class bit_array;
-// ========================================================================== //
+
+namespace policy {
+struct truncate;
+struct sign_extend;
+struct typical {
+  using truncation = truncate;
+  using extension = sign_extend;
+};
+
+}  // namespace policy
 
 /**
  * @brief Base class template for bit_array implementations
@@ -50,7 +60,7 @@ class bit_array;
  * @tparam It The iterator type for the derived class
  * @tparam CIt The const_iterator type for the derived class
  */
-template <typename Derived, typename T, size_t N, typename W, typename It, typename CIt>
+template <typename Derived, typename T, size_t N, typename W, typename Policy, typename Iterators>
 class bit_array_base {
  protected:
   constexpr Derived& derived() noexcept {
@@ -70,8 +80,8 @@ class bit_array_base {
   using const_reference = typename std::conditional<std::is_same_v<T, bit_value>, const bit_reference<const word_type&>, const T&>::type;
   using pointer = typename std::conditional<std::is_same_v<T, bit_value>, bit_pointer<word_type>, T&>::type;
   using const_pointer = const pointer;
-  using iterator = It;
-  using const_iterator = CIt;
+  using iterator = Iterators::iterator;
+  using const_iterator = Iterators::const_iterator;
 
   // Element access
   constexpr reference operator[](size_type pos) {
@@ -163,14 +173,14 @@ class bit_array_base {
    * @brief Slice operations - returns a bit_array_ref
    */
   constexpr auto operator()(size_type offset, size_type right) const noexcept {
-    return bit_array_ref<bit_value, const word_type>(&this->at(offset), right - offset);
+    return bit_array_ref<bit_value, const word_type, Policy>(&this->at(offset), right - offset);
   }
 
   /**
    * @brief Slice operations - returns a bit_array_ref
    */
   constexpr auto operator()(size_type offset, size_type right) noexcept {
-    return bit_array_ref<bit_value, word_type>(&this->at(offset), right - offset);
+    return bit_array_ref<bit_value, word_type, Policy>(&this->at(offset), right - offset);
   }
 
   // Common operations
@@ -185,6 +195,27 @@ class bit_array_base {
   explicit constexpr operator U() const noexcept {
     assert(derived().size() <= bitsof<U>());
     U integral;
+
+    if constexpr (N == std::dynamic_extent) {
+      if (derived().size() > bitsof<U>()) {
+        Policy::truncation::template to_integral<U, N>(derived(), integral);
+      } else {
+        ::bit::copy(derived().begin(), end(), bit_pointer<U>(&integral));
+      }
+      if (derived().size() < bitsof<U>()) {
+        Policy::extension::template from_integral<U, N>(derived(), integral);
+      }
+    } else {
+      if constexpr (N > bitsof<U>()) {
+        Policy::truncation::template to_integral<U, N>(derived(), integral);
+      } else {
+        ::bit::copy(derived().begin(), end(), bit_pointer<U>(&integral));
+      }
+      if constexpr (N < bitsof<U>()) {
+        Policy::extension::template from_integral<U, N>(derived(), integral);
+      }
+    }
+
     bit_span<uint8_t, bitsof<U>()> integral_ref(reinterpret_cast<uint8_t*>(&integral));
     copy(derived().begin(), derived().begin() + bitsof<U>(), integral_ref.begin());
     if constexpr (std::is_signed_v<U>) {
@@ -195,7 +226,7 @@ class bit_array_base {
     return integral;
   }
 
-  using compatible_bitarray = bit_array<value_type, N, word_type>;
+  using compatible_bitarray = bit_array<value_type, N, word_type, Policy>;
 
   constexpr compatible_bitarray operator~() {
     compatible_bitarray result(derived().size());
@@ -249,6 +280,61 @@ constexpr bool operator==(const bit_sized_range auto& lhs, const bit_sized_range
   }
   return ::bit::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
+
+namespace policy {
+struct truncate {
+  template <std::integral U, std::size_t N>
+  constexpr static void to_integral(const bit_sized_range auto& value, U& integral) noexcept {
+    bit_pointer<U> integral_begin(&integral);
+    ::bit::copy(value.begin(), value.begin() + bitsof<U>(), integral_begin);
+  }
+  template <std::integral U, std::size_t N>
+  constexpr static void from_integral(bit_sized_range auto& value, const U& integral) noexcept {
+    const bit_pointer<const U> integral_begin(&integral);
+    if constexpr (N == std::dynamic_extent) {
+      ::bit::copy(integral_begin, integral_begin + value.size(), value.begin());
+    } else {
+      ::bit::copy(integral_begin, integral_begin + N, value.begin());
+    }
+  }
+};
+
+struct sign_extend {
+  template <std::integral U, std::size_t N>
+  constexpr static void to_integral(const bit_sized_range auto& value, U& integral) noexcept {
+    bit_pointer<U> integral_begin(&integral);
+    if constexpr (N == std::dynamic_extent) {
+      if constexpr (std::is_signed_v<U>) {
+        if (value.last()[-1] == bit1) {
+          ::bit::fill(integral_begin + value.size(), integral_begin + bitsof<N>(), bit1);
+        }
+      }
+    } else {
+      if constexpr (std::is_signed_v<U>) {
+        if (value.begin()[N - 1] == bit1) {
+          ::bit::fill(integral_begin + value.size(), integral_begin + bitsof<N>(), bit1);
+        }
+      }
+    }
+  }
+  template <std::integral U, std::size_t N>
+  constexpr static void from_integral(bit_sized_range auto& value, const U& integral) noexcept {
+    if constexpr (N == std::dynamic_extent) {
+      if constexpr (std::is_signed_v<U>) {
+        if (integral < 0) {
+          ::bit::fill(value.begin() + bitsof<N>(), value.end(), bit1);
+        }
+      }
+    } else {
+      if constexpr (std::is_signed_v<U>) {
+        if (integral < 0) {
+          ::bit::fill(value.begin() + N, value.end(), bit1);
+        }
+      }
+    }
+  }
+};
+}  // namespace policy
 
 }  // namespace bit
 

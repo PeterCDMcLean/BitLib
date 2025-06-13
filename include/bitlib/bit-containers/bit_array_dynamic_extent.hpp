@@ -29,19 +29,20 @@
 namespace bit {
 namespace detail {
 template <typename value_type, typename word_type>
-using bit_array_it = typename std::conditional<std::is_same_v<value_type, bit_value>,
-                                               bit_iterator<word_type*>,
-                                               word_type*>::type;
-template <typename value_type, typename word_type>
-using bit_array_cit = typename std::conditional<std::is_same_v<value_type, bit_value>,
-                                                bit_iterator<const word_type*>,
-                                                const word_type*>::type;
+struct bit_array_dextent_iterator_types {
+  using iterator = typename std::conditional<std::is_same_v<value_type, bit_value>,
+                                             bit_iterator<word_type*>,
+                                             word_type*>::type;
+  using const_iterator = typename std::conditional<std::is_same_v<value_type, bit_value>,
+                                                   bit_iterator<const word_type*>,
+                                                   const word_type*>::type;
+};
 }  // namespace detail
-template <typename T, typename W>
-class bit_array<T, std::dynamic_extent, W>
-    : public bit_array_base<bit_array<T, std::dynamic_extent, W>, T, std::dynamic_extent, W, detail::bit_array_it<T, W>, detail::bit_array_cit<T, W>> {
+template <typename T, typename W, typename Policy>
+class bit_array<T, std::dynamic_extent, W, Policy>
+    : public bit_array_base<bit_array<T, std::dynamic_extent, W>, T, std::dynamic_extent, W, Policy, detail::bit_array_dextent_iterator_types<T, W>> {
  public:
-  using base = bit_array_base<bit_array<T, std::dynamic_extent, W>, T, std::dynamic_extent, W, detail::bit_array_it<T, W>, detail::bit_array_cit<T, W>>;
+  using base = bit_array_base<bit_array<T, std::dynamic_extent, W>, T, std::dynamic_extent, W, Policy, detail::bit_array_dextent_iterator_types<T, W>>;
   using base::end;
   using typename base::const_iterator;
   using typename base::const_pointer;

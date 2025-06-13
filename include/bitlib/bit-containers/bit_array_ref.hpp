@@ -27,6 +27,13 @@
 
 namespace bit {
 
+namespace detail {
+template <typename word_type>
+struct bit_array_ref_iterator_types {
+  using iterator = bit_iterator<word_type*>;
+  using const_iterator = bit_iterator<const word_type*>;
+};
+}  // namespace detail
 /**
  * @brief A non-owning reference to a bit array
  *
@@ -37,11 +44,11 @@ namespace bit {
  * @tparam T The value type (typically bit_value)
  * @tparam W The word type used for storage
  */
-template <typename T = bit_value, typename W = std::uintptr_t>
+template <typename T = bit_value, typename W = std::uintptr_t, typename Policy = policy::typical>
 class bit_array_ref
-    : public bit_array_base<bit_array_ref<T, W>, T, std::dynamic_extent, W, bit_iterator<W*>, bit_iterator<const W*>> {
+    : public bit_array_base<bit_array_ref<T, W>, T, std::dynamic_extent, W, Policy, detail::bit_array_ref_iterator_types<W>> {
  public:
-  using base = bit_array_base<bit_array_ref<T, W>, T, std::dynamic_extent, W, bit_iterator<W*>, bit_iterator<const W*>>;
+  using base = bit_array_base<bit_array_ref<T, W>, T, std::dynamic_extent, W, Policy, detail::bit_array_ref_iterator_types<W>>;
   using base::end;
   using typename base::const_iterator;
   using typename base::const_pointer;

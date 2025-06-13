@@ -38,22 +38,24 @@ template <typename value_type, typename word_type, std::size_t N>
 constexpr size_t Words() { return (N * bitsof<value_type>() + bitsof<word_type>() - 1) / bitsof<word_type>(); }
 
 template <typename value_type, typename word_type, std::size_t N>
-using bit_array_d_it = typename std::conditional<std::is_same_v<value_type, bit_value>,
-                                                 bit_iterator<typename std::array<word_type, Words<value_type, word_type, N>()>::iterator>,
-                                                 typename std::array<word_type, Words<value_type, word_type, N>()>::iterator>::type;
+struct bit_array_iterator_types {
+  using iterator = typename std::conditional<std::is_same_v<value_type, bit_value>,
+                                             bit_iterator<typename std::array<word_type, Words<value_type, word_type, N>()>::iterator>,
+                                             typename std::array<word_type, Words<value_type, word_type, N>()>::iterator>::type;
 
-template <typename value_type, typename word_type, std::size_t N>
-using bit_array_d_cit = typename std::conditional<std::is_same_v<value_type, bit_value>,
-                                                  bit_iterator<typename std::array<word_type, Words<value_type, word_type, N>()>::const_iterator>,
-                                                  typename std::array<const word_type, Words<value_type, word_type, N>()>::const_iterator>::type;
+  using const_iterator = typename std::conditional<std::is_same_v<value_type, bit_value>,
+                                                   bit_iterator<typename std::array<word_type, Words<value_type, word_type, N>()>::const_iterator>,
+                                                   typename std::array<const word_type, Words<value_type, word_type, N>()>::const_iterator>::type;
+};
 }  // namespace detail
 
 template <typename T = bit_value,
           std::size_t N = std::dynamic_extent,
-          typename W = std::conditional_t<(N == std::dynamic_extent), std::uintptr_t, ceil_integral<N>>>
-class bit_array : public bit_array_base<bit_array<T, N, W>, T, N, W, detail::bit_array_d_it<T, W, N>, detail::bit_array_d_cit<T, W, N>> {
+          typename W = std::conditional_t<(N == std::dynamic_extent), std::uintptr_t, ceil_integral<N>>,
+          typename Policy = policy::typical>
+class bit_array : public bit_array_base<bit_array<T, N, W>, T, N, W, Policy, detail::bit_array_iterator_types<T, W, N>> {
  public:
-  using base = bit_array_base<bit_array<T, N, W>, T, N, W, detail::bit_array_d_it<T, W, N>, detail::bit_array_d_cit<T, W, N>>;
+  using base = bit_array_base<bit_array<T, N, W>, T, N, W, Policy, detail::bit_array_iterator_types<T, W, N>>;
   using base::end;
   using typename base::const_iterator;
   using typename base::const_pointer;
@@ -169,7 +171,7 @@ class bit_array : public bit_array_base<bit_array<T, N, W>, T, N, W, detail::bit
   /*
     * Assignment
     */
-  constexpr bit_array& operator=(const bit_array<T, N, W>& other) = default;
+  constexpr bit_array& operator=(const bit_array<T, N, W, Policy>& other) = default;
 
   constexpr bit_array& operator=(const bit_sized_range auto& other) {
     if (other.size() != this->size()) [[unlikely]] {
@@ -179,7 +181,7 @@ class bit_array : public bit_array_base<bit_array<T, N, W>, T, N, W, detail::bit
     return *this;
   };
 
-  constexpr bit_array& operator=(bit_array<T, N, W>&& other) noexcept {
+  constexpr bit_array& operator=(bit_array<T, N, W, Policy>&& other) noexcept {
     std::copy(other.storage.begin(), other.storage.end(), storage.begin());
     return *this;
   }
