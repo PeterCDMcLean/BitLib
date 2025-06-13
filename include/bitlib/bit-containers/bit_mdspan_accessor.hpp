@@ -14,7 +14,7 @@
 #include "bitlib/bit-iterator/bit_value.hpp"
 
 namespace bit {
-template <typename WordType = uint8_t>
+template <typename WordType = uintptr_t>
 struct bit_default_accessor {
   using element_type = bit_value;
   using data_handle_type = bit_pointer<WordType>;

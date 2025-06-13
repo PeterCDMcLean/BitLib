@@ -40,9 +40,12 @@ namespace bit {
 class bit_value;
 template <class WordType>
 class bit_reference;
-template <class Iterator> class bit_iterator;
+template <class Iterator>
+class bit_iterator;
 template <class WordType>
 using bit_pointer = bit_iterator<WordType*>;
+template <typename target_word_ptr, typename source_word_ptr>
+class bit_word_pointer_adapter;
 
 // ========================================================================== //
 
@@ -68,24 +71,22 @@ struct binary_digits : binary_digits_impl<std::remove_cv_t<UIntType>> {};
 // Binary digits value
 template <class T>
 constexpr std::size_t binary_digits_v = binary_digits<T>::value;
-/* ************************************************************************** */
+/*************************************************************************** */
 
-#if 0
-template <typename T>
-using smallest_integral = std::conditional_t<
-    (sizeof(T) <= sizeof(std::uint8_t)),
+template <size_t N>
+using ceil_integral = std::conditional_t<
+    (N <= bitsof<std::uint8_t>()),
     std::uint8_t,
     std::conditional_t<
-        (sizeof(T) <= sizeof(std::uint16_t)),
+        (N <= bitsof<std::uint16_t>()),
         std::uint16_t,
         std::conditional_t<
-            (sizeof(T) <= sizeof(std::uint32_t)),
+            (N <= bitsof<std::uint32_t>()),
             std::uint32_t,
             std::conditional_t<
-                (sizeof(T) <= sizeof(std::uint64_t)),
+                (N <= bitsof<std::uint64_t>()),
                 std::uint64_t,
-                T>>>>;
-#endif
+                std::uint64_t>>>>;
 
 /* *************** IMPLEMENTATION DETAILS: CV ITERATOR TRAITS *************** */
 // Cv iterator traits structure definition
@@ -106,8 +107,9 @@ struct _cv_iterator_traits
     using _raw_pointer_t = typename std::remove_cv<_no_pointer_t>::type;
     using _raw_reference_t = typename std::remove_cv<_no_reference_t>::type;
     using _cv_value_t = _no_reference_t;
-    static_assert(std::is_same<_raw_pointer_t, _raw_value_t>::value, "");
-    static_assert(std::is_same<_raw_reference_t, _raw_value_t>::value, "");
+
+    //    static_assert(std::is_same<_raw_pointer_t, _raw_value_t>::value, "");
+    //    static_assert(std::is_same<_raw_reference_t, _raw_value_t>::value, "");
 
     // Types
     public:
@@ -119,8 +121,7 @@ struct _cv_iterator_traits
 };
 /* ************************************************************************** */
 
-
-
+#if 0
 /* *********** IMPLEMENTATION DETAILS: NARROWEST AND WIDEST TYPES *********** */
 // Narrowest type structure declaration
 template <class... T>
@@ -282,8 +283,53 @@ struct _wider_type<T, -1>
 template <class T>
 using _wider_type_t = typename _wider_type<T>::type;
 /* ************************************************************************** */
+#endif
 
+/*
+exact_ceil_integral is used to determine the exact integral type that a proxy reference
+can be implicitly converted to.
+If the proxy reference supports multiple types, it will pick the largest, preferring unsigned.
+*/
+template <typename T>
+struct exact_ceil_integral {
+ private:
+  using U = std::remove_cvref_t<T>;
 
+  template <typename From, typename To>
+  static constexpr bool is_exactly_convertible() {
+    if constexpr (!std::is_convertible_v<From, To>) {
+      return false;
+    } else {
+      // Try brace-initialization to detect narrowing
+      return requires(From f) {
+        To{f};  // will fail if narrowing
+      };
+    }
+  }
+
+ public:
+  using type = std::conditional_t<
+      is_exactly_convertible<U, uint64_t>(), uint64_t,
+      std::conditional_t<
+          is_exactly_convertible<U, int64_t>(), int64_t,
+          std::conditional_t<
+              is_exactly_convertible<U, uint32_t>(), uint32_t,
+              std::conditional_t<
+                  is_exactly_convertible<U, int32_t>(), int32_t,
+                  std::conditional_t<
+                      is_exactly_convertible<U, uint16_t>(), uint16_t,
+                      std::conditional_t<
+                          is_exactly_convertible<U, int16_t>(), int16_t,
+                          std::conditional_t<
+                              is_exactly_convertible<U, uint8_t>(), uint8_t,
+                              std::conditional_t<
+                                  is_exactly_convertible<U, int8_t>(), int8_t,
+                                  void>>>>>>>>;
+};
+
+// Helper alias
+template <typename T>
+using exact_ceil_integral_t = typename exact_ceil_integral<T>::type;
 
 /* ******************* IMPLEMENTATION DETAILS: UTILITIES ******************** */
 // Assertions
@@ -318,6 +364,7 @@ constexpr T _bextr(T src, T start, T len) noexcept;
 template <class T, class... X>
 constexpr T _bextr(T src, T start, T len, X...) noexcept;
 
+#if 0
 // Parallel bits deposit
 template <class T, class = decltype(_pdep_u64(T()))>
 constexpr T _pdep(T src, T msk) noexcept;
@@ -336,6 +383,8 @@ constexpr T _byteswap(T src) noexcept;
 template <class T, class... X>
 constexpr T _byteswap(T src, X...) noexcept;
 
+#endif
+
 // Bit swap
 template <class T>
 constexpr T _bitswap(T src) noexcept;
@@ -343,12 +392,6 @@ template <class T, std::size_t N>
 constexpr T _bitswap(T src) noexcept;
 template <class T, std::size_t N>
 constexpr T _bitswap() noexcept;
-
-// Bit blend
-template <class T>
-constexpr T _bitblend(T src0, T src1, T msk) noexcept;
-template <class T>
-constexpr T _bitblend(T src0, T src1, T start, T len) noexcept;
 
 // Bit exchange
 template <class T>
@@ -401,8 +444,13 @@ constexpr T _mulx(T src0, T src1, T* hi, X...) noexcept;
 Logical shift right
 */
 template <std::integral T, typename size_type = size_t>
-constexpr T lsr(const T& val, const size_type shift) {
+constexpr T lsr(const T val, const size_type shift) {
   return static_cast<T>(static_cast<std::make_unsigned_t<T>>(val) >> shift);
+}
+
+template <typename T, typename size_type = size_t>
+constexpr exact_ceil_integral_t<T> lsr(const T val, const size_type shift) {
+  return static_cast<exact_ceil_integral_t<T>>(static_cast<std::make_unsigned_t<exact_ceil_integral_t<T>>>(val) >> shift);
 }
 
 enum class _mask_len {
@@ -572,6 +620,7 @@ constexpr T _bextr(T src, T start, T len, X...) noexcept {
 }
 // -------------------------------------------------------------------------- //
 
+#if 0
 // ------- IMPLEMENTATION DETAILS: INSTRUCTIONS: PARALLEL BIT DEPOSIT ------- //
 // Deposits bits according to a mask with compiler instrinsics
 template <class T, class>
@@ -691,6 +740,7 @@ constexpr T _byteswap(T src, X...) noexcept {
   return src;
 }
 // -------------------------------------------------------------------------- //
+#endif
 
 // ------------- IMPLEMENTATION DETAILS: INSTRUCTIONS: BIT SWAP ------------- //
 // Reverses the order of the bits with or without of compiler intrinsics
@@ -752,18 +802,34 @@ constexpr T _bitswap() noexcept {
 
 // ------------ IMPLEMENTATION DETAILS: INSTRUCTIONS: BIT BLEND ------------- //
 // Replaces bits of src0 by the ones of src1 where the mask is true
-template <class T>
-constexpr T _bitblend(T src0, T src1, T msk) noexcept {
-  static_assert(binary_digits<T>::value, "");
+
+template <typename T, typename U>
+constexpr exact_ceil_integral_t<T> _bitblend(
+    const T src0_,
+    const U src1_,
+    const exact_ceil_integral_t<T> msk) noexcept
+  requires(std::is_same_v<exact_ceil_integral_t<T>, exact_ceil_integral_t<U>>)
+{
+  static_assert(binary_digits<exact_ceil_integral_t<T>>::value, "");
+  const exact_ceil_integral_t<T> src0 = static_cast<exact_ceil_integral_t<T>>(src0_);
+  const exact_ceil_integral_t<U> src1 = static_cast<exact_ceil_integral_t<U>>(src1_);
   return src0 ^ ((src0 ^ src1) & msk);
 }
 
 // Replaces len bits of src0 by the ones of src1 starting at start
-template <class T>
-constexpr T _bitblend(T src0, T src1, T start, T len) noexcept {
-  static_assert(binary_digits<T>::value, "");
-  constexpr T digits = binary_digits<T>::value;
-  const T msk = _mask<T, _mask_len::unknown>(len) << start;
+template <typename T, typename U>
+constexpr exact_ceil_integral_t<T> _bitblend(
+    const T src0_,
+    const U src1_,
+    const exact_ceil_integral_t<T> start,
+    const exact_ceil_integral_t<T> len) noexcept
+  requires(std::is_same_v<exact_ceil_integral_t<T>, exact_ceil_integral_t<U>>)
+{
+  static_assert(binary_digits<exact_ceil_integral_t<T>>::value, "");
+  constexpr exact_ceil_integral_t<T> digits = bitsof<exact_ceil_integral_t<T>>();
+  const exact_ceil_integral_t<T> src0 = static_cast<exact_ceil_integral_t<T>>(src0_);
+  const exact_ceil_integral_t<U> src1 = static_cast<exact_ceil_integral_t<U>>(src1_);
+  const exact_ceil_integral_t<T> msk = _mask<exact_ceil_integral_t<T>, _mask_len::unknown>(len) << start;
   return src0 ^ ((src0 ^ src1) & msk * (start < digits));
 }
 // -------------------------------------------------------------------------- //
@@ -951,7 +1017,7 @@ template <class T, class T128>
 constexpr T _mulx(T src0, T src1, T* hi) noexcept
 {
     static_assert(binary_digits<T>::value, "");
-    using wider_t = typename _wider_type<T>::type;
+    using wider_t = ceil_integral<bitsof<T>() + bitsof<T>()>;
     constexpr T digits = binary_digits<T>::value;
     wider_t tmp = 0;
     T128 tmp128 = 0;
@@ -994,7 +1060,50 @@ constexpr T _mulx(T src0, T src1, T* hi, X...) noexcept
 }
 // -------------------------------------------------------------------------- //
 
+template <typename AlgoFunc, typename SrcIt, typename DstIt>
+constexpr auto with_bit_iterator_adapter(
+    bit_iterator<SrcIt> first,
+    bit_iterator<SrcIt> last,
+    bit_iterator<DstIt> d_first) {
+  using dst_word_type = typename bit_iterator<DstIt>::word_type;
+  using src_word_type = typename bit_iterator<SrcIt>::word_type;
+  if constexpr (!std::is_same_v<src_word_type, dst_word_type> && bitsof<src_word_type>() != bitsof<dst_word_type>()) {
+    if constexpr (bitsof<src_word_type>() > bitsof<dst_word_type>()) {
+      bit_iterator<bit_word_pointer_adapter<DstIt, SrcIt>> adapted_first(
+          bit_word_pointer_adapter<DstIt, SrcIt>(first.base(), first.position() / bitsof<dst_word_type>()), first.position() % bitsof<dst_word_type>());
+      bit_iterator<bit_word_pointer_adapter<DstIt, SrcIt>> adapted_last(
+          bit_word_pointer_adapter<DstIt, SrcIt>(last.base(), last.position() / bitsof<dst_word_type>()), last.position() % bitsof<dst_word_type>());
+      return AlgoFunc{}(adapted_first, adapted_last, d_first);
+    } else {
+      bit_iterator<bit_word_pointer_adapter<SrcIt, DstIt>> adapted_d_first(
+          bit_word_pointer_adapter<SrcIt, DstIt>(d_first.base(), d_first.position() / bitsof<src_word_type>()), d_first.position() % bitsof<src_word_type>());
+      return AlgoFunc{}(first, last, adapted_d_first);
+    }
+  } else {
+    return AlgoFunc{}(first, last, d_first);
+  }
+}
 
+template <typename AlgoFunc, typename SrcIt, typename DstIt>
+constexpr auto with_bit_iterator_adapter(
+    bit_iterator<SrcIt> first,
+    bit_iterator<DstIt> last) {
+  using dst_word_type = typename bit_iterator<DstIt>::word_type;
+  using src_word_type = typename bit_iterator<SrcIt>::word_type;
+  if constexpr (!std::is_same_v<src_word_type, dst_word_type> && bitsof<src_word_type>() != bitsof<dst_word_type>()) {
+    if constexpr (bitsof<src_word_type>() > bitsof<dst_word_type>()) {
+      bit_iterator<bit_word_pointer_adapter<DstIt, SrcIt>> adapted_first(
+          bit_word_pointer_adapter<DstIt, SrcIt>(first.base(), first.position() / bitsof<dst_word_type>()), first.position() % bitsof<dst_word_type>());
+      return AlgoFunc{}(adapted_first, last);
+    } else {
+      bit_iterator<bit_word_pointer_adapter<SrcIt, DstIt>> adapted_last(
+          bit_word_pointer_adapter<SrcIt, DstIt>(last.base(), last.position() / bitsof<src_word_type>()), last.position() % bitsof<src_word_type>());
+      return AlgoFunc{}(first, adapted_last);
+    }
+  } else {
+    return AlgoFunc{}(first, last);
+  }
+}
 
 // ========================================================================== //
 }  // namespace bit

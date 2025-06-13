@@ -4,6 +4,7 @@
 // Description: A set of utilities to assist in writing algorithms
 // Contributor(s): Vincent Reverdy [2019]
 //                 Bryce Kille [2019]
+//                 Peter McLean [2025]
 // License: BSD 3-Clause License
 // ========================================================================== //
 #ifndef _BIT_ALGORITHM_DETAILS_HPP_INCLUDED
@@ -103,12 +104,11 @@ constexpr bool is_within(
 
 // Get next len bits beginning at start and store them in a word of type T
 template <class T, class InputIt>
-T get_word(bit_iterator<InputIt> first, size_t len=binary_digits<T>::value)
-{
+T get_word(const bit_iterator<InputIt>& first, size_t len = binary_digits<T>::value) {
   using native_word_type = typename bit_iterator<InputIt>::word_type;
   constexpr T digits = binary_digits<native_word_type>::value;
   assert(digits >= len);
-  using non_const_T = std::remove_cv_t<T>;
+  using non_const_T = std::remove_cvref_t<T>;
   non_const_T offset = digits - first.position();
   non_const_T ret_word = lsr(*first.base(), first.position());
 
@@ -224,7 +224,7 @@ void write_word(src_type src, bit_iterator<OutputIt> dst_bit_it,
     } else {
       *dst_bit_it.base() = _bitblend<src_type>(
           *dst_bit_it.base(),
-          src << dst_bit_it.position(),
+          static_cast<src_type>(src << dst_bit_it.position()),
           dst_bit_it.position(),
           std::min<src_type>(
               dst_digits - dst_bit_it.position(),

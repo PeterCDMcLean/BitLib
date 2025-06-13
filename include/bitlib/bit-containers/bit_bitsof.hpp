@@ -23,9 +23,16 @@ concept HasBits = requires {
 };
 
 // General case: for types that do not have a bits member.
-template <typename T> requires (!HasBits<T>)
+template <typename T>
+  requires(!HasBits<T> && !std::is_integral_v<T>)
 constexpr std::size_t bitsof() noexcept {
   return 8u * sizeof(T);
+}
+
+template <typename T>
+  requires(!HasBits<T> && std::is_integral_v<T>)
+constexpr std::size_t bitsof() noexcept {
+  return std::integral_constant<std::size_t, std::numeric_limits<std::make_unsigned_t<T>>::digits>::value;
 }
 
 // Overload for types with a bits member.

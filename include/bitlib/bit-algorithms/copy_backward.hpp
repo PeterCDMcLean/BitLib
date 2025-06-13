@@ -56,13 +56,12 @@ constexpr bit_iterator<RandomAccessIt2> copy_backward(bit_iterator<RandomAccessI
                 d_last.position()
         );
         *it = _bitblend<word_type>(
-                *it,
-                static_cast<word_type>(
-                  get_word<word_type>(last - partial_bits_to_copy, partial_bits_to_copy)
-                ) << (d_last.position() - partial_bits_to_copy),
-                d_last.position() - partial_bits_to_copy,
-                static_cast<word_type>(partial_bits_to_copy)
-        );
+            *it,
+            static_cast<word_type>(
+                get_word<word_type>(last - partial_bits_to_copy, partial_bits_to_copy)
+                << (d_last.position() - partial_bits_to_copy)),
+            d_last.position() - partial_bits_to_copy,
+            static_cast<word_type>(partial_bits_to_copy));
         remaining_bits_to_copy -= partial_bits_to_copy;
         advance(last, -partial_bits_to_copy);
     }
@@ -87,14 +86,13 @@ constexpr bit_iterator<RandomAccessIt2> copy_backward(bit_iterator<RandomAccessI
             it--;
         }
         if (remaining_bits_to_copy > 0) {
-            *it = _bitblend<word_type>(
-                    *it,
-                    get_word<word_type>(last - remaining_bits_to_copy, remaining_bits_to_copy)
-                       << (digits - remaining_bits_to_copy),
-                    digits - remaining_bits_to_copy,
-                    remaining_bits_to_copy
-            );
-            remaining_bits_to_copy = 0;
+          *it = _bitblend<word_type>(
+              *it,
+              static_cast<word_type>(get_word<word_type>(last - remaining_bits_to_copy, remaining_bits_to_copy)
+                                     << (digits - remaining_bits_to_copy)),
+              digits - remaining_bits_to_copy,
+              remaining_bits_to_copy);
+          remaining_bits_to_copy = 0;
         }
     }
     return d_last - total_bits_to_copy;

@@ -22,38 +22,41 @@
 namespace bit {
 // ========================================================================== //
 
-
-
-// ---------------------------- Copy Algorithms ----------------------------- //
+struct copy_impl;
 
 // Status: Does not work for Input/Output iterators due to distance call
-template <class RandomAccessIt1, class RandomAccessIt2>
-constexpr bit_iterator<RandomAccessIt2> copy(bit_iterator<RandomAccessIt1> first,
-                            bit_iterator<RandomAccessIt1> last,
-                            bit_iterator<RandomAccessIt2> d_first
-)
-{
+template <typename RandomAccessIt1, typename RandomAccessIt2>
+constexpr bit_iterator<RandomAccessIt2> copy(
+    const bit_iterator<RandomAccessIt1>& first,
+    const bit_iterator<RandomAccessIt1>& last,
+    const bit_iterator<RandomAccessIt2>& d_first) {
+  return with_bit_iterator_adapter<copy_impl>(first, last, d_first);
+}
+
+// ---------------------------- Copy Algorithms ----------------------------- //
+struct copy_impl {
+  // Status: Does not work for Input/Output iterators due to distance call
+  template <typename RandomAccessIt1, typename RandomAccessIt2>
+  constexpr bit_iterator<RandomAccessIt2> operator()(
+      bit_iterator<RandomAccessIt1> first,
+      bit_iterator<RandomAccessIt1> last,
+      bit_iterator<RandomAccessIt2> d_first) {
     // Types and constants
     using dst_word_type = typename bit_iterator<RandomAccessIt2>::word_type;
     using src_word_type = typename bit_iterator<RandomAccessIt1>::word_type;
 
     // This checks for differing word types and uses an unoptimized copy in that event
-    if (!::std::is_same<dst_word_type, src_word_type>::value) {
-      while (first != last) {
-        *d_first = *first;
-        first++;
-        d_first++;
-      }
-      return d_first;
-    }
+    static_assert(std::is_same<dst_word_type, src_word_type>::value, "Both types must be the same");
+
     using word_type = dst_word_type;
     using size_type = typename bit_iterator<RandomAccessIt2>::size_type;
     constexpr size_type digits = binary_digits<word_type>::value;
 
     // Assertions
     _assert_range_viability(first, last);
-    if (first == last) return d_first;
-
+    if (first == last) {
+      return d_first;
+    }
 
     // Initialization
     const bool is_d_first_aligned = d_first.position() == 0;
@@ -61,25 +64,21 @@ constexpr bit_iterator<RandomAccessIt2> copy(bit_iterator<RandomAccessIt1> first
     size_type remaining_bits_to_copy = total_bits_to_copy;
     auto it = d_first.base();
 
-
     // d_first is not aligned. Copy partial word to align it
     if (!is_d_first_aligned) {
-        size_type partial_bits_to_copy = ::std::min(
-                remaining_bits_to_copy,
-                digits - d_first.position()
-                );
-        *it = _bitblend(
-                *it,
-                static_cast<word_type>(
-                  get_word<word_type>(first, partial_bits_to_copy)
-                    << static_cast<word_type>(d_first.position())
-                ),
-                static_cast<word_type>(d_first.position()),
-                static_cast<word_type>(partial_bits_to_copy)
-                );
-        remaining_bits_to_copy -= partial_bits_to_copy;
-        advance(first, partial_bits_to_copy);
-        it++;
+      size_type partial_bits_to_copy = ::std::min(
+          remaining_bits_to_copy,
+          digits - d_first.position());
+      *it = _bitblend(
+          *it,
+          static_cast<word_type>(
+              get_word<word_type>(first, partial_bits_to_copy)
+              << static_cast<word_type>(d_first.position())),
+          static_cast<word_type>(d_first.position()),
+          static_cast<word_type>(partial_bits_to_copy));
+      remaining_bits_to_copy -= partial_bits_to_copy;
+      advance(first, partial_bits_to_copy);
+      it++;
     }
 
     if (remaining_bits_to_copy > 0) {
@@ -108,12 +107,13 @@ constexpr bit_iterator<RandomAccessIt2> copy(bit_iterator<RandomAccessIt1> first
         }
     }
     return d_first + total_bits_to_copy;
-}
+  }
+};
 // -------------------------------------------------------------------------- //
 
 
 
 // ========================================================================== //
-} // namespace bit
+}  // namespace bit
 #endif // _COPY_HPP_INCLUDED
 // ========================================================================== //

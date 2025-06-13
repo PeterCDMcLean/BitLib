@@ -30,6 +30,10 @@
 namespace bit {
 
 /* ****************************** BIT ITERATOR ****************************** */
+
+template <typename target_word_ptr, typename source_word_ptr>
+class bit_word_pointer_adapter;
+
 // Bit iterator class definition
 template <class Iterator>
 class bit_iterator
@@ -40,17 +44,17 @@ class bit_iterator
   // Assertions
  private:
   using _traits_t = _cv_iterator_traits<Iterator>;
-  static_assert(binary_digits<typename _traits_t::value_type>::value, "");
+  static_assert(binary_digits<std::iter_value_t<Iterator>>::value, "");
 
   // Types
  public:
   using iterator_type = Iterator;
-  using word_type = typename _traits_t::value_type;
+  using word_type = std::iter_value_t<Iterator>;
   using iterator_category = typename _traits_t::iterator_category;
   using value_type = bit_value;
   using difference_type = std::ptrdiff_t;
   using pointer = bit_pointer<word_type>;
-  using reference = bit_reference<word_type>;
+  using reference = bit_reference<typename _traits_t::reference>;  // typename _traits_t::reference;
   using size_type = std::size_t;
   using mask_type = std::make_unsigned_t<std::remove_cv_t<word_type>>;
 
@@ -65,6 +69,9 @@ class bit_iterator
   constexpr bit_iterator(iterator_type i, size_type pos);
   explicit constexpr bit_iterator(const pointer& ptr)
     requires std::constructible_from<iterator_type, word_type*>;
+
+  template <typename T>
+  constexpr bit_iterator(const bit_iterator<bit_word_pointer_adapter<T, Iterator>>& other);
 
   // Assignment
  public:
@@ -158,6 +165,13 @@ template <class Iterator>
 constexpr bit_iterator<Iterator>::bit_iterator(const pointer& ptr)
   requires std::constructible_from<iterator_type, word_type*>
     : _current(ptr._current), _position(ptr.position()) {
+  assert(_position < bitsof<word_type>());
+}
+
+template <class Iterator>
+template <typename T>
+constexpr bit_iterator<Iterator>::bit_iterator(const bit_iterator<bit_word_pointer_adapter<T, Iterator>>& other)
+    : _current(other.base().base()), _position(other.base().index() * bitsof<typename bit_word_pointer_adapter<T, Iterator>::value_type>() + other.position()) {
   assert(_position < bitsof<word_type>());
 }
 // -------------------------------------------------------------------------- //
@@ -366,7 +380,7 @@ operator-(const bit_iterator<T>& lhs, const bit_iterator<U>& rhs) {
 }
 
 static_assert(bit_iterator_c<bit_iterator<uint8_t*>>, "bit_iterator does not satisfy bit_iterator_c concept!");
-static_assert(bit_pointer_c<bit_pointer<uint8_t>, bit_reference<uint8_t>>, "bit_pointer does not satisfy bit_pointer_c concept!");
+static_assert(bit_pointer_c<bit_pointer<uint8_t>, bit_reference<uint8_t&>>, "bit_pointer does not satisfy bit_pointer_c concept!");
 static_assert(bit_iterator_c<bit_pointer<uint8_t>>, "bit_pointer does not satisfy bit_iterator_c concept!");
 
 // ========================================================================== //

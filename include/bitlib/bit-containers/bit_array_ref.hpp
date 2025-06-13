@@ -37,7 +37,7 @@ namespace bit {
  * @tparam T The value type (typically bit_value)
  * @tparam W The word type used for storage
  */
-template <typename T = bit_value, typename W = std::uint8_t>
+template <typename T = bit_value, typename W = std::uintptr_t>
 class bit_array_ref
     : public bit_array_base<bit_array_ref<T, W>, T, std::dynamic_extent, W, bit_iterator<W*>, bit_iterator<const W*>> {
  public:

@@ -76,7 +76,7 @@ class bit_vector {
   using allocator_type = Allocator;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
-  using reference = bit_reference<WordType>;
+  using reference = bit_reference<WordType&>;  // typename std::vector<WordType>::reference>;
   using const_reference = const reference;
   using pointer = bit_pointer<WordType>;
   using iterator = bit_iterator<typename std::vector<WordType>::iterator>;
