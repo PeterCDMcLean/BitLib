@@ -25,6 +25,7 @@
 #include "bitlib/bit-algorithms/bit_algorithm.hpp"
 #include "bitlib/bit-containers/bit_array_base.hpp"
 #include "bitlib/bit-containers/bit_bitsof.hpp"
+#include "bitlib/bit-containers/bit_policy.hpp"
 #include "bitlib/bit-containers/bit_span.hpp"
 #include "bitlib/bit-iterator/bit.hpp"
 #include "bitlib/bit_concepts.hpp"
@@ -52,7 +53,7 @@ struct bit_array_iterator_types {
 template <typename T = bit_value,
           std::size_t N = std::dynamic_extent,
           typename W = std::conditional_t<(N == std::dynamic_extent), std::uintptr_t, ceil_integral<N>>,
-          typename Policy = policy::typical>
+          typename Policy = policy::typical<W>>
 class bit_array : public bit_array_base<bit_array<T, N, W>, T, N, W, Policy, detail::bit_array_iterator_types<T, W, N>> {
  public:
   using base = bit_array_base<bit_array<T, N, W>, T, N, W, Policy, detail::bit_array_iterator_types<T, W, N>>;

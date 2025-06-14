@@ -12,13 +12,10 @@
 // Project sources
 #include "bitlib/bit-algorithms/bit_algorithm.hpp"
 #include "bitlib/bit-containers/bit_bitsof.hpp"
+#include "bitlib/bit-containers/bit_policy.hpp"
 #include "bitlib/bit-iterator/bit.hpp"
 
 namespace bit {
-
-namespace policy {
-struct typical;
-}
 
 template <typename T, typename W, typename Policy>
 class bit_array_ref;
@@ -39,7 +36,7 @@ struct bit_span_storage<WordType, std::dynamic_extent> {
     bit_span_storage(std::size_t size) : size_(size) {}
 };
 
-template <typename WordType = uint8_t, std::size_t Extent = std::dynamic_extent, typename Policy = policy::typical>
+template <typename WordType = uintptr_t, std::size_t Extent = std::dynamic_extent, typename Policy = policy::typical<WordType>>
 class bit_span : private bit_span_storage<WordType, Extent> {
  public:
   using word_type = WordType;

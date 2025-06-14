@@ -22,12 +22,14 @@
 #include "bitlib/bit-containers/bit_array.hpp"
 #include "bitlib/bit-containers/bit_array_base.hpp"
 #include "bitlib/bit-containers/bit_bitsof.hpp"
+#include "bitlib/bit-containers/bit_policy.hpp"
 #include "bitlib/bit-containers/bit_span.hpp"
 #include "bitlib/bit-iterator/bit.hpp"
 #include "bitlib/bit_concepts.hpp"
 
 namespace bit {
 namespace detail {
+
 template <typename value_type, typename word_type>
 struct bit_array_dextent_iterator_types {
   using iterator = typename std::conditional<std::is_same_v<value_type, bit_value>,
@@ -54,21 +56,34 @@ class bit_array<T, std::dynamic_extent, W, Policy>
   using typename base::size_type;
   using typename base::value_type;
   using typename base::word_type;
+  using Allocator = typename Policy::allocator;
 
  private:
-  using word_type_ptr = std::unique_ptr<word_type[]>;
+  using word_type_ptr = word_type*;
   static const size_type FixedWords = sizeof(word_type_ptr) / sizeof(word_type);
   static const size_type FixedBits = FixedWords * bitsof<word_type>();
 
   const size_type m_size;
 
-  union Storage {
-    word_type_ptr pointer;
-    word_type fixed[FixedWords];
+  struct Storage {
+    union {
+      word_type_ptr pointer;
+      word_type fixed[FixedWords];
+    };
+    Allocator m_allocator;
 
-    Storage(size_type words) {
+    Storage(size_type words, const Allocator& allocator, detail::uninitialized_t) : m_allocator(allocator) {
       if (words > FixedWords) {
-        new (&pointer) word_type_ptr(new word_type[words]);
+        new (&pointer) word_type_ptr(m_allocator.allocate(words));
+      }
+    }
+
+    Storage(size_type words, const Allocator& allocator = Allocator()) : m_allocator(allocator) {
+      if (words > FixedWords) {
+        new (&pointer) word_type_ptr(m_allocator.allocate(words));
+        for (size_type i = 0; i < words; ++i) {
+          new (pointer + i) word_type();
+        }
       } else {
         for (size_type i = 0; i < words; ++i) {
           new (&fixed[i]) word_type();
@@ -87,10 +102,14 @@ class bit_array<T, std::dynamic_extent, W, Policy>
       }
     }
 
-    Storage(size_type words, const Storage& other) {
+    Storage(size_type words, const Storage& other, const Allocator& allocator = Allocator())
+        : m_allocator(allocator) {
       if (words > FixedWords) {
-        new (&pointer) word_type_ptr(new word_type[words]);
-        std::memcpy(pointer.get(), other.pointer.get(), words * sizeof(word_type));
+        new (&pointer) word_type_ptr(m_allocator.allocate(words));
+        for (size_t i = 0; i < words; ++i) {
+          new (pointer + i) word_type(other.pointer[i]);
+        }
+        std::memcpy(pointer, other.pointer, words * sizeof(word_type));
       } else {
         for (size_type i = 0; i < words; ++i) {
           new (&fixed[i]) word_type(other.fixed[i]);
@@ -98,9 +117,13 @@ class bit_array<T, std::dynamic_extent, W, Policy>
       }
     }
     template <typename U>
-    Storage(size_type words, const U& val) {
+    Storage(size_type words, const U& val, const Allocator& allocator = Allocator())
+        : m_allocator(allocator) {
       if (words > FixedWords) {
-        new (&pointer) word_type_ptr(new word_type[words](val));
+        new (&pointer) word_type_ptr(m_allocator.allocate(words));
+        for (size_t i = 0; i < words; ++i) {
+          new (pointer + i) word_type(val);
+        }
       } else {
         for (size_type i = 0; i < words; ++i) {
           new (&fixed[i]) word_type(val);
@@ -108,21 +131,17 @@ class bit_array<T, std::dynamic_extent, W, Policy>
       }
     }
     Storage() = delete;
-    ~Storage() {}
+    ~Storage() {};
   } storage;
 
   static constexpr size_type Words(size_type N) {
     return (N * bitsof<value_type>() + bitsof<word_type>() - 1) / bitsof<word_type>();
   };
-  /*
-  constexpr size_type Words() const {
-    return Words(m_size);
-  }*/
 
  public:
   ~bit_array() {
     if (size() > FixedBits) {
-      storage.pointer.~unique_ptr();
+      storage.m_allocator.deallocate(storage.pointer, Words(size()));
     } else {
       for (size_type i = 0; i < Words(size()); ++i) {
         storage.fixed[i].~word_type();
@@ -135,50 +154,44 @@ class bit_array<T, std::dynamic_extent, W, Policy>
   */
   bit_array() = delete;
 
-  constexpr bit_array(const size_type size)
-      : m_size(size), storage(Words(size)) {
+  constexpr bit_array(const size_type size, const Allocator& allocator = Allocator())
+      : m_size(size), storage(Words(size), allocator) {
   }
 
   template <std::integral U>
-  constexpr bit_array(const size_type size, const U& integral)
-      : bit_array(size) {
-    assert(bitsof<U>() <= size);
-    if (size() > FixedBits) {
-      std::memcpy(storage.pointer, &integral, sizeof(integral));
+  constexpr bit_array(const size_type size, const U& integral, const Allocator& allocator = Allocator())
+      : m_size(size), storage(Words(size), allocator, detail::uninitialized) {
+    if (size() > bitsof<U>()) {
+      Policy::truncation::template from_integral(*this, integral);
     } else {
-      std::memcpy(storage.fixed, &integral, sizeof(integral));
+      bit_pointer<U> integral_ptr = bit_pointer<U>(&integral);
+      ::bit::copy(integral_ptr, integral_ptr + bitsof<U>(), begin());
     }
-    bool sign_extend = false;
-    if constexpr (std::is_signed_v<U>) {
-      sign_extend = (integral & (1 << (bitsof<U>() - 1))) ? true : false;
-    }
-    if (sign_extend) {
-      for (auto it = begin() + bitsof<U>(); it != end(); ++it) {
-        *it = bit1;
-      }
-    } else {
-      for (auto it = begin() + bitsof<U>(); it != end(); ++it) {
-        *it = bit0;
-      }
+    if (size() < bitsof<U>()) {
+      Policy::extension::template from_integral(*this, integral, detail::uninitialized);
     }
   }
 
-  constexpr bit_array(const size_type size, const word_type val)
-      : m_size(size), storage(Words(size), val) {
+  constexpr bit_array(const size_type size, const word_type val, const Allocator& allocator = Allocator())
+      : m_size(size), storage(Words(size), val, allocator) {
   }
 
-  constexpr bit_array(const size_type size, const value_type bit_val)
+  constexpr bit_array(const size_type size, const value_type bit_val, const Allocator& allocator = Allocator())
     requires(!std::is_same<value_type, word_type>::value)
-      : m_size(size), storage(Words(size)) {
+      : m_size(size), storage(Words(size), allocator, detail::uninitialized) {
     this->fill(bit_val);
   }
 
-  constexpr bit_array(const bit_array<T, std::dynamic_extent, W>& other)
+  constexpr bit_array(const bit_array<T, std::dynamic_extent, W, Policy>& other)
       : m_size(other.size()), storage(Words(size()), other.storage) {
   }
 
-  constexpr bit_array(const bit_sized_range auto& other)
-      : bit_array(other.size()) {
+  constexpr bit_array(const bit_array<T, std::dynamic_extent, W, Policy>& other, const Allocator& allocator)
+      : m_size(other.size()), storage(Words(size()), other.storage, allocator) {
+  }
+
+  constexpr bit_array(const bit_sized_range auto& other, const Allocator& allocator = Allocator())
+      : bit_array(other.size(), allocator, detail::uninitialized) {
     ::bit::copy(other.begin(), other.end(), this->begin());
   }
 
@@ -186,9 +199,13 @@ class bit_array<T, std::dynamic_extent, W, Policy>
       : m_size(other.size()), storage(Words(size()), std::move(other.storage)) {
   }
 
-  constexpr bit_array(const std::initializer_list<value_type> init)
+  constexpr bit_array(bit_array<T, std::dynamic_extent, W>&& other, const Allocator& allocator)
+      : m_size(other.size()), storage(Words(size()), std::move(other.storage), allocator) {
+  }
+
+  constexpr bit_array(const std::initializer_list<value_type> init, const Allocator& allocator = Allocator())
     requires(!std::is_same_v<value_type, word_type>)
-      : bit_array(init.size()) {
+      : m_size(init.size()), storage(Words(size()), allocator, detail::uninitialized) {
     std::copy(init.begin(), init.end(), this->begin());
   }
 
@@ -203,14 +220,14 @@ class bit_array<T, std::dynamic_extent, W, Policy>
 #endif
 
   template <typename U>
-  constexpr bit_array(const std::initializer_list<U> init)
-      : bit_array(bitsof<U>() * init.size()) {
+  constexpr bit_array(const std::initializer_list<U> init, const Allocator& allocator = Allocator())
+      : m_size(bitsof<U>() * init.size()), storage(Words(size()), allocator, detail::uninitialized) {
     std::copy(init.begin(), init.end(), data());
   }
 
-  constexpr bit_array(const std::string_view s)
+  constexpr bit_array(const std::string_view s, const Allocator& allocator = Allocator())
     requires(std::is_same_v<value_type, bit_value>)
-      : bit_array((std::count(s.begin(), s.end(), '0') + std::count(s.begin(), s.end(), '1'))) {
+      : m_size(std::count(s.begin(), s.end(), '0') + std::count(s.begin(), s.end(), '1')), storage(Words(size()), allocator, detail::uninitialized) {
     size_type i = 0;
     for (char c : s) {
       if (c == '0') {
@@ -257,7 +274,7 @@ class bit_array<T, std::dynamic_extent, W, Policy>
    */
   constexpr word_type* data() noexcept {
     if (size() > FixedBits) {
-      return storage.pointer.get();
+      return storage.pointer;
     } else {
       return storage.fixed;
     }
@@ -265,7 +282,7 @@ class bit_array<T, std::dynamic_extent, W, Policy>
 
   constexpr const word_type* data() const noexcept {
     if (size() > FixedBits) {
-      return storage.pointer.get();
+      return storage.pointer;
     } else {
       return storage.fixed;
     }
@@ -276,7 +293,7 @@ class bit_array<T, std::dynamic_extent, W, Policy>
    */
   constexpr iterator begin() noexcept {
     if (size() > FixedBits) {
-      return iterator(storage.pointer.get());
+      return iterator(storage.pointer);
     } else {
       return iterator(storage.fixed);
     }
@@ -284,7 +301,7 @@ class bit_array<T, std::dynamic_extent, W, Policy>
 
   constexpr const_iterator begin() const noexcept {
     if (size() > FixedBits) {
-      return const_iterator(storage.pointer.get());
+      return const_iterator(storage.pointer);
     } else {
       return const_iterator(storage.fixed);
     }

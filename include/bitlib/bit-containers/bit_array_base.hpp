@@ -24,6 +24,7 @@
 // Project sources
 #include "bitlib/bit-algorithms/bit_algorithm.hpp"
 #include "bitlib/bit-containers/bit_bitsof.hpp"
+#include "bitlib/bit-containers/bit_policy.hpp"
 #include "bitlib/bit-containers/bit_span.hpp"
 #include "bitlib/bit-iterator/bit.hpp"
 
@@ -38,16 +39,6 @@ template <typename T,
           typename Policy>
 class bit_array;
 
-namespace policy {
-struct truncate;
-struct sign_extend;
-struct typical {
-  using truncation = truncate;
-  using extension = sign_extend;
-};
-
-}  // namespace policy
-
 /**
  * @brief Base class template for bit_array implementations
  *
@@ -57,8 +48,9 @@ struct typical {
  * @tparam Derived The derived class (CRTP pattern)
  * @tparam T The value type (typically bit_value)
  * @tparam W The word type used for storage
- * @tparam It The iterator type for the derived class
- * @tparam CIt The const_iterator type for the derived class
+ * @tparam N The size of the bit array, or std::dynamic_extent for dynamic size
+ * @tparam Policy The policy for integral conversion (default is typical)
+ * @tparam Iterators A struct that provides iterator and const_iterator types
  */
 template <typename Derived, typename T, size_t N, typename W, typename Policy, typename Iterators>
 class bit_array_base {
@@ -203,7 +195,7 @@ class bit_array_base {
         ::bit::copy(derived().begin(), end(), bit_pointer<U>(&integral));
       }
       if (derived().size() < bitsof<U>()) {
-        Policy::extension::template from_integral<U, N>(derived(), integral);
+        Policy::extension::template to_integral<U, N>(derived(), integral);
       }
     } else {
       if constexpr (N > bitsof<U>()) {
@@ -212,17 +204,10 @@ class bit_array_base {
         ::bit::copy(derived().begin(), end(), bit_pointer<U>(&integral));
       }
       if constexpr (N < bitsof<U>()) {
-        Policy::extension::template from_integral<U, N>(derived(), integral);
+        Policy::extension::template to_integral<U, N>(derived(), integral);
       }
     }
 
-    bit_span<uint8_t, bitsof<U>()> integral_ref(reinterpret_cast<uint8_t*>(&integral));
-    copy(derived().begin(), derived().begin() + bitsof<U>(), integral_ref.begin());
-    if constexpr (std::is_signed_v<U>) {
-      ::bit::fill(integral_ref.begin() + derived().size(), integral_ref.end(), integral_ref[bitsof<U>() - 1]);
-    } else {
-      ::bit::fill(integral_ref.begin() + derived().size(), integral_ref.end(), bit0);
-    }
     return integral;
   }
 
@@ -280,61 +265,6 @@ constexpr bool operator==(const bit_sized_range auto& lhs, const bit_sized_range
   }
   return ::bit::equal(lhs.begin(), lhs.end(), rhs.begin());
 }
-
-namespace policy {
-struct truncate {
-  template <std::integral U, std::size_t N>
-  constexpr static void to_integral(const bit_sized_range auto& value, U& integral) noexcept {
-    bit_pointer<U> integral_begin(&integral);
-    ::bit::copy(value.begin(), value.begin() + bitsof<U>(), integral_begin);
-  }
-  template <std::integral U, std::size_t N>
-  constexpr static void from_integral(bit_sized_range auto& value, const U& integral) noexcept {
-    const bit_pointer<const U> integral_begin(&integral);
-    if constexpr (N == std::dynamic_extent) {
-      ::bit::copy(integral_begin, integral_begin + value.size(), value.begin());
-    } else {
-      ::bit::copy(integral_begin, integral_begin + N, value.begin());
-    }
-  }
-};
-
-struct sign_extend {
-  template <std::integral U, std::size_t N>
-  constexpr static void to_integral(const bit_sized_range auto& value, U& integral) noexcept {
-    bit_pointer<U> integral_begin(&integral);
-    if constexpr (N == std::dynamic_extent) {
-      if constexpr (std::is_signed_v<U>) {
-        if (value.last()[-1] == bit1) {
-          ::bit::fill(integral_begin + value.size(), integral_begin + bitsof<N>(), bit1);
-        }
-      }
-    } else {
-      if constexpr (std::is_signed_v<U>) {
-        if (value.begin()[N - 1] == bit1) {
-          ::bit::fill(integral_begin + value.size(), integral_begin + bitsof<N>(), bit1);
-        }
-      }
-    }
-  }
-  template <std::integral U, std::size_t N>
-  constexpr static void from_integral(bit_sized_range auto& value, const U& integral) noexcept {
-    if constexpr (N == std::dynamic_extent) {
-      if constexpr (std::is_signed_v<U>) {
-        if (integral < 0) {
-          ::bit::fill(value.begin() + bitsof<N>(), value.end(), bit1);
-        }
-      }
-    } else {
-      if constexpr (std::is_signed_v<U>) {
-        if (integral < 0) {
-          ::bit::fill(value.begin() + N, value.end(), bit1);
-        }
-      }
-    }
-  }
-};
-}  // namespace policy
 
 }  // namespace bit
 
