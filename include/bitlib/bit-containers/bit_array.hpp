@@ -90,28 +90,19 @@ class bit_array : public bit_array_base<bit_array<T, N, W>, T, N, W, Policy, det
     assert(size == N);
   }
 
-  constexpr bit_array(value_type bit_val) : storage{} {
+  constexpr bit_array(value_type bit_val) {
     this->fill(bit_val);
   }
 
   template <std::integral U>
-  constexpr bit_array(const U& integral)
-    requires(bitsof<U>() <= bits)
-  {
-    std::memcpy(&storage[0], &integral, sizeof(integral));
-
-    bool sign_extend = false;
-    if constexpr (std::is_signed_v<U>) {
-      sign_extend = (integral & (1 << (bitsof<U>() - 1))) ? true : false;
-    }
-    if (sign_extend) {
-      for (auto it = begin() + bitsof<U>(); it != end(); ++it) {
-        *it = bit1;
-      }
+  constexpr bit_array(const U& integral) {
+    if constexpr (bits < bitsof<U>) {
+      Policy::truncation::template from_integral<U, N>(*this, integral);
     } else {
-      for (auto it = begin() + bitsof<U>(); it != end(); ++it) {
-        *it = bit0;
-      }
+      std::memcpy(&storage[0], &integral, sizeof(integral));
+    }
+    if constexpr (bitsof<U>() < bits) {
+      Policy::extension::template from_integral<U, N>(*this, integral, detail::uninitialized);
     }
   }
 
@@ -218,6 +209,12 @@ class bit_array : public bit_array_base<bit_array<T, N, W>, T, N, W, Policy, det
     */
   constexpr void swap(bit_array<T, N, W>& other) noexcept {
     std::swap(this->storage, other.storage);
+  }
+
+  constexpr operator bit_value() const noexcept
+    requires(std::is_same_v<value_type, bit_value> && N == 1)
+  {
+    return this->begin()[0];
   }
 };
 

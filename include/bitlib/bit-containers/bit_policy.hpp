@@ -48,13 +48,13 @@ struct sign_extend {
     bit_pointer<U> integral_begin(&integral);
     if constexpr (N == std::dynamic_extent) {
       if constexpr (std::is_signed_v<U>) {
-        if (value.last()[-1] == bit1) {
+        if (value.last()[-1]) {
           ::bit::fill(integral_begin + value.size(), integral_begin + bitsof<U>(), bit1);
         }
       }
     } else {
       if constexpr (std::is_signed_v<U>) {
-        if (value.begin()[N - 1] == bit1) {
+        if (value.begin()[N - 1]) {
           ::bit::fill(integral_begin + value.size(), integral_begin + bitsof<U>(), bit1);
         }
       }
