@@ -162,13 +162,13 @@ class bit_array<T, std::dynamic_extent, W, Policy>
   constexpr bit_array(const size_type size, const U& integral, const Allocator& allocator = Allocator())
       : m_size(size), storage(Words(size), allocator, detail::uninitialized) {
     if (size() > bitsof<U>()) {
-      Policy::truncation::template from_integral(*this, integral);
+      Policy::truncation::from_integral(*this, integral);
     } else {
       bit_pointer<U> integral_ptr = bit_pointer<U>(&integral);
       ::bit::copy(integral_ptr, integral_ptr + bitsof<U>(), begin());
     }
     if (size() < bitsof<U>()) {
-      Policy::extension::template from_integral(*this, integral, detail::uninitialized);
+      Policy::extension::from_integral(*this, integral, detail::uninitialized);
     }
   }
 
