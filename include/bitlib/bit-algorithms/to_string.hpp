@@ -34,14 +34,14 @@ constexpr auto make_digit_map() {
 
 }  // namespace detail
 
-template <std::size_t base, bool prepend_zeros = false, std::endian endian = std::endian::little>
-constexpr std::string to_string(const bit_sized_range auto& bits, std::string prefix = "") {
+template <std::size_t base = 10, bool prepend_zeros = false, std::endian endian = std::endian::little, typename RandomAccessIt>
+constexpr std::string to_string(const bit_iterator<RandomAccessIt>& first, const bit_iterator<RandomAccessIt>& last, std::string prefix = "") {
   if constexpr (std::has_single_bit(base)) {
     constexpr const auto base_bits = std::bit_width(base - 1);
 
-    int skip_leading_bits = prepend_zeros ? 0 : count_msb(bits.begin(), bits.end(), bit0);
+    int skip_leading_bits = prepend_zeros ? 0 : count_msb(first, last, bit0);
 
-    int str_len = (bits.size() - skip_leading_bits);
+    int str_len = (distance(first, last) - skip_leading_bits);
     str_len += (0 != (str_len % base_bits));
     std::string& str = prefix;
     str.resize(str.length() + str_len);
@@ -50,7 +50,7 @@ constexpr std::string to_string(const bit_sized_range auto& bits, std::string pr
 
     return accumulate(
         policy::AccumulateNoInitialSubword{},
-        bits.begin(), bits.end() - skip_leading_bits, (str.data() + str_len),
+        first, last - skip_leading_bits, (str.data() + str_len),
         [](char* acc, auto word, const size_t bits = bitsof<decltype(word)>()) {
           const int characters = ((bits + base_bits - 1) / base_bits);
           acc -= characters;
@@ -63,9 +63,11 @@ constexpr std::string to_string(const bit_sized_range auto& bits, std::string pr
   }
 }
 
-constexpr std::string to_string(const bit_sized_range auto& bits, const uint8_t base, const std::endian endian = std::endian::native) {
-  return "";
+template <std::size_t base = 10, bool prepend_zeros = false, std::endian endian = std::endian::little>
+constexpr std::string to_string(const bit_sized_range auto& bits, std::string prefix = "") {
+  return to_string<base, prepend_zeros, endian>(bits.begin(), bits.end(), prefix);
 }
-}
+
+}  // namespace bit
 
 #endif // _BIT_TO_STRING_HPP_INCLUDED
