@@ -12,8 +12,9 @@
 #include <iterator>
 #include <numeric>
 // Project sources
+#include "bitlib/bit-algorithms/accumulate.hpp"
+#include "bitlib/bit-algorithms/libpopcnt.h"
 #include "bitlib/bit-iterator/bit.hpp"
-#include "bitlib/bit-algorithms//libpopcnt.h"
 // Third-party libraries
 #ifdef BITLIB_HWY
 #include "hwy/highway.h"
@@ -115,6 +116,24 @@ count(
 
     // Finalization
     return result;
+}
+
+template <class RandomAccessIt>
+constexpr int count_msb(
+    bit_iterator<RandomAccessIt> first,
+    bit_iterator<RandomAccessIt> last,
+    bit_value value) {
+  if (value) {
+    return bit::accumulate_backward_while(
+        first, last, 0,
+        [](int acc, auto word) { return std::make_pair((word == 0), acc + std::countl_one(word)); },
+        [](int acc, auto word, auto bits) { return std::make_pair((word == 0), acc + std::countl_one(word) - (bit::bitsof(word) - bits)); });
+  } else {
+    return bit::accumulate_backward_while(
+        first, last, 0,
+        [](int acc, auto word) { return std::make_pair((word == 0), acc + std::countl_zero(word)); },
+        [](int acc, auto word, auto bits) { return std::make_pair((word == 0), acc + std::countl_zero(word) - (bit::bitsof(word) - bits)); });
+  }
 }
 
 } // namespace bit

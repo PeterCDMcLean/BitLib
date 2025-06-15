@@ -15,8 +15,15 @@
 
 // Project sources
 #include "bitlib/bit-containers/bit_array.hpp"
+#include "bitlib/bit-containers/bit_policy.hpp"
+#include "bitlib/bit-iterator/bit_details.hpp"
 
 namespace bit {
+
+template <typename T, std::size_t N, typename W, typename Policy>
+class bit_array;
+
+class bit_value;
 
 // ========================================================================== //
 template <char Bit>
@@ -103,14 +110,17 @@ constexpr std::pair<size_t, uint64_t> _parameter_pack_decode_prefixed_num() {
 } // namespace bit
 
 template <char... Str>
-constexpr bit::bit_array<bit::bit_value, bit::_parameter_pack_decode_prefixed_num<Str...>().first> operator""_b() {
-  bit::bit_array<bit::bit_value, bit::_parameter_pack_decode_prefixed_num<Str...>().first> arr{};
-  auto [bits, num] = bit::_parameter_pack_decode_prefixed_num<Str...>();
+constexpr auto operator""_b() {
+  constexpr auto pair = bit::_parameter_pack_decode_prefixed_num<Str...>();
+  constexpr auto bits = pair.first;
+  using word_type = bit::ceil_integral<bits>;
+  bit::bit_array<bit::bit_value, bits, word_type, bit::policy::typical<word_type>> arr{};
+  auto num = pair.second;
   for (int i = 0; i < arr.size(); i++) {
-    arr[i] = (num & 0x1) ? bit::bit1 : bit::bit0;
+    arr[i] = (num & 0x1) ? bit::bit_value(1U) : bit::bit_value(0U);
     num >>= 1;
   }
   return arr;
 }
 
-#endif
+#endif  // _BIT_LITERAL_HPP_INCLUDED
