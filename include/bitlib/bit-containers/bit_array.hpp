@@ -15,7 +15,6 @@
 #include <algorithm>
 #include <bit>
 #include <cmath>
-#include <cstring>  // memcpy
 #include <span>
 #include <string>
 #include <type_traits>
@@ -99,7 +98,8 @@ class bit_array : public bit_array_base<bit_array<T, N, W>, T, N, W, Policy, det
     if constexpr (bits < bitsof<U>) {
       Policy::truncation::template from_integral<U, N>(*this, integral);
     } else {
-      std::memcpy(&storage[0], &integral, sizeof(integral));
+      bit_pointer<U> integral_ptr(&integral);
+      ::bit::copy(integral_ptr, integral_ptr + bitsof<U>(), begin());
     }
     if constexpr (bitsof<U>() < bits) {
       Policy::extension::template from_integral<U, N>(*this, integral, detail::uninitialized);

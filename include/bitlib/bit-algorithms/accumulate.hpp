@@ -15,6 +15,16 @@
 
 namespace bit {
 
+namespace policy {
+struct AccumulateInitialSubword {
+  static constexpr bool initial_sub_word = true;
+};
+
+struct AccumulateNoInitialSubword {
+  static constexpr bool initial_sub_word = false;
+};
+}  // namespace policy
+
 template <bool forward, bool initial_sub_word, typename RandomAccessIt, typename T, typename BinaryOperation, typename BinaryOperationSubword>
 constexpr auto accumulate(
     bit_iterator<RandomAccessIt> first,
@@ -195,6 +205,72 @@ constexpr auto accumulate_backward_while(
     BinaryOperation binary_op,
     BinaryOperationSubword binary_op_subword) {
   return accumulate_while<false, true>(first, last, acc, binary_op, binary_op_subword);
+}
+
+// Requires BinaryOperation to have a third but defaulted argument
+template <typename Policy, typename RandomAccessIt, typename T, typename BinaryOperation>
+constexpr auto accumulate(
+    Policy,
+    const bit_iterator<RandomAccessIt>& first,
+    const bit_iterator<RandomAccessIt>& last,
+    const T& acc,
+    BinaryOperation binary_op) {
+  return accumulate<true, Policy::initial_sub_word>(first, last, acc, binary_op, binary_op);
+}
+
+template <typename Policy, typename RandomAccessIt, typename T, typename BinaryOperation, typename BinaryOperationSubword>
+constexpr auto accumulate(
+    Policy,
+    const bit_iterator<RandomAccessIt>& first,
+    const bit_iterator<RandomAccessIt>& last,
+    const T& acc,
+    BinaryOperation binary_op,
+    BinaryOperationSubword binary_op_subword) {
+  return accumulate<true, Policy::initial_sub_word>(first, last, acc, binary_op, binary_op_subword);
+}
+
+// Requires BinaryOperation to have a third but defaulted argument
+template <typename Policy, typename RandomAccessIt, typename T, typename BinaryOperation>
+constexpr auto accumulate_while(
+    Policy,
+    const bit_iterator<RandomAccessIt>& first,
+    const bit_iterator<RandomAccessIt>& last,
+    const T& acc,
+    BinaryOperation binary_op) {
+  return accumulate_while<true, Policy::initial_sub_word>(first, last, acc, binary_op, binary_op);
+}
+
+template <typename Policy, typename RandomAccessIt, typename T, typename BinaryOperation, typename BinaryOperationSubword>
+constexpr auto accumulate_while(
+    Policy,
+    const bit_iterator<RandomAccessIt>& first,
+    const bit_iterator<RandomAccessIt>& last,
+    const T& acc,
+    BinaryOperation binary_op,
+    BinaryOperationSubword binary_op_subword) {
+  return accumulate_while<true, Policy::initial_sub_word>(first, last, acc, binary_op, binary_op_subword);
+}
+
+// Requires BinaryOperation to have a third but defaulted argument
+template <typename Policy, typename RandomAccessIt, typename T, typename BinaryOperation>
+constexpr auto accumulate_backward_while(
+    Policy,
+    const bit_iterator<RandomAccessIt>& first,
+    const bit_iterator<RandomAccessIt>& last,
+    const T& acc,
+    BinaryOperation binary_op) {
+  return accumulate_while<false, Policy::initial_sub_word>(first, last, acc, binary_op, binary_op);
+}
+
+template <typename Policy, typename RandomAccessIt, typename T, typename BinaryOperation, typename BinaryOperationSubword>
+constexpr auto accumulate_backward_while(
+    Policy,
+    const bit_iterator<RandomAccessIt>& first,
+    const bit_iterator<RandomAccessIt>& last,
+    const T& acc,
+    BinaryOperation binary_op,
+    BinaryOperationSubword binary_op_subword) {
+  return accumulate_while<false, Policy::initial_sub_word>(first, last, acc, binary_op, binary_op_subword);
 }
 
 } // namespace bit

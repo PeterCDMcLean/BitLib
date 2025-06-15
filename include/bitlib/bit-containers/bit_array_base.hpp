@@ -15,7 +15,6 @@
 #include <algorithm>
 #include <bit>
 #include <cmath>
-#include <cstring>  // memcpy
 #include <span>
 #include <string>
 #include <type_traits>

@@ -11,7 +11,6 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <cstring>  // memcpy
 #include <initializer_list>
 #include <memory>
 #include <span>  // std::dynamic_extent

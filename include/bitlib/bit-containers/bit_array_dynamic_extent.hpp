@@ -11,7 +11,6 @@
 
 #include <algorithm>
 #include <cstddef>
-#include <cstring>  // memcpy
 #include <initializer_list>
 #include <memory>
 #include <new>
@@ -109,7 +108,7 @@ class bit_array<T, std::dynamic_extent, W, Policy>
         for (size_t i = 0; i < words; ++i) {
           new (pointer + i) word_type(other.pointer[i]);
         }
-        std::memcpy(pointer, other.pointer, words * sizeof(word_type));
+        std::copy_n(other.pointer, words, pointer);
       } else {
         for (size_type i = 0; i < words; ++i) {
           new (&fixed[i]) word_type(other.fixed[i]);
@@ -161,13 +160,13 @@ class bit_array<T, std::dynamic_extent, W, Policy>
   template <std::integral U>
   constexpr bit_array(const size_type size, const U& integral, const Allocator& allocator = Allocator())
       : m_size(size), storage(Words(size), allocator, detail::uninitialized) {
-    if (size() > bitsof<U>()) {
+    if (size() * bitsof<value_type>() > bitsof<U>()) {
       Policy::truncation::from_integral(*this, integral);
     } else {
       bit_pointer<U> integral_ptr = bit_pointer<U>(&integral);
       ::bit::copy(integral_ptr, integral_ptr + bitsof<U>(), begin());
     }
-    if (size() < bitsof<U>()) {
+    if (bitsof<U>() < size() * bitsof<value_type>()) {
       Policy::extension::from_integral(*this, integral, detail::uninitialized);
     }
   }

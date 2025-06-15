@@ -49,6 +49,7 @@ constexpr std::string to_string(const bit_sized_range auto& bits, std::string pr
     static constexpr auto base_digits = detail::make_digit_map<base>();
 
     return accumulate(
+        policy::AccumulateNoInitialSubword{},
         bits.begin(), bits.end() - skip_leading_bits, (str.data() + str_len),
         [](char* acc, auto word, const size_t bits = bitsof<decltype(word)>()) {
           const int characters = ((bits + base_bits - 1) / base_bits);
