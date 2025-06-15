@@ -95,3 +95,12 @@ TEST(BitLiteral, UserDefinedDecLiteral) {
   auto arr3 = 16'123'45_b;
   EXPECT_EQ(arr, arr3);
 }
+
+TEST(BitLiteral, SizeOneLiteral) {
+  auto arr = 1_b;
+  EXPECT_EQ(arr.size(), 1);
+
+  bit::bit_value b = arr;
+  EXPECT_EQ(b, bit::bit1);
+  EXPECT_EQ(arr, bit::bit1);
+}

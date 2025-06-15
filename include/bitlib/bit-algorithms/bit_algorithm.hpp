@@ -21,8 +21,8 @@
 #include "bit_algorithm_details.hpp"
 // <algorithm> overloads
 #include "bit_algorithm_details.hpp"
-#include "copy_backward.hpp"
 #include "copy.hpp"
+#include "copy_backward.hpp"
 #include "count.hpp"
 #include "debug_utils.hpp"
 #include "equal.hpp"
@@ -33,6 +33,7 @@
 #include "rotate.hpp"
 #include "shift.hpp"
 #include "swap_ranges.hpp"
+#include "to_string.hpp"
 #include "transform.hpp"
 #include "type_traits.hpp"
 // ========================================================================== //
