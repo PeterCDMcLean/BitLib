@@ -257,7 +257,34 @@ class bit_array_base {
               [](const word_type& a, const word_type& b) -> word_type { return a ^ b; });
     return derived();
   }
+
+ protected:
+  template <typename U>
+  constexpr void from_integral(const U& integral) {
+    if constexpr (N == std::dynamic_extent) {
+      if ((derived().size() * bitsof<value_type>()) < bitsof<U>()) {
+        Policy::truncation::template from_integral<U, N>(derived(), integral);
+      } else {
+        bit_pointer<U> integral_ptr(&integral);
+        ::bit::copy(integral_ptr, integral_ptr + bitsof<U>(), derived().begin());
+      }
+      if (bitsof<U>() < (derived().size() * bitsof<value_type>())) {
+        Policy::extension::template from_integral<U, N>(derived(), integral, detail::uninitialized);
+      }
+    } else {
+      if constexpr ((N * bitsof<value_type>()) < bitsof<U>()) {
+        Policy::truncation::template from_integral<U, N>(derived(), integral);
+      } else {
+        bit_pointer<U> integral_ptr(&integral);
+        ::bit::copy(integral_ptr, integral_ptr + bitsof<U>(), derived().begin());
+      }
+      if constexpr (bitsof<U>() < (N * bitsof<value_type>())) {
+        Policy::extension::template from_integral<U, N>(derived(), integral, detail::uninitialized);
+      }
+    }
+  }
 };
+
 constexpr bool operator==(const bit_sized_range auto& lhs, const bit_sized_range auto& rhs) {
   if (lhs.size() != rhs.size()) {
     return false;

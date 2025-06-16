@@ -90,15 +90,7 @@ class bit_array : public bit_array_base<bit_array<T, N, W>, T, N, W, Policy, det
 
   template <std::integral U>
   constexpr bit_array(const U& integral) {
-    if constexpr (bits < bitsof<U>()) {
-      Policy::truncation::template from_integral<U, N>(*this, integral);
-    } else {
-      bit_pointer<U> integral_ptr(&integral);
-      ::bit::copy(integral_ptr, integral_ptr + bitsof<U>(), begin());
-    }
-    if constexpr (bitsof<U>() < bits) {
-      Policy::extension::template from_integral<U, N>(*this, integral, detail::uninitialized);
-    }
+    this->from_integral(integral);
   }
 
   constexpr bit_array(const bit_array<T, N, W>& other) noexcept
