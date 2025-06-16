@@ -480,6 +480,28 @@ TEST(BitArrayTest, Slice) {
   EXPECT_EQ(arr, 0x20'DEADBEAF_b);
 }
 
+TEST(BitArrayTest, SliceWithClass) {
+  auto arr = 0x20'DEADBEEF_b;
+  auto span2 = arr(bit::bounds{4} += 4);
+  EXPECT_EQ(span2.size(), 4);
+  EXPECT_EQ(span2[0], (0xE & (1 << 0)) ? bit::bit1 : bit::bit0);
+  EXPECT_EQ(span2[1], (0xE & (1 << 1)) ? bit::bit1 : bit::bit0);
+  EXPECT_EQ(span2[2], (0xE & (1 << 2)) ? bit::bit1 : bit::bit0);
+  EXPECT_EQ(span2[3], (0xE & (1 << 3)) ? bit::bit1 : bit::bit0);
+  span2 = 0x4'A_b;
+  EXPECT_EQ(arr, 0x20'DEADBEAF_b);
+  auto span3 = arr({4, 8});
+  EXPECT_EQ(span3, span2);
+  auto span4 = arr(bit::bounds{7} -= 4);
+  EXPECT_EQ(span4, span2);
+  auto span5 = arr({4, {}});
+  auto span6 = arr(4, 32);
+  EXPECT_EQ(span5, span6);
+  bit::bounds bounds(0, 5);
+  bit::bounds bounds2{{}, 5};
+  EXPECT_EQ(bounds.resolve(32), bounds2.resolve(32));
+}
+
 TEST(BitArrayTest, SliceModify) {
   auto arr = 0x24'DEADBEEF_b;
   auto span2 = arr(4, 8);
