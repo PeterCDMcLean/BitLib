@@ -15,12 +15,12 @@
 
 namespace bit {
 
-template <typename Derived, typename T, typename W, typename It, typename CIt>
+template <typename Derived, typename T, size_t N, typename W, typename It, typename CIt>
 class bit_array_base;
 
 template <std::signed_integral size_type = int>
 class bounds {
-  template <typename Derived, typename T, typename W, typename It, typename CIt>
+  template <typename Derived, typename T, size_t N, typename W, typename It, typename CIt>
   friend class bit_array_base;
 
  public:
