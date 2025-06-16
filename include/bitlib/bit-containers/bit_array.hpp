@@ -84,18 +84,13 @@ class bit_array : public bit_array_base<bit_array<T, N, W>, T, N, W, Policy, det
   */
   constexpr bit_array() noexcept : storage{} {}
 
-  /*This constructor is purely to simplify some corners of the API*/
-  constexpr bit_array(size_type size) noexcept : storage{} {
-    assert(size == N);
-  }
-
   constexpr bit_array(value_type bit_val) {
     this->fill(bit_val);
   }
 
   template <std::integral U>
   constexpr bit_array(const U& integral) {
-    if constexpr (bits < bitsof<U>) {
+    if constexpr (bits < bitsof<U>()) {
       Policy::truncation::template from_integral<U, N>(*this, integral);
     } else {
       bit_pointer<U> integral_ptr(&integral);

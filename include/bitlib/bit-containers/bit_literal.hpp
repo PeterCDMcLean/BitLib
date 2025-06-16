@@ -113,14 +113,12 @@ template <char... Str>
 constexpr auto operator""_b() {
   constexpr auto pair = bit::_parameter_pack_decode_prefixed_num<Str...>();
   constexpr auto bits = pair.first;
+  constexpr auto num = pair.second;
+  static_assert(
+      (((1ull << bits) - 1ull) >= num),
+      "bit literal size prefix has too few bits to represent the given value");
   using word_type = bit::ceil_integral<bits>;
-  bit::bit_array<bit::bit_value, bits, word_type, bit::policy::typical<word_type>> arr{};
-  auto num = pair.second;
-  for (int i = 0; i < arr.size(); i++) {
-    arr[i] = (num & 0x1) ? bit::bit_value(1U) : bit::bit_value(0U);
-    num >>= 1;
-  }
-  return arr;
+  return bit::bit_array<bit::bit_value, bits, word_type, bit::policy::typical<word_type>>(num);
 }
 
 #endif  // _BIT_LITERAL_HPP_INCLUDED

@@ -22,8 +22,8 @@ TEST(BitLiteral, dec_base) {
   auto one = 1'1_b;
   EXPECT_EQ(one.size(), 1);
   EXPECT_EQ(one[0], bit::bit1);
-  auto three = 2'1'1_b;
-  EXPECT_EQ(three.size(), 2);
+  auto three = 4'1'1_b;
+  EXPECT_EQ(three.size(), 4);
   EXPECT_EQ(three[0], bit::bit1);
   EXPECT_EQ(three[1], bit::bit1);
   auto ten = 4'10_b;
@@ -71,8 +71,8 @@ TEST(BitLiteral, UserDefinedLiteral) {
   EXPECT_EQ(arr.size(), 8);
   EXPECT_EQ(arr[7], bit::bit0);
   EXPECT_EQ(arr[0], bit::bit1);
-  auto arr2 = 0b1'01001101_b;
-  EXPECT_EQ(arr2.size(), 1);
+  auto arr2 = 0b1000'01001101_b;
+  EXPECT_EQ(arr2.size(), 8);
 }
 
 TEST(BitLiteral, UserDefinedHexLiteral) {
