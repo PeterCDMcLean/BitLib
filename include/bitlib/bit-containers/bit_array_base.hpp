@@ -32,10 +32,10 @@ namespace bit {
 template <typename T, typename W, typename Policy>
 class bit_array_ref;
 
-template <typename T,
-          std::size_t N,
-          typename W,
-          typename Policy>
+template <typename T = bit_value,
+          std::size_t N = std::dynamic_extent,
+          typename W = std::conditional_t<(N == std::dynamic_extent), std::uintptr_t, ceil_integral<N>>,
+          typename Policy = policy::typical<W>>
 class bit_array;
 
 /**

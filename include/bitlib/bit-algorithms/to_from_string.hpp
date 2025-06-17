@@ -14,6 +14,8 @@
 
 #include "bitlib/bit-algorithms/accumulate.hpp"
 #include "bitlib/bit-algorithms/count.hpp"
+#include "bitlib/bit-containers/bit_array_dynamic_extent.hpp"
+#include "bitlib/bit-containers/bit_vector.hpp"
 #include "bitlib/bit_concepts.hpp"
 
 namespace bit {
@@ -32,9 +34,30 @@ constexpr auto make_digit_map() {
   return map;
 }
 
+template <std::size_t Base>
+constexpr auto make_from_digit_map() {
+  static_assert((Base >= 2) && ((Base & (Base - 1)) == 0), "Base must be power of 2 >= 2");
+  static_assert(Base <= 64, "Base too large for simple char mapping");
+
+  std::array<char, 128> map = {};
+  for (std::size_t i = 0; i < 128; ++i) {
+    map[i] = 0;
+    if (i >= '0' && i <= '9') {
+      map[i] = i - '0';
+    }
+    if (i >= 'a' && i <= 'z') {
+      map[i] = (i - 'a') + 10;
+    }
+    if (i >= 'A' && i <= 'Z') {
+      map[i] = (i - 'A') + 10;
+    }
+  }
+  return map;
+}
+
 }  // namespace detail
 
-template <std::size_t base = 10, bool prepend_zeros = false, std::endian endian = std::endian::little, typename RandomAccessIt>
+template <std::size_t base = 10, bool prepend_zeros = false, std::endian endian = std::endian::big, typename RandomAccessIt>
 constexpr std::string to_string(const bit_iterator<RandomAccessIt>& first, const bit_iterator<RandomAccessIt>& last, std::string prefix = "") {
   if constexpr (std::has_single_bit(base)) {
     constexpr const auto base_bits = std::bit_width(base - 1);
@@ -60,12 +83,43 @@ constexpr std::string to_string(const bit_iterator<RandomAccessIt>& first, const
           }
           return acc;
         });
+  } else {
+    return "not_implented_yet";
   }
 }
 
-template <std::size_t base = 10, bool prepend_zeros = false, std::endian endian = std::endian::little>
+template <std::size_t base = 10, bool prepend_zeros = false, std::endian endian = std::endian::big>
 constexpr std::string to_string(const bit_sized_range auto& bits, std::string prefix = "") {
   return to_string<base, prepend_zeros, endian>(bits.begin(), bits.end(), prefix);
+}
+
+template <std::size_t base = 10, std::endian endian = std::endian::big>
+constexpr bit_vector<> from_string(const char* first, const char* last) {
+  if constexpr (std::has_single_bit(base)) {
+    constexpr const auto base_bits = std::bit_width(base - 1);
+    static constexpr auto base_from_digits = detail::make_from_digit_map<base>();
+
+    uint64_t work = 0;
+    bit_vector<> vec;
+
+    last--;
+    while (last >= first) {
+      int bits = 0;
+      for (; (bits < bitsof<uint64_t>()) && (last >= first); bits += base_bits, last--) {
+        char c = *last;
+        if (c < base_from_digits.size()) {
+          work |= (base_from_digits[c] << bits);
+        }
+      }
+      vec.append_range(bit_array<>(bits, work));
+    }
+    return vec;
+  }
+}
+
+template <std::size_t base = 10, std::endian endian = std::endian::big>
+constexpr bit_vector<> from_string(const std::string& str) {
+  return from_string<base, endian>(str.c_str(), str.c_str() + str.length());
 }
 
 }  // namespace bit

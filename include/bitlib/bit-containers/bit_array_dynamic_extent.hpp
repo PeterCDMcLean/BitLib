@@ -41,9 +41,9 @@ struct bit_array_dextent_iterator_types {
 }  // namespace detail
 template <typename T, typename W, typename Policy>
 class bit_array<T, std::dynamic_extent, W, Policy>
-    : public bit_array_base<bit_array<T, std::dynamic_extent, W>, T, std::dynamic_extent, W, Policy, detail::bit_array_dextent_iterator_types<T, W>> {
+    : public bit_array_base<bit_array<T, std::dynamic_extent, W, Policy>, T, std::dynamic_extent, W, Policy, detail::bit_array_dextent_iterator_types<T, W>> {
  public:
-  using base = bit_array_base<bit_array<T, std::dynamic_extent, W>, T, std::dynamic_extent, W, Policy, detail::bit_array_dextent_iterator_types<T, W>>;
+  using base = bit_array_base<bit_array<T, std::dynamic_extent, W, Policy>, T, std::dynamic_extent, W, Policy, detail::bit_array_dextent_iterator_types<T, W>>;
   using base::end;
   using typename base::const_iterator;
   using typename base::const_pointer;
@@ -190,11 +190,11 @@ class bit_array<T, std::dynamic_extent, W, Policy>
     ::bit::copy(other.begin(), other.end(), this->begin());
   }
 
-  constexpr bit_array(bit_array<T, std::dynamic_extent, W>&& other)
+  constexpr bit_array(bit_array<T, std::dynamic_extent, W, Policy>&& other)
       : m_size(other.size()), storage(Words(size()), std::move(other.storage)) {
   }
 
-  constexpr bit_array(bit_array<T, std::dynamic_extent, W>&& other, const Allocator& allocator)
+  constexpr bit_array(bit_array<T, std::dynamic_extent, W, Policy>&& other, const Allocator& allocator)
       : m_size(other.size()), storage(Words(size()), std::move(other.storage), allocator) {
   }
 
@@ -236,7 +236,7 @@ class bit_array<T, std::dynamic_extent, W, Policy>
   /*
    * Assignment
    */
-  constexpr bit_array<T, std::dynamic_extent, W>& operator=(const bit_array<T, std::dynamic_extent, W>& other) {
+  constexpr bit_array<T, std::dynamic_extent, W, Policy>& operator=(const bit_array<T, std::dynamic_extent, W, Policy>& other) {
     if (nullptr == data() || size() != other.size()) {
       throw std::invalid_argument("Cannot reassign bit_array<std::dynamic_extent,V,W> size");
     }
@@ -247,7 +247,7 @@ class bit_array<T, std::dynamic_extent, W, Policy>
     return *this;
   }
 
-  constexpr bit_array<T, std::dynamic_extent, W>& operator=(const bit_sized_range auto& other) {
+  constexpr bit_array<T, std::dynamic_extent, W, Policy>& operator=(const bit_sized_range auto& other) {
     if (other.size() != this->size()) [[unlikely]] {
       throw std::invalid_argument("other bit_range contains an invalid number of bits for bit_array.");
     }
@@ -255,11 +255,11 @@ class bit_array<T, std::dynamic_extent, W, Policy>
     return *this;
   };
 
-  constexpr bit_array<T, std::dynamic_extent, W>& operator=(bit_array<T, std::dynamic_extent, W>&& other) {
+  constexpr bit_array<T, std::dynamic_extent, W, Policy>& operator=(bit_array<T, std::dynamic_extent, W, Policy>&& other) {
     if (nullptr == data() || size() != other.size()) {
       throw std::invalid_argument("Cannot reassign bit_array<std::dynamic_extent,V,W> size");
     }
-    bit_array<T, std::dynamic_extent, W> temp(std::move(other));
+    bit_array<T, std::dynamic_extent, W, Policy> temp(std::move(other));
     swap(temp);
     return *this;
   }
@@ -312,7 +312,7 @@ class bit_array<T, std::dynamic_extent, W, Policy>
   /*
    * Operations
    */
-  constexpr void swap(bit_array<T, std::dynamic_extent, W>& other) noexcept {
+  constexpr void swap(bit_array<T, std::dynamic_extent, W, Policy>& other) noexcept {
     assert(size() == other.size());
     if (size() > FixedBits) {
       std::swap(this->storage.pointer, other.storage.pointer);
@@ -324,8 +324,8 @@ class bit_array<T, std::dynamic_extent, W, Policy>
   }
 };
 
-static_assert(bit_range<bit_array<>>, "bit_array<> does not satisfy bit_contiguous_range concept!");
-static_assert(bit_sized_range<bit_array<>>, "bit_array<> does not satisfy bit_contiguous_sized_range concept!");
+static_assert(bit_range<bit_array<bit_value, std::dynamic_extent, uint8_t, policy::typical<uint8_t>>>, "bit_array<> does not satisfy bit_contiguous_range concept!");
+static_assert(bit_sized_range<bit_array<bit_value, std::dynamic_extent, uint8_t, policy::typical<uint8_t>>>, "bit_array<> does not satisfy bit_contiguous_sized_range concept!");
 #ifdef CONTIGUOUS_RANGE
 static_assert(bit_contiguous_range<bit_array<>>, "bit_array<> does not satisfy bit_contiguous_range concept!");
 static_assert(bit_contiguous_sized_range<bit_array<>>, "bit_array<> does not satisfy bit_contiguous_sized_range concept!");
