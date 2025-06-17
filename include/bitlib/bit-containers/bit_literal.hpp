@@ -15,8 +15,15 @@
 
 // Project sources
 #include "bitlib/bit-containers/bit_array.hpp"
+#include "bitlib/bit-containers/bit_policy.hpp"
+#include "bitlib/bit-iterator/bit_details.hpp"
 
 namespace bit {
+
+template <typename T, std::size_t N, typename W, typename Policy>
+class bit_array;
+
+class bit_value;
 
 // ========================================================================== //
 template <char Bit>
@@ -103,14 +110,15 @@ constexpr std::pair<size_t, uint64_t> _parameter_pack_decode_prefixed_num() {
 } // namespace bit
 
 template <char... Str>
-constexpr bit::bit_array<bit::bit_value, bit::_parameter_pack_decode_prefixed_num<Str...>().first> operator""_b() {
-  bit::bit_array<bit::bit_value, bit::_parameter_pack_decode_prefixed_num<Str...>().first> arr{};
-  auto [bits, num] = bit::_parameter_pack_decode_prefixed_num<Str...>();
-  for (int i = 0; i < arr.size(); i++) {
-    arr[i] = (num & 0x1) ? bit::bit1 : bit::bit0;
-    num >>= 1;
-  }
-  return arr;
+constexpr auto operator""_b() {
+  constexpr auto pair = bit::_parameter_pack_decode_prefixed_num<Str...>();
+  constexpr auto bits = pair.first;
+  constexpr auto num = pair.second;
+  static_assert(
+      (((1ull << bits) - 1ull) >= num),
+      "bit literal size prefix has too few bits to represent the given value");
+  using word_type = bit::ceil_integral<bits>;
+  return bit::bit_array<bit::bit_value, bits, word_type, bit::policy::typical<word_type>>(static_cast<word_type>(num));
 }
 
-#endif
+#endif  // _BIT_LITERAL_HPP_INCLUDED

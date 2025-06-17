@@ -1105,6 +1105,15 @@ constexpr auto with_bit_iterator_adapter(
   }
 }
 
+namespace detail {
+
+struct uninitialized_t {
+  explicit uninitialized_t() = default;
+};
+inline constexpr uninitialized_t uninitialized{};
+
+}  // namespace detail
+
 // ========================================================================== //
 }  // namespace bit
 #endif // _BIT_DETAILS_HPP_INCLUDED

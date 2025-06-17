@@ -142,6 +142,11 @@ T get_word(const bit_iterator<InputIt>& first, size_t len = binary_digits<T>::va
     return ret_word;
 }
 
+template <class T, class InputIt>
+T get_masked_word(const bit_iterator<InputIt>& first, size_t len = binary_digits<T>::value) {
+  return get_word<T>(first, len) & _mask<T>(len);
+}
+
 // Get next len bits beginning at start and store them in a word of type T
 // If we reach `last` before we get len bits, break and return the current word
 // bits_read will store the number of bits that we read.
