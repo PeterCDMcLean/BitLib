@@ -265,7 +265,7 @@ class bit_array_base {
       if ((derived().size() * bitsof<value_type>()) < bitsof<U>()) {
         Policy::truncation::template from_integral<U, N>(derived(), integral);
       } else {
-        bit_pointer<U> integral_ptr(&integral);
+        bit_pointer<const U> integral_ptr(&integral);
         ::bit::copy(integral_ptr, integral_ptr + bitsof<U>(), derived().begin());
       }
       if (bitsof<U>() < (derived().size() * bitsof<value_type>())) {
@@ -275,7 +275,7 @@ class bit_array_base {
       if constexpr ((N * bitsof<value_type>()) < bitsof<U>()) {
         Policy::truncation::template from_integral<U, N>(derived(), integral);
       } else {
-        bit_pointer<U> integral_ptr(&integral);
+        bit_pointer<const U> integral_ptr(&integral);
         ::bit::copy(integral_ptr, integral_ptr + bitsof<U>(), derived().begin());
       }
       if constexpr (bitsof<U>() < (N * bitsof<value_type>())) {

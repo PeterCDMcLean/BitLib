@@ -118,7 +118,7 @@ constexpr auto operator""_b() {
       (((1ull << bits) - 1ull) >= num),
       "bit literal size prefix has too few bits to represent the given value");
   using word_type = bit::ceil_integral<bits>;
-  return bit::bit_array<bit::bit_value, bits, word_type, bit::policy::typical<word_type>>(num);
+  return bit::bit_array<bit::bit_value, bits, word_type, bit::policy::typical<word_type>>(static_cast<word_type>(num));
 }
 
 #endif  // _BIT_LITERAL_HPP_INCLUDED

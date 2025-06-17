@@ -44,14 +44,14 @@ constexpr auto accumulate(
     if constexpr (forward) {
       sub_digits = std::min(digits - first.position(), total_bits_to_op);
       if (sub_digits != 0) {
-        acc = binary_op_subword(std::move(acc), get_word<word_type>(first, sub_digits), sub_digits);
+        acc = binary_op_subword(std::move(acc), get_masked_word<word_type>(first, sub_digits), sub_digits);
         advance(first, digits - first.position());
       }
     } else {
       sub_digits = std::min(last.position(), total_bits_to_op);
       if (sub_digits != 0) {
         advance(last, -sub_digits);
-        acc = binary_op_subword(std::move(acc), get_word<word_type>(last, sub_digits), sub_digits);
+        acc = binary_op_subword(std::move(acc), get_masked_word<word_type>(last, sub_digits), sub_digits);
       }
     }
     total_bits_to_op -= sub_digits;
@@ -71,10 +71,10 @@ constexpr auto accumulate(
   }
   if (remaining_bits_to_op > 0) {
     if constexpr (forward) {
-      acc = binary_op_subword(std::move(acc), get_word<word_type>(first, remaining_bits_to_op), remaining_bits_to_op);
+      acc = binary_op_subword(std::move(acc), get_masked_word<word_type>(first, remaining_bits_to_op), remaining_bits_to_op);
     } else {
       advance(last, -remaining_bits_to_op);
-      acc = binary_op_subword(std::move(acc), get_word<word_type>(last, remaining_bits_to_op), remaining_bits_to_op);
+      acc = binary_op_subword(std::move(acc), get_masked_word<word_type>(last, remaining_bits_to_op), remaining_bits_to_op);
     }
   }
 
@@ -103,14 +103,14 @@ constexpr auto accumulate_while(
       if constexpr (forward) {
         sub_digits = std::min(digits - first.position(), total_bits_to_op);
         if (sub_digits != 0) {
-          std::tie(keep_going, acc) = binary_op_subword(std::move(acc), get_word<word_type>(first, sub_digits), sub_digits);
+          std::tie(keep_going, acc) = binary_op_subword(std::move(acc), get_masked_word<word_type>(first, sub_digits), sub_digits);
           advance(first, digits - first.position());
         }
       } else {
         sub_digits = std::min(last.position(), total_bits_to_op);
         if (sub_digits != 0) {
           advance(last, -sub_digits);
-          std::tie(keep_going, acc) = binary_op_subword(std::move(acc), get_word<word_type>(first, sub_digits), sub_digits);
+          std::tie(keep_going, acc) = binary_op_subword(std::move(acc), get_masked_word<word_type>(first, sub_digits), sub_digits);
         }
       }
       total_bits_to_op -= sub_digits;
@@ -137,10 +137,10 @@ constexpr auto accumulate_while(
   }
   if (remaining_bits_to_op > 0) {
     if constexpr (forward) {
-      std::tie(std::ignore, acc) = binary_op_subword(std::move(acc), get_word<word_type>(first, remaining_bits_to_op), remaining_bits_to_op);
+      std::tie(std::ignore, acc) = binary_op_subword(std::move(acc), get_masked_word<word_type>(first, remaining_bits_to_op), remaining_bits_to_op);
     } else {
       advance(last, -remaining_bits_to_op);
-      std::tie(std::ignore, acc) = binary_op_subword(std::move(acc), get_word<word_type>(last, remaining_bits_to_op), remaining_bits_to_op);
+      std::tie(std::ignore, acc) = binary_op_subword(std::move(acc), get_masked_word<word_type>(last, remaining_bits_to_op), remaining_bits_to_op);
     }
   }
 
