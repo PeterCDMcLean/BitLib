@@ -31,8 +31,6 @@
 namespace bit {
 // ========================================================================== //
 
-
-
 /* ****************************** BIT VECTOR ****************************** */
 //! A bit-vector with a similar interface to std::vector<bool>
 template <class WordType = uint8_t, class Allocator = std::allocator<WordType>>
@@ -186,7 +184,7 @@ class bit_vector {
         /*
           * Slice
         */
-        constexpr bit_array_ref<> operator()(size_type begin, size_type end) const noexcept;
+        constexpr auto operator()(size_type begin, size_type end) const noexcept;
 
         /*
          * Helper functions
@@ -659,8 +657,8 @@ constexpr void bit_vector<WordType, Allocator>::append_range(R&& range) {
   * Slice
 */
 template <class WordType, class Allocator>
-constexpr bit_array_ref<> bit_vector<WordType, Allocator>::operator()(size_type begin, size_type end) const noexcept {
-  return bit_array_ref<>(&this->at(begin), end - begin);
+constexpr auto bit_vector<WordType, Allocator>::operator()(size_type begin, size_type end) const noexcept {
+  return bit_array_ref<bit_value, WordType>(&this->at(begin), end - begin);
 }
 
 // ------------------------ BIT VECTOR: DEBUGGING -------------------------- //

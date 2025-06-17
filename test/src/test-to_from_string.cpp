@@ -3,7 +3,7 @@
 #include <utility>
 
 #include "bitlib/bit-algorithms/count.hpp"
-#include "bitlib/bit-algorithms/to_string.hpp"
+#include "bitlib/bit-algorithms/to_from_string.hpp"
 #include "bitlib/bit-containers/bit_array.hpp"
 #include "bitlib/bit-containers/bit_array_dynamic_extent.hpp"
 #include "fixtures.hpp"
@@ -25,4 +25,9 @@ TEST(ToString, Blah) {
   EXPECT_EQ(num2.size(), 35);
   str = bit::to_string<16>(num2);
   EXPECT_EQ(str, "10EADBEEF");
+}
+
+TEST(FromString, Blah) {
+  auto t = bit::from_string<16>("DEADBEEF");
+  EXPECT_EQ(t, 0x20'DEADBEEF_b);
 }

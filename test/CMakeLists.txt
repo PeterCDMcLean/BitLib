@@ -41,7 +41,7 @@ set(TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/src/test-shift.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/test-span.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/test-swap_ranges.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/src/test-to_string.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/test-to_from_string.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/test-transform.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/test-usecase.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/test-array_ref.cpp"
