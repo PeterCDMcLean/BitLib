@@ -104,6 +104,10 @@ class array : public array_base<array<T, N, W, Policy>, T, N, W, false, Policy, 
     this->fill(bit_val);
   }
 
+  constexpr bit_array(detail::uninitialized_t, const size_t& size) {
+    assert(size == N);
+  }
+
   template <std::integral U>
   constexpr array(const U& integral) {
     this->from_integral(integral);
