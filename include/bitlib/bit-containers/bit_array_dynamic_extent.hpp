@@ -157,6 +157,10 @@ class bit_array<T, std::dynamic_extent, W, Policy>
       : m_size(size), storage(Words(size), allocator) {
   }
 
+  constexpr bit_array(detail::uninitialized_t, size_type size, const Allocator& allocator = Allocator())
+      : m_size(size), storage(Words(size), allocator, detail::uninitialized) {
+  }
+
   template <std::integral U>
   constexpr bit_array(const size_type size, const U& integral, const Allocator& allocator = Allocator())
       : m_size(size), storage(Words(size), allocator, detail::uninitialized) {

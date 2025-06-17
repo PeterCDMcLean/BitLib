@@ -213,14 +213,14 @@ class bit_array_base {
   using compatible_bitarray = bit_array<value_type, N, word_type, Policy>;
 
   constexpr compatible_bitarray operator~() {
-    compatible_bitarray result(derived().size());
+    compatible_bitarray result(detail::uninitialized, derived().size());
     transform(derived().begin(), derived().end(), result.begin(), [](const word_type& bits) -> word_type { return ~bits; });
     return result;
   }
 
   constexpr compatible_bitarray operator|(const bit_sized_range auto& other) const {
     assert(other.size() == derived().size());
-    compatible_bitarray result(derived().size());
+    compatible_bitarray result(detail::uninitialized, derived().size());
     transform(derived().begin(), derived().end(), other.begin(), result.begin(),
               [](const word_type& a, const word_type& b) -> word_type { return a | b; });
     return result;
@@ -233,7 +233,7 @@ class bit_array_base {
   }
   constexpr compatible_bitarray operator&(const bit_sized_range auto& other) const {
     assert(other.size() == derived().size());
-    compatible_bitarray result(derived().size());
+    compatible_bitarray result(detail::uninitialized, derived().size());
     transform(derived().begin(), derived().end(), other.begin(), result.begin(),
               [](const word_type& a, const word_type& b) -> word_type { return a & b; });
     return result;
@@ -246,7 +246,7 @@ class bit_array_base {
   }
   constexpr compatible_bitarray operator^(const bit_sized_range auto& other) const {
     assert(other.size() == derived().size());
-    compatible_bitarray result(derived().size());
+    compatible_bitarray result(detail::uninitialized, derived().size());
     transform(derived().begin(), derived().end(), other.begin(), result.begin(),
               [](const word_type& a, const word_type& b) -> word_type { return a ^ b; });
     return result;

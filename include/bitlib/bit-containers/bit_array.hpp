@@ -88,6 +88,10 @@ class bit_array : public bit_array_base<bit_array<T, N, W>, T, N, W, Policy, det
     this->fill(bit_val);
   }
 
+  constexpr bit_array(detail::uninitialized_t, const size_t& size) {
+    assert(size == N);
+  }
+
   template <std::integral U>
   constexpr bit_array(const U& integral) {
     this->from_integral(integral);
