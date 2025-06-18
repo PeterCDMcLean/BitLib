@@ -34,7 +34,7 @@ class bit_array_ref;
 
 template <typename T = bit_value,
           std::size_t N = std::dynamic_extent,
-          typename W = std::conditional_t<(N == std::dynamic_extent), std::uintptr_t, ceil_integral<N>>,
+          typename W = std::conditional_t<(N == std::dynamic_extent), std::uintptr_t, ceil_integral<N * bitsof<T>()>>,
           typename Policy = policy::typical<W>>
 class bit_array;
 
