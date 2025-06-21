@@ -20,7 +20,7 @@
 
 namespace bit {
 
-namespace detail {
+namespace string {
 
 template <std::size_t Base>
 constexpr auto make_digit_map() {
@@ -55,21 +55,37 @@ constexpr auto make_from_digit_map() {
   return map;
 }
 
-}  // namespace detail
+struct metadata_t {
+  size_t base;
+  bool is_signed;
+  std::endian endian;
+  bool str_sign_extend_zeros;
+};
 
-template <std::size_t base = 10, bool prepend_zeros = false, std::endian endian = std::endian::big, typename RandomAccessIt>
+constexpr metadata_t typical(size_t base = 10, bool str_sign_extend_zeros = false) {
+  return {
+      .base = base,
+      .is_signed = false,
+      .endian = std::endian::big,
+      .str_sign_extend_zeros = str_sign_extend_zeros};
+}
+
+}  // namespace string
+
+template <string::metadata_t meta = string::typical(), typename RandomAccessIt>
 constexpr std::string to_string(const bit_iterator<RandomAccessIt>& first, const bit_iterator<RandomAccessIt>& last, std::string prefix = "") {
-  if constexpr (std::has_single_bit(base)) {
-    constexpr const auto base_bits = std::bit_width(base - 1);
+  static_assert(meta.endian == std::endian::big, "Only bit big endian support (MSB on the left)");
+  if constexpr (std::has_single_bit(meta.base)) {
+    constexpr const auto base_bits = std::bit_width(meta.base - 1);
 
-    int skip_leading_bits = prepend_zeros ? 0 : count_msb(first, last, bit0);
+    int skip_leading_bits = meta.str_sign_extend_zeros ? 0 : count_msb(first, last, bit0);
 
     int str_len = (distance(first, last) - skip_leading_bits);
     str_len += (0 != (str_len % base_bits));
     std::string& str = prefix;
     str.resize(str.length() + str_len);
 
-    static constexpr auto base_digits = detail::make_digit_map<base>();
+    static constexpr auto base_digits = string::make_digit_map<meta.base>();
 
     return accumulate(
         policy::AccumulateNoInitialSubword{},
@@ -78,7 +94,7 @@ constexpr std::string to_string(const bit_iterator<RandomAccessIt>& first, const
           const int characters = ((bits + base_bits - 1) / base_bits);
           acc -= characters;
           for (int i = characters - 1; i >= 0; i--) {
-            acc[i] = base_digits[word & (base - 1)];
+            acc[i] = base_digits[word & (meta.base - 1)];
             word >>= base_bits;
           }
           return acc;
@@ -88,16 +104,25 @@ constexpr std::string to_string(const bit_iterator<RandomAccessIt>& first, const
   }
 }
 
-template <std::size_t base = 10, bool prepend_zeros = false, std::endian endian = std::endian::big>
+template <string::metadata_t meta = string::typical()>
 constexpr std::string to_string(const bit_sized_range auto& bits, std::string prefix = "") {
-  return to_string<base, prepend_zeros, endian>(bits.begin(), bits.end(), prefix);
+  return to_string<meta>(bits.begin(), bits.end(), prefix);
 }
 
-template <std::size_t base = 10, std::endian endian = std::endian::big>
+template <string::metadata_t meta = string::typical(), typename Policy = policy::typical<uintptr_t>, typename RandomAccessIt>
+constexpr void from_string(
+    Policy,
+    const char* str_first, const char* str_last,
+    bit_iterator<RandomAccessIt> bit_first, bit_iterator<RandomAccessIt> bit_last) {
+  const auto str_len = str_last - str_first;
+}
+
+template <string::metadata_t meta = string::typical()>
 constexpr bit_vector<> from_string(const char* first, const char* last) {
-  if constexpr (std::has_single_bit(base)) {
-    constexpr const auto base_bits = std::bit_width(base - 1);
-    static constexpr auto base_from_digits = detail::make_from_digit_map<base>();
+  static_assert(meta.endian == std::endian::big, "Only bit big endian support (MSB on the left)");
+  if constexpr (std::has_single_bit(meta.base)) {
+    constexpr const auto base_bits = std::bit_width(meta.base - 1);
+    static constexpr auto base_from_digits = string::make_from_digit_map<meta.base>();
 
     uint64_t work = 0;
     bit_vector<> vec;
@@ -114,12 +139,14 @@ constexpr bit_vector<> from_string(const char* first, const char* last) {
       vec.append_range(bit_array<>(bits, work));
     }
     return vec;
+  } else {
+    //from_string base 10 not implemented yet;
   }
 }
 
-template <std::size_t base = 10, std::endian endian = std::endian::big>
+template <string::metadata_t meta = string::typical()>
 constexpr bit_vector<> from_string(const std::string& str) {
-  return from_string<base, endian>(str.c_str(), str.c_str() + str.length());
+  return from_string<meta>(str.c_str(), str.c_str() + str.length());
 }
 
 }  // namespace bit

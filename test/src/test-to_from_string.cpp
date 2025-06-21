@@ -14,20 +14,20 @@
 TEST(ToString, Blah) {
   auto num = 0x20'DEADBEEF_b;
   EXPECT_EQ(static_cast<uint32_t>(num), 0xDEADBEEF);
-  auto str = bit::to_string<16>(num);
+  auto str = bit::to_string<bit::string::typical(16)>(num);
   EXPECT_EQ(str, "DEADBEEF");
   num = 0x20'0EADBEEF_b;
-  str = bit::to_string<16>(num);
+  str = bit::to_string<bit::string::typical(16)>(num);
   EXPECT_EQ(str, "EADBEEF");
-  str = bit::to_string<16, true>(num);
+  str = bit::to_string<bit::string::typical(16, true)>(num);
   EXPECT_EQ(str, "0EADBEEF");
   auto num2 = 0x23'10EADBEEF_b;
   EXPECT_EQ(num2.size(), 35);
-  str = bit::to_string<16>(num2);
+  str = bit::to_string<bit::string::typical(16)>(num2);
   EXPECT_EQ(str, "10EADBEEF");
 }
 
 TEST(FromString, Blah) {
-  auto t = bit::from_string<16>("DEADBEEF");
+  auto t = bit::from_string<bit::string::typical(16)>("DEADBEEF");
   EXPECT_EQ(t, 0x20'DEADBEEF_b);
 }
