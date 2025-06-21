@@ -195,7 +195,7 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
       if (derived().size() > bitsof<U>()) {
         Policy::truncation::template to_integral<U, N>(derived(), integral);
       } else {
-        ::bit::copy(derived().begin(), end(), bit_pointer<U>(&integral));
+        ::bit::copy(derived().begin(), end(), &integral);
       }
       if (derived().size() < bitsof<U>()) {
         Policy::extension::template to_integral<U, N>(derived(), integral, detail::uninitialized);
@@ -204,7 +204,7 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
       if constexpr (N > bitsof<U>()) {
         Policy::truncation::template to_integral<U, N>(derived(), integral);
       } else {
-        ::bit::copy(derived().begin(), end(), bit_pointer<U>(&integral));
+        ::bit::copy(derived().begin(), end(), &integral);
       }
       if constexpr (N < bitsof<U>()) {
         Policy::extension::template to_integral<U, N>(derived(), integral, detail::uninitialized);
@@ -269,21 +269,19 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
       if ((derived().size() * bitsof<value_type>()) < bitsof<U>()) {
         Policy::truncation::template from_integral<U, N>(derived(), integral);
       } else {
-        bit_pointer<const U> integral_ptr(&integral);
-        ::bit::copy(integral_ptr, integral_ptr + bitsof<U>(), derived().begin());
+        ::bit::copy(&integral, &integral + 1, derived().begin());
       }
       if (bitsof<U>() < (derived().size() * bitsof<value_type>())) {
-        Policy::extension::template from_integral<U, N>(derived(), integral, detail::uninitialized);
+        Policy::extension::template from_integral<U, N>(detail::uninitialized, derived(), integral);
       }
     } else {
       if constexpr ((N * bitsof<value_type>()) < bitsof<U>()) {
         Policy::truncation::template from_integral<U, N>(derived(), integral);
       } else {
-        bit_pointer<const U> integral_ptr(&integral);
-        ::bit::copy(integral_ptr, integral_ptr + bitsof<U>(), derived().begin());
+        ::bit::copy(&integral, &integral + 1, derived().begin());
       }
       if constexpr (bitsof<U>() < (N * bitsof<value_type>())) {
-        Policy::extension::template from_integral<U, N>(derived(), integral, detail::uninitialized);
+        Policy::extension::template from_integral<U, N>(detail::uninitialized, derived(), integral);
       }
     }
   }

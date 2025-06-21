@@ -122,3 +122,11 @@ TYPED_TEST(MixedDoubleRangeTest, Copy) {
         boolvec1.begin(), boolvec1.end(), comparator));
   }
 }
+
+TEST(Copy, ImplicitConvert) {
+  std::array<uint8_t, 10> words = {0xA, 0xB, 0xC, 0xD, 0xE, 0xF, 0x1A, 0x1B, 0x1C, 0x1D};
+  bit::bit_array<>
+      bits(5 * 8 + 4, bit::bit0);
+  bit::copy(words.begin(), words.begin() + 5, bits.begin() + 4);
+  EXPECT_EQ(bits, 0x2C'0E0D0C0B0A0_b);
+}
