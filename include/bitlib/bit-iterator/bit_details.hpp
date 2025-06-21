@@ -1060,11 +1060,11 @@ constexpr T _mulx(T src0, T src1, T* hi, X...) noexcept
 }
 // -------------------------------------------------------------------------- //
 
-template <typename AlgoFunc, typename SrcIt, typename DstIt>
+template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
 constexpr auto with_bit_iterator_adapter(
-    bit_iterator<SrcIt> first,
-    bit_iterator<SrcIt> last,
-    bit_iterator<DstIt> d_first) {
+    const bit_iterator<SrcIt>& first,
+    const bit_iterator<SrcIt>& last,
+    const bit_iterator<DstIt>& d_first) {
   using dst_word_type = typename bit_iterator<DstIt>::word_type;
   using src_word_type = typename bit_iterator<SrcIt>::word_type;
   if constexpr (!std::is_same_v<src_word_type, dst_word_type> && bitsof<src_word_type>() != bitsof<dst_word_type>()) {
@@ -1084,10 +1084,26 @@ constexpr auto with_bit_iterator_adapter(
   }
 }
 
-template <typename AlgoFunc, typename SrcIt, typename DstIt>
+template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
 constexpr auto with_bit_iterator_adapter(
-    bit_iterator<SrcIt> first,
-    bit_iterator<DstIt> last) {
+    const SrcIt& first,
+    const SrcIt& last,
+    const bit_iterator<DstIt>& d_first) {
+  return with_bit_iterator_adapter<AlgoFunc>(bit_iterator(first), bit_iterator(last), d_first);
+}
+
+template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
+constexpr auto with_bit_iterator_adapter(
+    const bit_iterator<SrcIt>& first,
+    const bit_iterator<SrcIt>& last,
+    const DstIt& d_first) {
+  return with_bit_iterator_adapter<AlgoFunc>(first, last, bit_iterator(d_first));
+}
+
+template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
+constexpr auto with_bit_iterator_adapter(
+    const bit_iterator<SrcIt>& first,
+    const bit_iterator<DstIt>& last) {
   using dst_word_type = typename bit_iterator<DstIt>::word_type;
   using src_word_type = typename bit_iterator<SrcIt>::word_type;
   if constexpr (!std::is_same_v<src_word_type, dst_word_type> && bitsof<src_word_type>() != bitsof<dst_word_type>()) {
@@ -1103,6 +1119,20 @@ constexpr auto with_bit_iterator_adapter(
   } else {
     return AlgoFunc{}(first, last);
   }
+}
+
+template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
+constexpr auto with_bit_iterator_adapter(
+    const SrcIt& first,
+    const bit_iterator<DstIt>& last) {
+  return with_bit_iterator_adapter<AlgoFunc>(bit_iterator(first), last);
+}
+
+template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
+constexpr auto with_bit_iterator_adapter(
+    const bit_iterator<SrcIt>& first,
+    const DstIt& last) {
+  return with_bit_iterator_adapter<AlgoFunc>(first, bit_iterator(last));
 }
 
 namespace detail {

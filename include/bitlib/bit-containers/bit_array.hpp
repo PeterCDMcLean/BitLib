@@ -49,10 +49,7 @@ struct bit_array_iterator_types {
 };
 }  // namespace detail
 
-template <typename T = bit_value,
-          std::size_t N = std::dynamic_extent,
-          typename W = std::conditional_t<(N == std::dynamic_extent), std::uintptr_t, ceil_integral<N>>,
-          typename Policy = policy::typical<W>>
+template <typename T, std::size_t N, typename W, typename Policy>
 class bit_array : public bit_array_base<bit_array<T, N, W>, T, N, W, Policy, detail::bit_array_iterator_types<T, W, N>> {
  public:
   using base = bit_array_base<bit_array<T, N, W>, T, N, W, Policy, detail::bit_array_iterator_types<T, W, N>>;
@@ -86,6 +83,10 @@ class bit_array : public bit_array_base<bit_array<T, N, W>, T, N, W, Policy, det
 
   constexpr bit_array(value_type bit_val) {
     this->fill(bit_val);
+  }
+
+  constexpr bit_array(detail::uninitialized_t, const size_t& size) {
+    assert(size == N);
   }
 
   template <std::integral U>
