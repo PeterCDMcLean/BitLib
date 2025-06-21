@@ -112,8 +112,21 @@ constexpr std::pair<size_t, uint64_t> _parameter_pack_decode_prefixed_num() {
 
 } // namespace bit
 
+#ifdef BITLIB_LITERAL_NAMESPACE
+namespace BITLIB_LITERAL_NAMESPACE {
+#endif
+
+#ifndef BITLIB_LITERAL_SUFFIX
+#define _BITLIB_LITERAL_SUFFIX b
+#else
+#define _BITLIB_LITERAL_SUFFIX BITLIB_LITERAL_SUFFIX
+#endif
+
+#define _BITLIB_CONCAT(x, y) x##y
+#define _BITLIB_LITERAL_OPERATOR(suffix) _BITLIB_CONCAT(operator""_, suffix)
+
 template <char... Str>
-constexpr auto operator""_b() {
+constexpr auto _BITLIB_LITERAL_OPERATOR(_BITLIB_LITERAL_SUFFIX)() {
   constexpr auto pair = bit::_parameter_pack_decode_prefixed_num<Str...>();
   constexpr auto bits = pair.first;
   constexpr auto num = pair.second;
@@ -123,5 +136,13 @@ constexpr auto operator""_b() {
   using word_type = bit::ceil_integral<bits>;
   return bit::bit_array<bits, word_type, bit::policy::typical<word_type>>(static_cast<word_type>(num));
 }
+
+#undef _BITLIB_LITERAL_SUFFIX
+#undef _BITLIB_LITERAL_OPERATOR
+#undef _BITLIB_CONCAT
+
+#ifdef BITLIB_LITERAL_NAMESPACE
+}
+#endif
 
 #endif  // _BIT_LITERAL_HPP_INCLUDED
