@@ -2,10 +2,10 @@
 #include <string_view>
 #include <utility>
 
-#include "bitlib/bit-containers/bit_array.hpp"
-#include "bitlib/bit-containers/bit_array_dynamic_extent.hpp"
 #include "bitlib/bit-algorithms/count.hpp"
 #include "bitlib/bit-algorithms/to_string.hpp"
+#include "bitlib/bit-containers/bit_array.hpp"
+#include "bitlib/bit-containers/bit_array_dynamic_extent.hpp"
 #include "fixtures.hpp"
 
 // Third-party libraries

@@ -1,7 +1,7 @@
-// ================================= BIT_ARRAY =================================== //
+// ================================= array =================================== //
 // Project:     The Experimental Bit Algorithms Library
 // \file        bit_literal.hpp
-// Description: Implementation of bit_array user defined literal
+// Description: Implementation of array user defined literal
 // Creator:     Vincent Reverdy
 // Contributor: Peter McLean [2025]
 // License:     BSD 3-Clause License
@@ -20,10 +20,13 @@
 
 namespace bit {
 
-template <typename T, std::size_t N, typename W, typename Policy>
-class bit_array;
-
 class bit_value;
+
+template <typename T, std::size_t N, typename W, typename Policy>
+class array;
+
+template <std::size_t N, typename W, typename Policy>
+using bit_array = array<bit_value, N, W, Policy>;
 
 // ========================================================================== //
 template <char Bit>
@@ -118,7 +121,7 @@ constexpr auto operator""_b() {
       (((1ull << bits) - 1ull) >= num),
       "bit literal size prefix has too few bits to represent the given value");
   using word_type = bit::ceil_integral<bits>;
-  return bit::bit_array<bit::bit_value, bits, word_type, bit::policy::typical<word_type>>(static_cast<word_type>(num));
+  return bit::bit_array<bits, word_type, bit::policy::typical<word_type>>(static_cast<word_type>(num));
 }
 
 #endif  // _BIT_LITERAL_HPP_INCLUDED

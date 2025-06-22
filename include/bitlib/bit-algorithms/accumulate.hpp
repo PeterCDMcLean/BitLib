@@ -1,4 +1,4 @@
-// ================================= BIT_ARRAY_REF =================================== //
+// ================================= array_REF =================================== //
 // Project:     The Experimental Bit Algorithms Library
 // \file        accumulate.hpp
 // Description: Implementation of accumulate

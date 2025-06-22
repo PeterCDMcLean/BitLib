@@ -11,7 +11,7 @@
 #include "gtest/gtest.h"
 
 TEST(CountLeading, CountLeadingZeroes) {
-  auto num = bit::bit_array<bit::bit_value, 128>(bit::bit0);
+  auto num = bit::bit_array<128>(bit::bit0);
   auto clz = bit::count_msb(num.begin(), num.end(), bit::bit0);
   std::cout << "Count leading zeroes: " << clz << std::endl;
   EXPECT_EQ(clz, 128);
