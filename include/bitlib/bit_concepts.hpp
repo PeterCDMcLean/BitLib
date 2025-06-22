@@ -5,6 +5,8 @@
 #include <iterator>
 #include <ranges>
 
+#include "bit-iterator/bit_details.hpp"
+
 #if (defined(__GLIBCXX__) && (_GLIBCXX_RELEASE < 14))
 namespace std {
 struct from_range_t {
@@ -72,8 +74,7 @@ concept bit_iterator_c =
 template <typename It>
 concept bit_contiguous_iterator_c = bit_iterator_c<It> &&
                                     std::contiguous_iterator<typename It::iterator_type> &&
-                                    std::has_unique_object_representations_v<typename std::iterator_traits<typename It::iterator_type>::value_type>;
-
+                                    is_always_exhaustive_v<typename std::iterator_traits<typename It::iterator_type>::value_type>;
 
 template <typename R>
 concept bit_range =
@@ -85,17 +86,15 @@ concept bit_sized_range =
     bit_range<R> &&
     std::ranges::sized_range<R>;
 
-#ifdef CONTIGUOUS_RANGE
 template <typename R>
 concept bit_contiguous_range = bit_range<R> &&
                                std::contiguous_iterator<typename std::ranges::iterator_t<R>::iterator_type> &&
-                               std::has_unique_object_representations_v<typename std::iterator_traits<typename std::ranges::iterator_t<R>::iterator_type>::value_type>;
+                               is_always_exhaustive_v<typename std::iterator_traits<typename std::ranges::iterator_t<R>::iterator_type>::value_type>;
 
 template <typename R>
 concept bit_contiguous_sized_range =
     bit_contiguous_range<R> &&
     std::ranges::sized_range<R>;
-#endif
 
 } // namespace bit
 

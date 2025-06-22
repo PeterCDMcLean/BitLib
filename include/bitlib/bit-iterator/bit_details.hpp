@@ -18,6 +18,7 @@
 #include <immintrin.h>
 
 #include <algorithm>
+#include <bit>
 #include <cassert>
 #include <concepts>
 #include <cstddef>
@@ -31,7 +32,6 @@
 #include <utility>
 
 #include "bitlib/bit-containers/bit_bitsof.hpp"
-#include "bitlib/bit_concepts.hpp"
 
 // Project sources
 // Third-party libraries
@@ -119,7 +119,65 @@ struct _cv_iterator_traits
     using reference = _reference_t;
     using iterator_category = _category_t;
 };
-/* ************************************************************************** */
+
+/* See P3707 – A std::is_always_exhaustive trait
+  "Exhaustive" means that the layout mapping is surjective, that is, that every index in
+  the mapping's codomain has a corresponding multidimensional index in the mapping's
+  domain. To say that a type has no "padding" means that every byte of an object of that
+  type corresponds to some member of the type. That is, the mapping from member
+  name to bytes of the object is surjective.
+*/
+template <typename T>
+struct is_always_exhaustive {
+ public:
+  using value_type = bool;
+
+ private:
+  // Bit-cast padding check, only participates if T has operator==
+  static consteval bool is_exhaustive_brute_force()
+    requires requires(const T& a, const T& b) {
+      { a == b } -> std::convertible_to<bool>;
+    }
+  {
+    auto bytes = std::array<uint8_t, sizeof(T)>{};
+    const T reference = std::bit_cast<T>(bytes);
+
+    for (uint32_t i = 0; i < sizeof(T); ++i) {
+      bytes[i] = 1u;
+      const T instance = std::bit_cast<T>(bytes);
+      if (instance == reference) {
+        return false;  // found a padding byte
+      }
+      bytes[i] = 0u;
+    }
+    return true;  // no padding detected
+  }
+  static consteval value_type _value() {
+    if constexpr (std::has_unique_object_representations_v<T>) {
+      // Unique object representation ⇒ no padding
+      return true;
+    } else if constexpr (requires { is_exhaustive_brute_force(); }) {
+      // Has padding only if is_exhaustive_brute_force finds it
+      return is_exhaustive_brute_force();
+    } else {
+      // No operator== ⇒ assume has padding
+      return false;
+    }
+  }
+
+ public:
+  static constexpr const value_type value = _value();
+};
+
+template <typename T>
+constexpr bool is_always_exhaustive_v = is_always_exhaustive<T>::value;
+
+struct has_float_member_t {
+  float a;
+  bool operator==(const has_float_member_t&) const = default;
+};
+
+static_assert(is_always_exhaustive_v<has_float_member_t>, "Oh no");
 
 #if 0
 /* *********** IMPLEMENTATION DETAILS: NARROWEST AND WIDEST TYPES *********** */
