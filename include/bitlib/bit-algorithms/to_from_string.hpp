@@ -41,7 +41,7 @@ constexpr auto make_from_digit_map() {
 
   std::array<char, 128> map = {};
   for (std::size_t i = 0; i < 128; ++i) {
-    map[i] = 0;
+    map[i] = ~0;
     if (i >= '0' && i <= '9') {
       map[i] = i - '0';
     }
@@ -124,19 +124,29 @@ constexpr bit_vector<> from_string(const char* first, const char* last) {
     constexpr const auto base_bits = std::bit_width(meta.base - 1);
     static constexpr auto base_from_digits = string::make_from_digit_map<meta.base>();
 
-    uint64_t work = 0;
     bit_vector<> vec;
 
     last--;
     while (last >= first) {
-      int bits = 0;
-      for (; (bits < bitsof<uint64_t>()) && (last >= first); bits += base_bits, last--) {
+      uint64_t work = 0;
+      size_t bits = 0;
+      for (; (bits < bitsof<uint64_t>()) && (last >= first); last--) {
         char c = *last;
-        if (c < base_from_digits.size()) {
-          work |= (base_from_digits[c] << bits);
+        // TODO: This should be a policy
+        if (c >= base_from_digits.size()) {
+          continue;
         }
+        auto digit = base_from_digits[c];
+        // TODO: This should be a policy
+        if (~0 == digit) {
+          continue;
+        }
+        work |= (digit << bits);
+        bits += base_bits;
       }
-      vec.append_range(bit_array<>(bits, work));
+      if (bits) {
+        vec.append_range(bit_array<>(bits, work));
+      }
     }
     return vec;
   } else {
