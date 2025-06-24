@@ -11,6 +11,7 @@
 #define _BIT_TO_STRING_HPP_INCLUDED
 
 #include <bit>
+#include <string>
 
 #include "bitlib/bit-algorithms/accumulate.hpp"
 #include "bitlib/bit-algorithms/count.hpp"

@@ -2,6 +2,7 @@
 #define _BIT_CONCEPTS_HPP_INCLUDED
 
 #include <concepts>
+#include <cstdint>
 #include <iterator>
 #include <ranges>
 
