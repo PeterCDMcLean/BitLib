@@ -24,7 +24,6 @@
 #include "bitlib/bit-algorithms/bit_algorithm.hpp"
 #include "bitlib/bit-containers/bit_bitsof.hpp"
 #include "bitlib/bit-containers/bit_policy.hpp"
-#include "bitlib/bit-containers/bit_span.hpp"
 #include "bitlib/bit-iterator/bit.hpp"
 
 namespace bit {

@@ -20,7 +20,6 @@
 #include "bitlib/bit-containers/bit_array_base.hpp"
 #include "bitlib/bit-containers/bit_bitsof.hpp"
 #include "bitlib/bit-containers/bit_policy.hpp"
-#include "bitlib/bit-containers/bit_span.hpp"
 #include "bitlib/bit-iterator/bit.hpp"
 #include "bitlib/bit_concepts.hpp"
 

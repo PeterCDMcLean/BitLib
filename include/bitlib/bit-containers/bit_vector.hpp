@@ -22,7 +22,6 @@
 #include <vector>
 // Project sources
 #include "bitlib/bit-algorithms/bit_algorithm.hpp"
-#include "bitlib/bit-containers/bit_span.hpp"
 #include "bitlib/bit-iterator/bit.hpp"
 #include "bitlib/bit_concepts.hpp"
 

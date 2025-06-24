@@ -11,17 +11,12 @@
 #include <type_traits>
 // Project sources
 #include "bitlib/bit-algorithms/bit_algorithm.hpp"
+#include "bitlib/bit-containers/bit_array_ref.hpp"
 #include "bitlib/bit-containers/bit_bitsof.hpp"
 #include "bitlib/bit-containers/bit_policy.hpp"
 #include "bitlib/bit-iterator/bit.hpp"
 
 namespace bit {
-
-template <typename T, typename W, typename Policy>
-class array_ref;
-
-template <typename W = std::uintptr_t, typename Policy = policy::typical<W>>
-using bit_array_ref = array_ref<bit_value, W, Policy>;
 
 // Helper storage: for a fixed extent no runtime size is stored.
 template<typename WordType, std::size_t Extent>
