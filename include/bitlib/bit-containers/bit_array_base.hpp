@@ -24,25 +24,24 @@
 #include "bitlib/bit-algorithms/bit_algorithm.hpp"
 #include "bitlib/bit-containers/bit_bitsof.hpp"
 #include "bitlib/bit-containers/bit_policy.hpp"
-#include "bitlib/bit-containers/bit_span.hpp"
 #include "bitlib/bit-iterator/bit.hpp"
 
 namespace bit {
 
 template <typename T, typename W, typename Policy>
-class bit_array_ref;
+class array_ref;
 
 template <typename T,
           std::size_t N,
           typename W,
           typename Policy>
-class bit_array;
+class array;
 
 /**
- * @brief Base class template for bit_array implementations
+ * @brief Base class template for array implementations
  *
  * This is a CRTP (Curiously Recurring Template Pattern) base class that provides
- * common functionality for bit_array variants.
+ * common functionality for array variants.
  *
  * @tparam Derived The derived class (CRTP pattern)
  * @tparam T The value type (typically bit_value)
@@ -52,7 +51,7 @@ class bit_array;
  * @tparam Iterators A struct that provides iterator and const_iterator types
  */
 template <typename Derived, typename T, size_t N, typename W, typename Policy, typename Iterators>
-class bit_array_base {
+class array_base {
  protected:
   constexpr Derived& derived() noexcept {
     return static_cast<Derived&>(*this);
@@ -161,17 +160,17 @@ class bit_array_base {
   }
 
   /**
-   * @brief Slice operations - returns a bit_array_ref
+   * @brief Slice operations - returns a array_ref
    */
   constexpr auto operator()(size_type offset, size_type right) const noexcept {
-    return bit_array_ref<bit_value, const word_type, Policy>(&this->at(offset), right - offset);
+    return array_ref<value_type, const word_type, Policy>(&this->at(offset), right - offset);
   }
 
   /**
-   * @brief Slice operations - returns a bit_array_ref
+   * @brief Slice operations - returns a array_ref
    */
   constexpr auto operator()(size_type offset, size_type right) noexcept {
-    return bit_array_ref<bit_value, word_type, Policy>(&this->at(offset), right - offset);
+    return array_ref<value_type, word_type, Policy>(&this->at(offset), right - offset);
   }
 
   // Common operations
@@ -210,7 +209,7 @@ class bit_array_base {
     return integral;
   }
 
-  using compatible_bitarray = bit_array<value_type, N, word_type, Policy>;
+  using compatible_bitarray = array<value_type, N, word_type, Policy>;
 
   constexpr compatible_bitarray operator~() {
     compatible_bitarray result(derived().size());
@@ -295,4 +294,3 @@ constexpr bool operator==(const bit_sized_range auto& lhs, const bit_sized_range
 }  // namespace bit
 
 #endif  // _BIT_ARRAY_BASE_HPP_INCLUDED
-        // ========================================================================== //

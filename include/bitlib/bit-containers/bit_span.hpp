@@ -11,14 +11,12 @@
 #include <type_traits>
 // Project sources
 #include "bitlib/bit-algorithms/bit_algorithm.hpp"
+#include "bitlib/bit-containers/bit_array_ref.hpp"
 #include "bitlib/bit-containers/bit_bitsof.hpp"
 #include "bitlib/bit-containers/bit_policy.hpp"
 #include "bitlib/bit-iterator/bit.hpp"
 
 namespace bit {
-
-template <typename T, typename W, typename Policy>
-class bit_array_ref;
 
 // Helper storage: for a fixed extent no runtime size is stored.
 template<typename WordType, std::size_t Extent>
@@ -131,7 +129,7 @@ class bit_span : private bit_span_storage<WordType, Extent> {
   constexpr bit_span<WordType, std::dynamic_extent> subspan(size_type offset, size_type count = std::dynamic_extent) const noexcept
     requires(Extent == std::dynamic_extent);
 
-  constexpr bit_array_ref<bit_value, WordType, Policy> operator()(size_type begin, size_type end) const noexcept;
+  constexpr bit_array_ref<WordType, Policy> operator()(size_type begin, size_type end) const noexcept;
 
   template <std::size_t NewExtent>
   constexpr bit_span<WordType, NewExtent> first() const noexcept
@@ -306,8 +304,8 @@ constexpr bit_span<WordType, std::dynamic_extent> bit_span<WordType, Extent, Pol
 }
 
 template <typename WordType, std::size_t Extent, typename Policy>
-constexpr bit_array_ref<bit_value, WordType, Policy> bit_span<WordType, Extent, Policy>::operator()(size_type begin, size_type end) const noexcept {
-  return bit_array_ref<bit_value, WordType, Policy>(&(this->begin()[begin]), end - begin);
+constexpr bit_array_ref<WordType, Policy> bit_span<WordType, Extent, Policy>::operator()(size_type begin, size_type end) const noexcept {
+  return bit_array_ref<WordType, Policy>(&(this->begin()[begin]), end - begin);
 }
 
 template <typename WordType, std::size_t Extent, typename Policy>

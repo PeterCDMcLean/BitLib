@@ -1,6 +1,6 @@
 // ================================= BIT_ARRAY =================================== //
 // Project:     The Experimental Bit Algorithms Library
-// \file        bit_array.hpp
+// \file        bit_array_dynamic_extent.hpp
 // Description: Implementation of bit_array
 // Creator:     Vincent Reverdy
 // Contributor: Peter McLean [2025]
@@ -22,7 +22,6 @@
 #include "bitlib/bit-containers/bit_array_base.hpp"
 #include "bitlib/bit-containers/bit_bitsof.hpp"
 #include "bitlib/bit-containers/bit_policy.hpp"
-#include "bitlib/bit-containers/bit_span.hpp"
 #include "bitlib/bit-iterator/bit.hpp"
 #include "bitlib/bit_concepts.hpp"
 
@@ -30,7 +29,7 @@ namespace bit {
 namespace detail {
 
 template <typename value_type, typename word_type>
-struct bit_array_dextent_iterator_types {
+struct array_dextent_iterator_types {
   using iterator = typename std::conditional<std::is_same_v<value_type, bit_value>,
                                              bit_iterator<word_type*>,
                                              word_type*>::type;
@@ -40,10 +39,10 @@ struct bit_array_dextent_iterator_types {
 };
 }  // namespace detail
 template <typename T, typename W, typename Policy>
-class bit_array<T, std::dynamic_extent, W, Policy>
-    : public bit_array_base<bit_array<T, std::dynamic_extent, W>, T, std::dynamic_extent, W, Policy, detail::bit_array_dextent_iterator_types<T, W>> {
+class array<T, std::dynamic_extent, W, Policy>
+    : public array_base<array<T, std::dynamic_extent, W>, T, std::dynamic_extent, W, Policy, detail::array_dextent_iterator_types<T, W>> {
  public:
-  using base = bit_array_base<bit_array<T, std::dynamic_extent, W>, T, std::dynamic_extent, W, Policy, detail::bit_array_dextent_iterator_types<T, W>>;
+  using base = array_base<array<T, std::dynamic_extent, W>, T, std::dynamic_extent, W, Policy, detail::array_dextent_iterator_types<T, W>>;
   using base::end;
   using typename base::const_iterator;
   using typename base::const_pointer;
@@ -138,7 +137,7 @@ class bit_array<T, std::dynamic_extent, W, Policy>
   };
 
  public:
-  ~bit_array() {
+  ~array() {
     if (size() > FixedBits) {
       storage.m_allocator.deallocate(storage.pointer, Words(size()));
     } else {
@@ -151,50 +150,50 @@ class bit_array<T, std::dynamic_extent, W, Policy>
   /*
   * Constructors, copies and moves...
   */
-  bit_array() = delete;
+  array() = delete;
 
-  constexpr bit_array(const size_type size, const Allocator& allocator = Allocator())
+  constexpr array(const size_type size, const Allocator& allocator = Allocator())
       : m_size(size), storage(Words(size), allocator) {
   }
 
   template <std::integral U>
-  constexpr bit_array(const size_type size, const U& integral, const Allocator& allocator = Allocator())
+  constexpr array(const size_type size, const U& integral, const Allocator& allocator = Allocator())
       : m_size(size), storage(Words(size), allocator, detail::uninitialized) {
     this->from_integral(integral);
   }
 
-  constexpr bit_array(const size_type size, const word_type val, const Allocator& allocator = Allocator())
+  constexpr array(const size_type size, const word_type val, const Allocator& allocator = Allocator())
       : m_size(size), storage(Words(size), val, allocator) {
   }
 
-  constexpr bit_array(const size_type size, const value_type bit_val, const Allocator& allocator = Allocator())
+  constexpr array(const size_type size, const value_type bit_val, const Allocator& allocator = Allocator())
     requires(!std::is_same<value_type, word_type>::value)
       : m_size(size), storage(Words(size), allocator, detail::uninitialized) {
     this->fill(bit_val);
   }
 
-  constexpr bit_array(const bit_array<T, std::dynamic_extent, W, Policy>& other)
+  constexpr array(const array<T, std::dynamic_extent, W, Policy>& other)
       : m_size(other.size()), storage(Words(size()), other.storage) {
   }
 
-  constexpr bit_array(const bit_array<T, std::dynamic_extent, W, Policy>& other, const Allocator& allocator)
+  constexpr array(const array<T, std::dynamic_extent, W, Policy>& other, const Allocator& allocator)
       : m_size(other.size()), storage(Words(size()), other.storage, allocator) {
   }
 
-  constexpr bit_array(const bit_sized_range auto& other, const Allocator& allocator = Allocator())
-      : bit_array(other.size(), allocator, detail::uninitialized) {
+  constexpr array(const bit_sized_range auto& other, const Allocator& allocator = Allocator())
+      : array(other.size(), allocator, detail::uninitialized) {
     ::bit::copy(other.begin(), other.end(), this->begin());
   }
 
-  constexpr bit_array(bit_array<T, std::dynamic_extent, W>&& other)
+  constexpr array(array<T, std::dynamic_extent, W>&& other)
       : m_size(other.size()), storage(Words(size()), std::move(other.storage)) {
   }
 
-  constexpr bit_array(bit_array<T, std::dynamic_extent, W>&& other, const Allocator& allocator)
+  constexpr array(array<T, std::dynamic_extent, W>&& other, const Allocator& allocator)
       : m_size(other.size()), storage(Words(size()), std::move(other.storage), allocator) {
   }
 
-  constexpr bit_array(const std::initializer_list<value_type> init, const Allocator& allocator = Allocator())
+  constexpr array(const std::initializer_list<value_type> init, const Allocator& allocator = Allocator())
     requires(!std::is_same_v<value_type, word_type>)
       : m_size(init.size()), storage(Words(size()), allocator, detail::uninitialized) {
     std::copy(init.begin(), init.end(), this->begin());
@@ -203,7 +202,7 @@ class bit_array<T, std::dynamic_extent, W, Policy>
 #if 0
   No known conversion from bool to bit_value
   bit_value has explicit constructor from bool to bit_value so this doesnt work
-  constexpr bit_array<std::dynamic_extent,W>::bit_array(const std::initializer_list<bool> init)
+  constexpr array<std::dynamic_extent,W>::array(const std::initializer_list<bool> init)
       : storage(std::make_unique<word_type[]>(Words(init.size()))),
         m_size(init.size()) {
     std::copy(init.begin(), init.end(), this->begin());
@@ -211,12 +210,12 @@ class bit_array<T, std::dynamic_extent, W, Policy>
 #endif
 
   template <typename U>
-  constexpr bit_array(const std::initializer_list<U> init, const Allocator& allocator = Allocator())
+  constexpr array(const std::initializer_list<U> init, const Allocator& allocator = Allocator())
       : m_size(bitsof<U>() * init.size()), storage(Words(size()), allocator, detail::uninitialized) {
     std::copy(init.begin(), init.end(), data());
   }
 
-  constexpr bit_array(const std::string_view s, const Allocator& allocator = Allocator())
+  constexpr array(const std::string_view s, const Allocator& allocator = Allocator())
     requires(std::is_same_v<value_type, bit_value>)
       : m_size(std::count(s.begin(), s.end(), '0') + std::count(s.begin(), s.end(), '1')), storage(Words(size()), allocator, detail::uninitialized) {
     size_type i = 0;
@@ -232,9 +231,9 @@ class bit_array<T, std::dynamic_extent, W, Policy>
   /*
    * Assignment
    */
-  constexpr bit_array<T, std::dynamic_extent, W>& operator=(const bit_array<T, std::dynamic_extent, W>& other) {
+  constexpr array<T, std::dynamic_extent, W>& operator=(const array<T, std::dynamic_extent, W>& other) {
     if (nullptr == data() || size() != other.size()) {
-      throw std::invalid_argument("Cannot reassign bit_array<std::dynamic_extent,V,W> size");
+      throw std::invalid_argument("Cannot reassign array<std::dynamic_extent,V,W> size");
     }
     if (this == &other) [[unlikely]] {
       return *this;
@@ -243,19 +242,19 @@ class bit_array<T, std::dynamic_extent, W, Policy>
     return *this;
   }
 
-  constexpr bit_array<T, std::dynamic_extent, W>& operator=(const bit_sized_range auto& other) {
+  constexpr array<T, std::dynamic_extent, W>& operator=(const bit_sized_range auto& other) {
     if (other.size() != this->size()) [[unlikely]] {
-      throw std::invalid_argument("other bit_range contains an invalid number of bits for bit_array.");
+      throw std::invalid_argument("other bit_range contains an invalid number of bits for array.");
     }
     ::bit::copy(other.begin(), other.end(), this->begin());
     return *this;
   };
 
-  constexpr bit_array<T, std::dynamic_extent, W>& operator=(bit_array<T, std::dynamic_extent, W>&& other) {
+  constexpr array<T, std::dynamic_extent, W>& operator=(array<T, std::dynamic_extent, W>&& other) {
     if (nullptr == data() || size() != other.size()) {
-      throw std::invalid_argument("Cannot reassign bit_array<std::dynamic_extent,V,W> size");
+      throw std::invalid_argument("Cannot reassign array<std::dynamic_extent,V,W> size");
     }
-    bit_array<T, std::dynamic_extent, W> temp(std::move(other));
+    array<T, std::dynamic_extent, W> temp(std::move(other));
     swap(temp);
     return *this;
   }
@@ -308,7 +307,7 @@ class bit_array<T, std::dynamic_extent, W, Policy>
   /*
    * Operations
    */
-  constexpr void swap(bit_array<T, std::dynamic_extent, W>& other) noexcept {
+  constexpr void swap(array<T, std::dynamic_extent, W>& other) noexcept {
     assert(size() == other.size());
     if (size() > FixedBits) {
       std::swap(this->storage.pointer, other.storage.pointer);
@@ -320,11 +319,11 @@ class bit_array<T, std::dynamic_extent, W, Policy>
   }
 };
 
-static_assert(bit_range<bit_array<>>, "bit_array<> does not satisfy bit_contiguous_range concept!");
-static_assert(bit_sized_range<bit_array<>>, "bit_array<> does not satisfy bit_contiguous_sized_range concept!");
+static_assert(bit_range<array<>>, "array<> does not satisfy bit_contiguous_range concept!");
+static_assert(bit_sized_range<array<>>, "array<> does not satisfy bit_contiguous_sized_range concept!");
 #ifdef CONTIGUOUS_RANGE
-static_assert(bit_contiguous_range<bit_array<>>, "bit_array<> does not satisfy bit_contiguous_range concept!");
-static_assert(bit_contiguous_sized_range<bit_array<>>, "bit_array<> does not satisfy bit_contiguous_sized_range concept!");
+static_assert(bit_contiguous_range<array<>>, "array<> does not satisfy bit_contiguous_range concept!");
+static_assert(bit_contiguous_sized_range<array<>>, "array<> does not satisfy bit_contiguous_sized_range concept!");
 #endif
 
 // ========================================================================== //

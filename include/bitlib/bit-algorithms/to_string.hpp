@@ -1,7 +1,7 @@
-// ================================= BIT_ARRAY_REF =================================== //
+// ================================= array_REF =================================== //
 // Project:     The Experimental Bit Algorithms Library
 // \file        to_string.hpp
-// Description: Implementation of bit_array_ref
+// Description: Implementation of array_ref
 // Creator:     Vincent Reverdy
 // Contributor: Peter McLean [2025]
 // License:     BSD 3-Clause License
@@ -11,6 +11,7 @@
 #define _BIT_TO_STRING_HPP_INCLUDED
 
 #include <bit>
+#include <string>
 
 #include "bitlib/bit-algorithms/accumulate.hpp"
 #include "bitlib/bit-algorithms/count.hpp"

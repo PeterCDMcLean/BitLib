@@ -20,15 +20,20 @@
 #include "bitlib/bit-containers/bit_array_base.hpp"
 #include "bitlib/bit-containers/bit_bitsof.hpp"
 #include "bitlib/bit-containers/bit_policy.hpp"
-#include "bitlib/bit-containers/bit_span.hpp"
 #include "bitlib/bit-iterator/bit.hpp"
 #include "bitlib/bit_concepts.hpp"
 
 namespace bit {
 
+template <typename T = bit_value, typename W = std::uintptr_t, typename Policy = policy::typical<W>>
+class array_ref;
+
+template <typename W = std::uintptr_t, typename Policy = policy::typical<W>>
+using bit_array_ref = array_ref<bit_value, W, Policy>;
+
 namespace detail {
 template <typename word_type>
-struct bit_array_ref_iterator_types {
+struct array_ref_iterator_types {
   using iterator = bit_iterator<word_type*>;
   using const_iterator = bit_iterator<const word_type*>;
 };
@@ -36,18 +41,18 @@ struct bit_array_ref_iterator_types {
 /**
  * @brief A non-owning reference to a bit array
  *
- * Similar to bit_array_dynamic_extent but does not allocate or deallocate memory.
+ * Similar to array_dynamic_extent but does not allocate or deallocate memory.
  * The pointer and size are const class members and cannot be re-bound.
  * Assignment operations always copy content and can't rebind the pointer/size.
  *
  * @tparam T The value type (typically bit_value)
  * @tparam W The word type used for storage
  */
-template <typename T = bit_value, typename W = std::uintptr_t, typename Policy = policy::typical<W>>
-class bit_array_ref
-    : public bit_array_base<bit_array_ref<T, W>, T, std::dynamic_extent, W, Policy, detail::bit_array_ref_iterator_types<W>> {
+template <typename T, typename W, typename Policy>
+class array_ref
+    : public array_base<array_ref<T, W>, T, std::dynamic_extent, W, Policy, detail::array_ref_iterator_types<W>> {
  public:
-  using base = bit_array_base<bit_array_ref<T, W>, T, std::dynamic_extent, W, Policy, detail::bit_array_ref_iterator_types<W>>;
+  using base = array_base<array_ref<T, W>, T, std::dynamic_extent, W, Policy, detail::array_ref_iterator_types<W>>;
   using base::end;
   using typename base::const_iterator;
   using typename base::const_pointer;
@@ -66,7 +71,7 @@ class bit_array_ref
 
  public:
   // Constructors
-  bit_array_ref() = delete;
+  array_ref() = delete;
 
   /**
    * @brief Constructs a non-owning reference to a bit array
@@ -74,7 +79,7 @@ class bit_array_ref
    * @param storage Pointer to the storage
    * @param size Number of bits
    */
-  constexpr bit_array_ref(word_type* storage, size_type size)
+  constexpr array_ref(word_type* storage, size_type size)
       : m_storage(storage),
         m_size(size) {
   }
@@ -85,7 +90,7 @@ class bit_array_ref
    * @param storage bit_pointer to the storage
    * @param size Number of bits
    */
-  constexpr bit_array_ref(bit_pointer<word_type> storage, size_type size)
+  constexpr array_ref(bit_pointer<word_type> storage, size_type size)
       : m_storage(storage),
         m_size(size) {
   }
@@ -95,7 +100,7 @@ class bit_array_ref
    *
    * @param other bit_sized_range
    */
-  constexpr bit_array_ref(bit_range auto& other, size_type size)
+  constexpr array_ref(bit_range auto& other, size_type size)
       : m_storage(&(*other.begin())),
         m_size(size) {
     assert(size <= (other.end() - other.begin()));
@@ -106,7 +111,7 @@ class bit_array_ref
    *
    * @param other bit_sized_range
    */
-  constexpr bit_array_ref(const bit_range auto& other, size_type size)
+  constexpr array_ref(const bit_range auto& other, size_type size)
     requires(std::is_const_v<W>)
       : m_storage(&(*other.begin())),
         m_size(size) {
@@ -116,19 +121,19 @@ class bit_array_ref
   /**
    * @brief Copy constructor
    */
-  constexpr bit_array_ref(const bit_array_ref& other) = default;
+  constexpr array_ref(const array_ref& other) = default;
 
   /**
    * @brief Move constructor
    */
-  constexpr bit_array_ref(bit_array_ref&& other) = default;
+  constexpr array_ref(array_ref&& other) = default;
 
   /**
    * @brief Range Assignment operator - copies content but doesn't rebind
    */
-  constexpr bit_array_ref& operator=(const bit_sized_range auto& other) {
+  constexpr array_ref& operator=(const bit_sized_range auto& other) {
     if (m_size != other.size()) {
-      throw std::invalid_argument("Cannot assign from bit_array_ref of different size");
+      throw std::invalid_argument("Cannot assign from array_ref of different size");
     }
     ::bit::copy(other.begin(), other.end(), this->begin());
     return *this;
@@ -137,10 +142,10 @@ class bit_array_ref
   /**
    * @brief Copy Assignment operator - copies content but doesn't rebind
    */
-  constexpr bit_array_ref& operator=(const bit_array_ref& other) {
+  constexpr array_ref& operator=(const array_ref& other) {
     if (this != &other) {
       if (m_size != other.m_size) {
-        throw std::invalid_argument("Cannot assign from bit_array_ref of different size");
+        throw std::invalid_argument("Cannot assign from array_ref of different size");
       }
       ::bit::copy(other.begin(), other.end(), this->begin());
     }
@@ -150,10 +155,10 @@ class bit_array_ref
   /**
    * @brief Move assignment operator - copies content but doesn't rebind
    */
-  constexpr bit_array_ref& operator=(bit_array_ref&& other) {
+  constexpr array_ref& operator=(array_ref&& other) {
     if (this != &other) {
       if (m_size != other.size()) {
-        throw std::invalid_argument("Cannot assign from bit_array_ref of different size");
+        throw std::invalid_argument("Cannot assign from array_ref of different size");
       }
       ::bit::copy(other.begin(), other.end(), this->begin());
     }
@@ -163,7 +168,7 @@ class bit_array_ref
   /**
    * @brief No destructor needed as we don't own the memory
    */
-  ~bit_array_ref() = default;
+  ~array_ref() = default;
 
   /*
    * Iterators
@@ -186,19 +191,19 @@ class bit_array_ref
   /*
    * Operations
    */
-  constexpr void swap(bit_array_ref& other) {
+  constexpr void swap(array_ref& other) {
     if (m_size != other.m_size) {
-      throw std::invalid_argument("Cannot swap bit_array_ref of different sizes");
+      throw std::invalid_argument("Cannot swap array_ref of different sizes");
     }
     swap_ranges(begin(), end(), other.begin());
   }
 };
 
-static_assert(bit_range<bit_array_ref<>>, "bit_array_ref<> does not satisfy bit_range concept!");
-static_assert(bit_sized_range<bit_array_ref<>>, "bit_array_ref<> does not satisfy bit_sized_range concept!");
+static_assert(bit_range<array_ref<>>, "array_ref<> does not satisfy bit_range concept!");
+static_assert(bit_sized_range<array_ref<>>, "array_ref<> does not satisfy bit_sized_range concept!");
 #ifdef CONTIGUOUS_RANGE
-static_assert(bit_contiguous_range<bit_array_ref<>>, "bit_array_ref<> does not satisfy bit_contiguous_range concept!");
-static_assert(bit_contiguous_sized_range<bit_array_ref<>>, "bit_array_ref<> does not satisfy bit_contiguous_sized_range concept!");
+static_assert(bit_contiguous_range<array_ref<>>, "array_ref<> does not satisfy bit_contiguous_range concept!");
+static_assert(bit_contiguous_sized_range<array_ref<>>, "array_ref<> does not satisfy bit_contiguous_sized_range concept!");
 #endif
 
 // ========================================================================== //
