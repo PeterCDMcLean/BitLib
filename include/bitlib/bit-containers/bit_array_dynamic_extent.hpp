@@ -58,7 +58,10 @@ class array<T, std::dynamic_extent, W, Policy>
 
  private:
   using word_type_ptr = word_type*;
+  #pragma GCC diagnostic push
+  #pragma GCC diagnostic ignored "-Wsizeof-pointer-div"
   static const size_type FixedWords = sizeof(word_type_ptr) / sizeof(word_type);
+  #pragma GCC diagnostic pop
   static const size_type FixedBits = FixedWords * bitsof<word_type>();
 
   const size_type m_size;
@@ -181,15 +184,15 @@ class array<T, std::dynamic_extent, W, Policy>
   }
 
   constexpr array(const bit_sized_range auto& other, const Allocator& allocator = Allocator())
-      : array(other.size(), allocator, detail::uninitialized) {
+      : m_size(other.size()), storage(Words(size()), allocator, detail::uninitialized) {
     ::bit::copy(other.begin(), other.end(), this->begin());
   }
 
-  constexpr array(array<T, std::dynamic_extent, W>&& other)
+  constexpr array(array<T, std::dynamic_extent, W, Policy>&& other)
       : m_size(other.size()), storage(Words(size()), std::move(other.storage)) {
   }
 
-  constexpr array(array<T, std::dynamic_extent, W>&& other, const Allocator& allocator)
+  constexpr array(array<T, std::dynamic_extent, W, Policy>&& other, const Allocator& allocator)
       : m_size(other.size()), storage(Words(size()), std::move(other.storage), allocator) {
   }
 
@@ -202,7 +205,7 @@ class array<T, std::dynamic_extent, W, Policy>
 #if 0
   No known conversion from bool to bit_value
   bit_value has explicit constructor from bool to bit_value so this doesnt work
-  constexpr array<std::dynamic_extent,W>::array(const std::initializer_list<bool> init)
+  constexpr array<std::dynamic_extent, W, Policy>::array(const std::initializer_list<bool> init)
       : storage(std::make_unique<word_type[]>(Words(init.size()))),
         m_size(init.size()) {
     std::copy(init.begin(), init.end(), this->begin());
@@ -231,9 +234,9 @@ class array<T, std::dynamic_extent, W, Policy>
   /*
    * Assignment
    */
-  constexpr array<T, std::dynamic_extent, W>& operator=(const array<T, std::dynamic_extent, W>& other) {
+  constexpr array<T, std::dynamic_extent, W, Policy>& operator=(const array<T, std::dynamic_extent, W, Policy>& other) {
     if (nullptr == data() || size() != other.size()) {
-      throw std::invalid_argument("Cannot reassign array<std::dynamic_extent,V,W> size");
+      throw std::invalid_argument("Cannot reassign array<std::dynamic_extent,V,W,Policy> size");
     }
     if (this == &other) [[unlikely]] {
       return *this;
@@ -242,7 +245,7 @@ class array<T, std::dynamic_extent, W, Policy>
     return *this;
   }
 
-  constexpr array<T, std::dynamic_extent, W>& operator=(const bit_sized_range auto& other) {
+  constexpr array<T, std::dynamic_extent, W, Policy>& operator=(const bit_sized_range auto& other) {
     if (other.size() != this->size()) [[unlikely]] {
       throw std::invalid_argument("other bit_range contains an invalid number of bits for array.");
     }
@@ -250,11 +253,11 @@ class array<T, std::dynamic_extent, W, Policy>
     return *this;
   };
 
-  constexpr array<T, std::dynamic_extent, W>& operator=(array<T, std::dynamic_extent, W>&& other) {
+  constexpr array<T, std::dynamic_extent, W, Policy>& operator=(array<T, std::dynamic_extent, W, Policy>&& other) {
     if (nullptr == data() || size() != other.size()) {
-      throw std::invalid_argument("Cannot reassign array<std::dynamic_extent,V,W> size");
+      throw std::invalid_argument("Cannot reassign array<std::dynamic_extent,V,W,Policy> size");
     }
-    array<T, std::dynamic_extent, W> temp(std::move(other));
+    array<T, std::dynamic_extent, W, Policy> temp(std::move(other));
     swap(temp);
     return *this;
   }
@@ -307,7 +310,7 @@ class array<T, std::dynamic_extent, W, Policy>
   /*
    * Operations
    */
-  constexpr void swap(array<T, std::dynamic_extent, W>& other) noexcept {
+  constexpr void swap(array<T, std::dynamic_extent, W, Policy>& other) noexcept {
     assert(size() == other.size());
     if (size() > FixedBits) {
       std::swap(this->storage.pointer, other.storage.pointer);

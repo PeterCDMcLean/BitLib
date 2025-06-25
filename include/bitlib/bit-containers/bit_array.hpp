@@ -39,7 +39,7 @@ template <typename T = bit_value,
                   std::uintptr_t,
                   ceil_integral<N>>,
               T>,
-          typename Policy = policy::typical<W>>
+          typename Policy = policy::typical<std::remove_cvref_t<W>>>
 class array;
 
 template <std::size_t N = std::dynamic_extent,
@@ -47,7 +47,7 @@ template <std::size_t N = std::dynamic_extent,
               (N == std::dynamic_extent),
               std::uintptr_t,
               ceil_integral<N>>,
-          typename Policy = policy::typical<W>>
+          typename Policy = policy::typical<std::remove_cvref_t<W>>>
 using bit_array = array<bit_value, N, W, Policy>;
 
 namespace detail {
@@ -108,10 +108,10 @@ class array : public array_base<array<T, N, W>, T, N, W, Policy, detail::array_i
     this->from_integral(integral);
   }
 
-  constexpr array(const array<T, N, W>& other) noexcept
+  constexpr array(const array<T, N, W, Policy>& other) noexcept
       : storage(other.storage) {}
 
-  constexpr array(const array<T, N, W>&& other) noexcept
+  constexpr array(const array<T, N, W, Policy>&& other) noexcept
       : storage(other.storage) {}
 
   constexpr array(const bit_sized_range auto& other) {
@@ -209,7 +209,7 @@ class array : public array_base<array<T, N, W>, T, N, W, Policy, detail::array_i
   /*
     * Operations
     */
-  constexpr void swap(array<T, N, W>& other) noexcept {
+  constexpr void swap(array<T, N, W, Policy>& other) noexcept {
     std::swap(this->storage, other.storage);
   }
 

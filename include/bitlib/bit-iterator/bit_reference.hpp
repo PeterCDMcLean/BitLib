@@ -80,6 +80,7 @@ class bit_reference {
   // Access
  public:
   constexpr bit_pointer<WordType> operator&() const noexcept;
+  constexpr bit_pointer<WordType> operator&() noexcept;
 
   // Swap members
  public:
@@ -225,6 +226,11 @@ constexpr bit_reference<WordRef>::operator bool() const noexcept {
 // Gets a bit pointer from the bit reference
 template <class WordRef>
 constexpr bit_pointer<std::remove_reference_t<WordRef>> bit_reference<WordRef>::operator&() const noexcept {
+  return bit_pointer<WordType>(&_ref, _tzcnt(_mask));
+}
+
+template <class WordRef>
+constexpr bit_pointer<std::remove_reference_t<WordRef>> bit_reference<WordRef>::operator&() noexcept {
   return bit_pointer<WordType>(&_ref, _tzcnt(_mask));
 }
 // -------------------------------------------------------------------------- //

@@ -90,7 +90,6 @@ constexpr auto accumulate_while(
     BinaryOperationSubword binary_op_subword) {
   using word_type = typename bit_iterator<RandomAccessIt>::word_type;
   using size_type = typename bit_iterator<RandomAccessIt>::size_type;
-  using difference_type = typename bit_iterator<RandomAccessIt>::difference_type;
   constexpr size_type digits = bitsof<word_type>();
 
   size_type total_bits_to_op = distance(first, last);
