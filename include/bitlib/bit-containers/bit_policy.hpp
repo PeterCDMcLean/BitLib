@@ -64,13 +64,9 @@ struct sign_extend {
   constexpr static void to_integral(const bit_sized_range auto& value, U& integral, detail::uninitialized_t) noexcept {
     bit_pointer<U> integral_begin(&integral);
     if constexpr (N == std::dynamic_extent) {
-      if constexpr (std::is_signed_v<U>) {
-        ::bit::fill(integral_begin + value.size(), integral_begin + bitsof<U>(), value.last()[-1]);
-      }
+      ::bit::fill(integral_begin + value.size(), integral_begin + bitsof<U>(), value.end()[-1]);
     } else {
-      if constexpr (std::is_signed_v<U>) {
-        ::bit::fill(integral_begin + N, integral_begin + bitsof<U>(), value.begin()[N - 1]);
-      }
+      ::bit::fill(integral_begin + N, integral_begin + bitsof<U>(), value.begin()[N - 1]);
     }
   }
   template <std::integral U, std::size_t N = std::dynamic_extent>
@@ -92,13 +88,9 @@ struct sign_extend {
   template <std::integral U, std::size_t N = std::dynamic_extent>
   constexpr static void from_integral(bit_sized_range auto& value, const U& integral, detail::uninitialized_t) noexcept {
     if constexpr (N == std::dynamic_extent) {
-      if constexpr (std::is_signed_v<U>) {
-        ::bit::fill(value.begin() + bitsof<U>(), value.end(), (integral < 0) ? bit1 : bit0);
-      }
+      ::bit::fill(value.begin() + bitsof<U>(), value.end(), (integral < 0) ? bit1 : bit0);
     } else {
-      if constexpr (std::is_signed_v<U>) {
-        ::bit::fill(value.begin() + N, value.end(), (integral < 0) ? bit1 : bit0);
-      }
+      ::bit::fill(value.begin() + N, value.end(), (integral < 0) ? bit1 : bit0);
     }
   }
 };
