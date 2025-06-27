@@ -322,8 +322,8 @@ class array<T, std::dynamic_extent, W, Policy>
   }
 };
 
-static_assert(bit_range<array<>>, "array<> does not satisfy bit_contiguous_range concept!");
-static_assert(bit_sized_range<array<>>, "array<> does not satisfy bit_contiguous_sized_range concept!");
+static_assert(bit_range<bit_array<>>, "array<> does not satisfy bit_contiguous_range concept!");
+static_assert(bit_sized_range<bit_array<>>, "array<> does not satisfy bit_contiguous_sized_range concept!");
 #ifdef CONTIGUOUS_RANGE
 static_assert(bit_contiguous_range<array<>>, "array<> does not satisfy bit_contiguous_range concept!");
 static_assert(bit_contiguous_sized_range<array<>>, "array<> does not satisfy bit_contiguous_sized_range concept!");
