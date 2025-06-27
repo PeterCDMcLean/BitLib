@@ -40,9 +40,9 @@ struct array_dextent_iterator_types {
 }  // namespace detail
 template <typename T, typename W, typename Policy>
 class array<T, std::dynamic_extent, W, Policy>
-    : public array_base<array<T, std::dynamic_extent, W>, T, std::dynamic_extent, W, Policy, detail::array_dextent_iterator_types<T, W>> {
+    : public array_base<array<T, std::dynamic_extent, W, Policy>, T, std::dynamic_extent, W, Policy, detail::array_dextent_iterator_types<T, W>> {
  public:
-  using base = array_base<array<T, std::dynamic_extent, W>, T, std::dynamic_extent, W, Policy, detail::array_dextent_iterator_types<T, W>>;
+  using base = array_base<array<T, std::dynamic_extent, W, Policy>, T, std::dynamic_extent, W, Policy, detail::array_dextent_iterator_types<T, W>>;
   using base::end;
   using typename base::const_iterator;
   using typename base::const_pointer;
