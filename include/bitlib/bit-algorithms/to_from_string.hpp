@@ -14,7 +14,7 @@
 
 #include "bitlib/bit-algorithms/accumulate.hpp"
 #include "bitlib/bit-algorithms/count.hpp"
-#include "bitlib/bit-containers/array_dynamic_extent.hpp"
+#include "bitlib/bit-containers/bit_array_dynamic_extent.hpp"
 #include "bitlib/bit-containers/bit_vector.hpp"
 #include "bitlib/bit_concepts.hpp"
 
@@ -81,6 +81,9 @@ constexpr std::string to_string(const bit_iterator<RandomAccessIt>& first, const
     int skip_leading_bits = meta.str_sign_extend_zeros ? 0 : count_msb(first, last, bit0);
 
     int str_len = (distance(first, last) - skip_leading_bits);
+    if (str_len == 0) {
+      return prefix + "0";
+    }
     str_len += (0 != (str_len % base_bits));
     std::string& str = prefix;
     str.resize(str.length() + str_len);

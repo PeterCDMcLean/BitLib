@@ -49,11 +49,6 @@ class bit_reference {
 
   // Lifecycle
  public:
-  template <class T>
-    requires(std::is_const_v<std::remove_reference_t<WordRef>> == std::is_const_v<std::remove_reference_t<T>>)
-  constexpr bit_reference(const bit_reference<T>& other) noexcept
-      : _ref(other._ref), _mask(other._mask) {
-  }
   constexpr bit_reference(const bit_reference& other) noexcept;
   explicit constexpr bit_reference(WordRef ref) noexcept;
   constexpr bit_reference(WordRef ref, size_type pos);
