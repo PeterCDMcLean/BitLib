@@ -23,7 +23,7 @@
 
 //
 // GoogleTest suite for bit::bit_word_pointer_adapter.
-// Covers both “big‐to‐small” and “small‐to‐large” modes.
+// Covers both "big‐to‐small" and "small‐to‐large" modes.
 //
 
 // Assumes a little‐endian platform (so that reinterpret_cast<…> of bytes

@@ -193,7 +193,7 @@ class array_base {
         ::bit::copy(derived().begin(), end(), bit_pointer<U>(&integral));
       }
       if (derived().size() < bitsof<U>()) {
-        Policy::extension::template to_integral<U, N>(derived(), integral);
+        Policy::extension::template to_integral<U, N>(derived(), integral, detail::uninitialized);
       }
     } else {
       if constexpr (N > bitsof<U>()) {
@@ -202,7 +202,7 @@ class array_base {
         ::bit::copy(derived().begin(), end(), bit_pointer<U>(&integral));
       }
       if constexpr (N < bitsof<U>()) {
-        Policy::extension::template to_integral<U, N>(derived(), integral);
+        Policy::extension::template to_integral<U, N>(derived(), integral, detail::uninitialized);
       }
     }
 

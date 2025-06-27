@@ -25,10 +25,10 @@
 
 namespace bit {
 
-template <typename T = bit_value, typename W = std::uintptr_t, typename Policy = policy::typical<W>>
+template <typename T = bit_value, typename W = std::uintptr_t, typename Policy = policy::typical<std::remove_cvref_t<W>>>
 class array_ref;
 
-template <typename W = std::uintptr_t, typename Policy = policy::typical<W>>
+template <typename W = std::uintptr_t, typename Policy = policy::typical<std::remove_cvref_t<W>>>
 using bit_array_ref = array_ref<bit_value, W, Policy>;
 
 namespace detail {
