@@ -231,7 +231,7 @@ class MixedDoubleRangeTest : public testing::Test {
         bitvecs.push_back(bv);
         boolvecs.push_back(boolvec_from_bitvec(bv));
       }
-      // “big” runs around (big_size-1)*digits +/-4
+      // "big" runs around (big_size-1)*digits +/-4
       const auto max_digits = std::max(bit::bitsof<FromWordType>(), bit::bitsof<ToWordType>());
       for (int i = -4; i < 4; ++i) {
         size_t cont_size = big_bit_size - max_digits + i;
