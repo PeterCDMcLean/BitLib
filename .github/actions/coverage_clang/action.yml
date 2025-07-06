@@ -24,17 +24,18 @@ runs:
         # Show summary coverage report
         llvm-cov report ${{ inputs.build-output-dir }}/test/bitlib-tests \
             -instr-profile=coverage.profdata \
-            -ignore-filename-regex='/usr/|_deps/|libpopcnt\.h|test/inc/|test/src/'
+            -ignore-filename-regex='/usr/.*|.*_deps/.*|.*/libpopcnt\.h|.*test/inc/.*|.*test/src/.*'
 
         # Generate HTML report
         llvm-cov show ${{ inputs.build-output-dir }}/test/bitlib-tests \
             -instr-profile=coverage.profdata \
             -format=html \
             -output-dir=out/coverage_clang \
-            -ignore-filename-regex='/usr/|_deps/|libpopcnt\.h|test/inc/|test/src/'
+            -ignore-filename-regex='/usr/.*|.*_deps/.*|.*/libpopcnt\.h|.*test/inc/.*|.*test/src/.*'
 
         llvm-cov export ${{ inputs.build-output-dir }}/test/bitlib-tests \
             -instr-profile=coverage.profdata \
+            -ignore-filename-regex='/usr/.*|.*_deps/.*|.*/libpopcnt\.h|.*test/inc/.*|.*test/src/.*' \
             -format=lcov > coverage_clang.info
 
     - name: Upload coverage artifact

@@ -1,10 +1,14 @@
-# specify the C++ standard
-cmake_minimum_required(VERSION 3.14)
-cmake_policy(SET CMP0168 NEW)
-cmake_policy(SET CMP0167 NEW)
+cmake_minimum_required(VERSION 3.20)
+
+if (POLICY CMP0168)
+  cmake_policy(SET CMP0168 NEW)
+endif()
+if (POLICY CMP0167)
+  cmake_policy(SET CMP0167 NEW)
+endif()
 
 # set the project name
-project(BitLib VERSION 0.3.0)
+project(BitLib VERSION 1.0.0)
 
 option(BITLIB_HWY "Build with google highway SIMD extensions" OFF)
 option(BITLIB_BENCHMARK "Build bitlib benchmarks" OFF)
