@@ -286,12 +286,12 @@ using _wider_type_t = typename _wider_type<T>::type;
 #endif
 
 /*
-exact_ceil_integral is used to determine the exact integral type that a proxy reference
+exact_floor_integral is used to determine the exact integral type that a proxy reference
 can be implicitly converted to.
-If the proxy reference supports multiple types, it will pick the largest, preferring unsigned.
+If the proxy reference supports multiple types, it will pick the smallest, preferring unsigned.
 */
 template <typename T>
-struct exact_ceil_integral {
+struct exact_floor_integral {
  private:
   using U = std::remove_cvref_t<T>;
 
@@ -308,28 +308,29 @@ struct exact_ceil_integral {
   }
 
  public:
-  using type = std::conditional_t<
-      is_exactly_convertible<U, uint64_t>(), uint64_t,
+  using type =
       std::conditional_t<
-          is_exactly_convertible<U, int64_t>(), int64_t,
+          is_exactly_convertible<U, uint8_t>(), uint8_t,
           std::conditional_t<
-              is_exactly_convertible<U, uint32_t>(), uint32_t,
+              is_exactly_convertible<U, int8_t>(), int8_t,
               std::conditional_t<
-                  is_exactly_convertible<U, int32_t>(), int32_t,
+                  is_exactly_convertible<U, uint16_t>(), uint16_t,
                   std::conditional_t<
-                      is_exactly_convertible<U, uint16_t>(), uint16_t,
+                      is_exactly_convertible<U, int16_t>(), int16_t,
                       std::conditional_t<
-                          is_exactly_convertible<U, int16_t>(), int16_t,
+                          is_exactly_convertible<U, uint32_t>(), uint32_t,
                           std::conditional_t<
-                              is_exactly_convertible<U, uint8_t>(), uint8_t,
+                              is_exactly_convertible<U, int32_t>(), int32_t,
                               std::conditional_t<
-                                  is_exactly_convertible<U, int8_t>(), int8_t,
-                                  void>>>>>>>>;
+                                  is_exactly_convertible<U, uint64_t>(), uint64_t,
+                                  std::conditional_t<
+                                      is_exactly_convertible<U, int64_t>(), int64_t,
+                                      void>>>>>>>>;
 };
 
 // Helper alias
 template <typename T>
-using exact_ceil_integral_t = typename exact_ceil_integral<T>::type;
+using exact_floor_integral_t = typename exact_floor_integral<T>::type;
 
 /* ******************* IMPLEMENTATION DETAILS: UTILITIES ******************** */
 // Assertions
@@ -449,8 +450,10 @@ constexpr T lsr(const T val, const size_type shift) {
 }
 
 template <typename T, typename size_type = size_t>
-constexpr exact_ceil_integral_t<T> lsr(const T val, const size_type shift) {
-  return static_cast<exact_ceil_integral_t<T>>(static_cast<std::make_unsigned_t<exact_ceil_integral_t<T>>>(val) >> shift);
+constexpr exact_floor_integral_t<T> lsr(const T val, const size_type shift) {
+  static_assert(!std::is_same_v<exact_floor_integral_t<T>, void>,
+                "Type T must be convertible to an integral type");
+  return static_cast<exact_floor_integral_t<T>>(static_cast<std::make_unsigned_t<exact_floor_integral_t<T>>>(val) >> shift);
 }
 
 enum class _mask_len {
@@ -804,32 +807,32 @@ constexpr T _bitswap() noexcept {
 // Replaces bits of src0 by the ones of src1 where the mask is true
 
 template <typename T, typename U>
-constexpr exact_ceil_integral_t<T> _bitblend(
+constexpr exact_floor_integral_t<T> _bitblend(
     const T src0_,
     const U src1_,
-    const exact_ceil_integral_t<T> msk) noexcept
-  requires(std::is_same_v<exact_ceil_integral_t<T>, exact_ceil_integral_t<U>>)
+    const exact_floor_integral_t<T> msk) noexcept
+  requires(std::is_same_v<exact_floor_integral_t<T>, exact_floor_integral_t<U>>)
 {
-  static_assert(binary_digits<exact_ceil_integral_t<T>>::value, "");
-  const exact_ceil_integral_t<T> src0 = static_cast<exact_ceil_integral_t<T>>(src0_);
-  const exact_ceil_integral_t<U> src1 = static_cast<exact_ceil_integral_t<U>>(src1_);
+  static_assert(binary_digits<exact_floor_integral_t<T>>::value, "");
+  const exact_floor_integral_t<T> src0 = static_cast<exact_floor_integral_t<T>>(src0_);
+  const exact_floor_integral_t<U> src1 = static_cast<exact_floor_integral_t<U>>(src1_);
   return src0 ^ ((src0 ^ src1) & msk);
 }
 
 // Replaces len bits of src0 by the ones of src1 starting at start
 template <typename T, typename U>
-constexpr exact_ceil_integral_t<T> _bitblend(
+constexpr exact_floor_integral_t<T> _bitblend(
     const T src0_,
     const U src1_,
-    const exact_ceil_integral_t<T> start,
-    const exact_ceil_integral_t<T> len) noexcept
-  requires(std::is_same_v<exact_ceil_integral_t<T>, exact_ceil_integral_t<U>>)
+    const exact_floor_integral_t<T> start,
+    const exact_floor_integral_t<T> len) noexcept
+  requires(std::is_same_v<exact_floor_integral_t<T>, exact_floor_integral_t<U>>)
 {
-  static_assert(binary_digits<exact_ceil_integral_t<T>>::value, "");
-  constexpr exact_ceil_integral_t<T> digits = bitsof<exact_ceil_integral_t<T>>();
-  const exact_ceil_integral_t<T> src0 = static_cast<exact_ceil_integral_t<T>>(src0_);
-  const exact_ceil_integral_t<U> src1 = static_cast<exact_ceil_integral_t<U>>(src1_);
-  const exact_ceil_integral_t<T> msk = _mask<exact_ceil_integral_t<T>, _mask_len::unknown>(len) << start;
+  static_assert(binary_digits<exact_floor_integral_t<T>>::value, "");
+  constexpr exact_floor_integral_t<T> digits = bitsof<exact_floor_integral_t<T>>();
+  const exact_floor_integral_t<T> src0 = static_cast<exact_floor_integral_t<T>>(src0_);
+  const exact_floor_integral_t<U> src1 = static_cast<exact_floor_integral_t<U>>(src1_);
+  const exact_floor_integral_t<T> msk = _mask<exact_floor_integral_t<T>, _mask_len::unknown>(len) << start;
   return src0 ^ ((src0 ^ src1) & msk * (start < digits));
 }
 // -------------------------------------------------------------------------- //
