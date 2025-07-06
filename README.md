@@ -14,6 +14,7 @@ This project provides convenient and efficient stl-like containers and algorithm
 - [CMake](#cmake)
 - [Sized Literal](#literal)
 - [Slice Operator](#slice-operator)
+- [Policy](#policy)
 - [Owning Containers](#owning-containers)
   - [bit_array](#bit_array)
   - [bit_vector](#bit_vector)
@@ -164,6 +165,14 @@ lit(4, 8) = 0xA;
 assert(lit == 0x1F'1E2A0_b);
 assert(ref(1,4) == 0x5); // array_ref can be sliced further
 ```
+
+# Policy <a href="#policy"></a>
+
+Template class controlling behavior such as expansion (aka sign-extension) and truncation
+The containers can be specialized with a custom policy type to
+throwing an exception on loss of data or clamping instead of truncation
+
+The default policy truncates when necessary and sign extends for conversion to/from signed integrals
 
 # Owning Containers <a href="#owning-containers"></a>
 
