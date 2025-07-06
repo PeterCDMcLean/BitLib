@@ -28,7 +28,7 @@
 
 namespace bit {
 
-template <typename T, typename W, typename Policy>
+template <typename T, size_t N, typename W, typename Policy>
 class array_ref;
 
 template <typename T,
@@ -50,8 +50,8 @@ class array;
  * @tparam Policy The policy for integral conversion (default is typical)
  * @tparam Iterators A struct that provides iterator and const_iterator types
  */
-template <typename Derived, typename T, size_t N, typename W, typename Policy, typename Iterators>
-class array_base {
+template <typename Derived, typename T, size_t N, typename W, bool resizable, typename Policy, typename Iterators>
+class array_base : public detail::container_size_storage<std::size_t, resizable, N> {
  protected:
   constexpr Derived& derived() noexcept {
     return static_cast<Derived&>(*this);
@@ -72,6 +72,11 @@ class array_base {
   using const_pointer = const pointer;
   using iterator = Iterators::iterator;
   using const_iterator = Iterators::const_iterator;
+
+  constexpr array_base() noexcept : detail::container_size_storage<std::size_t, resizable, N>() {}
+  constexpr array_base(const size_type& size) noexcept
+    requires(N == std::dynamic_extent)
+      : detail::container_size_storage<std::size_t, resizable, N>(size) {}
 
   // Element access
   constexpr reference operator[](size_type pos) {
@@ -163,14 +168,14 @@ class array_base {
    * @brief Slice operations - returns a array_ref
    */
   constexpr auto operator()(size_type offset, size_type right) const noexcept {
-    return array_ref<value_type, const word_type, Policy>(&this->at(offset), right - offset);
+    return array_ref<value_type, std::dynamic_extent, const word_type, Policy>(&this->at(offset), right - offset);
   }
 
   /**
    * @brief Slice operations - returns a array_ref
    */
   constexpr auto operator()(size_type offset, size_type right) noexcept {
-    return array_ref<value_type, word_type, Policy>(&this->at(offset), right - offset);
+    return array_ref<value_type, std::dynamic_extent, word_type, Policy>(&this->at(offset), right - offset);
   }
 
   // Common operations

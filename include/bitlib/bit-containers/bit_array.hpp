@@ -68,10 +68,11 @@ struct array_iterator_types {
 }  // namespace detail
 
 template <typename T, std::size_t N, typename W, typename Policy>
-class array : public array_base<array<T, N, W, Policy>, T, N, W, Policy, detail::array_iterator_types<T, W, N>> {
+class array : public array_base<array<T, N, W, Policy>, T, N, W, false, Policy, detail::array_iterator_types<T, W, N>> {
  public:
-  using base = array_base<array<T, N, W, Policy>, T, N, W, Policy, detail::array_iterator_types<T, W, N>>;
+  using base = array_base<array<T, N, W, Policy>, T, N, W, false, Policy, detail::array_iterator_types<T, W, N>>;
   using base::end;
+  using base::size;
   using typename base::const_iterator;
   using typename base::const_pointer;
   using typename base::const_reference;

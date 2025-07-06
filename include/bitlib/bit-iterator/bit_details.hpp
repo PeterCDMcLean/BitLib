@@ -1112,6 +1112,34 @@ struct uninitialized_t {
 };
 inline constexpr uninitialized_t uninitialized{};
 
+template <typename size_type, bool resizeable, std::size_t Extent>
+struct container_size_storage {
+  constexpr size_type size() const noexcept {
+    return Extent;
+  }
+
+  constexpr container_size_storage() noexcept {}
+};
+
+template <typename size_type, bool resizeable>
+struct container_size_storage<size_type, resizeable, std::dynamic_extent> {
+  using maybe_const_size_type = std::conditional_t<resizeable, size_type, std::add_const_t<size_type>>;
+
+  maybe_const_size_type size_;
+  constexpr size_type size() const noexcept {
+    return size_;
+  }
+  constexpr void resize(const size_type& new_size)
+    requires(resizeable)
+  {
+    size_ = new_size;
+  }
+
+  constexpr container_size_storage() noexcept : size_() {}
+  constexpr container_size_storage(const size_type& size) noexcept
+      : size_(size) {}
+};
+
 }  // namespace detail
 
 // ========================================================================== //
