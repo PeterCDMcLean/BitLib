@@ -283,19 +283,19 @@ bit_iterator<RandomAccessIt> shift_right(
 
     // Shift bit sequence to the msb
     if (offset == 0) {
-        auto new_first = bit::bit_iterator<RandomAccessIt>(
-                STD_SHIFT_RIGHT(
-                    first.base(),
-                    last.base(),
-                    word_shifts),
-                first.position()
-        );
-        // https://en.cppreference.com/w/cpp/algorithm/shift
-        // "Elements that are in the original range but not the new range
-        // are left in a valid but unspecified state."
-        //
-        //bit::fill(first, new_first, bit::bit0);
-        return first + n;
+      /*auto new_first = */
+      static_cast<void>(bit::bit_iterator<RandomAccessIt>(
+          STD_SHIFT_RIGHT(
+              first.base(),
+              last.base(),
+              word_shifts),
+          first.position()));
+      // https://en.cppreference.com/w/cpp/algorithm/shift
+      // "Elements that are in the original range but not the new range
+      // are left in a valid but unspecified state."
+      //
+      //bit::fill(first, new_first, bit::bit0);
+      return first + n;
     }
 
     if (bit::distance(first, middle) >= digits)
