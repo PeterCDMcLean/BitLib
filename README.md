@@ -291,5 +291,9 @@ assert(bits(7*8*9-7, 7*8*9) == 0x7F);
  - to_from_string
  - transform
 
+# License <a href="#license"></a>
 
+This open source library is license under [BSD 3-Clause License](./LICENSE).
 
+> [!IMPORTANT]
+> This library uses libpopcnt which has its own [BSD 2-Clause License](include/bitlib/bit-algorithms/libpopcnt.h)
