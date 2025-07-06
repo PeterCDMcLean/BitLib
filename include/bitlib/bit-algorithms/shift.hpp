@@ -98,9 +98,6 @@ bit_iterator<RandomAccessIt> shift_left(
       write_word<word_type>(new_word, first, d - n);
       return first + d - n;
     }
-    // Multiple word case
-    word_type first_value = *first.base();
-    word_type last_value = !is_last_aligned ? *last.base() : 0;
 
     // Align first
     if (!is_first_aligned) {

@@ -46,16 +46,6 @@ TEST(IteratorAdapter, Basic) {
 }
 
 // -----------------------------------------------------------------------------
-// Helper: Convert a 32‐bit word into its 4 individual bytes (little‐endian)
-// -----------------------------------------------------------------------------
-static void split_u32_le(uint32_t value, uint8_t out_bytes[4]) {
-  out_bytes[0] = static_cast<uint8_t>(value & 0xFFu);
-  out_bytes[1] = static_cast<uint8_t>((value >> 8) & 0xFFu);
-  out_bytes[2] = static_cast<uint8_t>((value >> 16) & 0xFFu);
-  out_bytes[3] = static_cast<uint8_t>((value >> 24) & 0xFFu);
-}
-
-// -----------------------------------------------------------------------------
 // TEST SUITE: Big-to-Small Mode (BaseIterator.value_type > Iterator.value_type)
 // -----------------------------------------------------------------------------
 TEST(BitIteratorAdapter_BigToSmall, DereferenceAndIncrement) {

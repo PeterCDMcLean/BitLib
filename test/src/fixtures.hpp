@@ -47,9 +47,9 @@ class VectorTest : public testing::Test {
   std::vector<std::vector<bool>> random_boolvecs;
   std::vector<WordType> random_vec;
   void SetUp() override {
-    const size_t word_size = 4;
-    const size_t bit_size = word_size * bit::binary_digits<WordType>::value;
     const size_t digits = bit::binary_digits<WordType>::value;
+    const size_t word_size = 4;
+    const size_t bit_size = word_size * digits;
     empty_vec = vec_type();
     random_vec = get_random_vec<WordType>(word_size);
     for (size_t cont_size = 1; cont_size < bit_size; ++cont_size) {

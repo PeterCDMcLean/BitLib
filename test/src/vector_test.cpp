@@ -34,9 +34,9 @@ TYPED_TEST(VectorTest, SizeInitializerConstructor) {
   }
   using WordType = typename TestFixture::base_type;
   constexpr auto digits = bit::binary_digits<WordType>::value;
-  using vec_type = typename TestFixture::vec_type;
+  using VecType = typename TestFixture::vec_type;
   for (unsigned int veclen = 0; veclen < 4 * digits; veclen++) {
-    this->empty_vec = vec_type(veclen);
+    this->empty_vec = VecType(veclen);
     for (unsigned int i = 0; i < veclen; ++i) {
       EXPECT_FALSE(this->empty_vec[i]);
     }
@@ -52,38 +52,38 @@ TYPED_TEST(VectorTest, SizeInitializerConstructor) {
 }
 
 TYPED_TEST(VectorTest, CountValueConstructor) {
-    using vec_type = typename TestFixture::vec_type;
-    using WordType = typename TestFixture::base_type;
-    constexpr auto digits = bit::binary_digits<WordType>::value;
-    for (unsigned int veclen = 0; veclen < 4 * digits; veclen++) {
-      this->empty_vec = vec_type(veclen, bit::bit1);
-      unsigned int i = 0;
-      // TODO misplaced test for range-based for loop
-      for (auto bv : this->empty_vec) {
-        EXPECT_TRUE(bv);
-        i++;
-      }
-      EXPECT_EQ(i, veclen);
-      this->empty_vec = vec_type(veclen, bit::bit0);
-      i = 0;
-      // TODO misplaced test for range-based for loop
-      for (auto bv : this->empty_vec) {
-        EXPECT_FALSE(bv);
-        i++;
-      }
-      EXPECT_EQ(i, veclen);
+  using VecType = typename TestFixture::vec_type;
+  using WordType = typename TestFixture::base_type;
+  constexpr auto digits = bit::binary_digits<WordType>::value;
+  for (unsigned int veclen = 0; veclen < 4 * digits; veclen++) {
+    this->empty_vec = VecType(veclen, bit::bit1);
+    unsigned int i = 0;
+    // TODO misplaced test for range-based for loop
+    for (auto bv : this->empty_vec) {
+      EXPECT_TRUE(bv);
+      i++;
     }
+    EXPECT_EQ(i, veclen);
+    this->empty_vec = VecType(veclen, bit::bit0);
+    i = 0;
+    // TODO misplaced test for range-based for loop
+    for (auto bv : this->empty_vec) {
+      EXPECT_FALSE(bv);
+      i++;
+    }
+    EXPECT_EQ(i, veclen);
+  }
 }
 
 // Test when first, last are WordType iterators
 TYPED_TEST(VectorTest, WordIterPairConstructor) {
     using WordType = typename TestFixture::base_type;
-    using vec_type = typename TestFixture::vec_type;
+    using VecType = typename TestFixture::vec_type;
     using iterator_type = typename std::vector<WordType>::iterator;
     constexpr auto digits = bit::binary_digits<WordType>::value;
     for (unsigned int veclen = 0; veclen < 4 * digits; veclen++) {
       std::vector<WordType> word_vec = get_random_vec<WordType>(veclen);
-      vec_type test(word_vec.begin(), word_vec.end());
+      VecType test(word_vec.begin(), word_vec.end());
       EXPECT_TRUE(std::equal(
           test.begin(),
           test.end(),
@@ -94,48 +94,48 @@ TYPED_TEST(VectorTest, WordIterPairConstructor) {
 
 // Test when first, last are bool iterators
 TYPED_TEST(VectorTest, BoolIterPairConstructor) {
-    using vec_type = typename TestFixture::vec_type;
-    for (unsigned int vec_idx = 0; vec_idx < this->random_bitvecs.size(); ++vec_idx) {
-        auto& boolvec = this->random_boolvecs[vec_idx];
-        vec_type test = vec_type(boolvec.begin(), boolvec.end());
-        EXPECT_TRUE(std::equal(
-                test.begin(),
-                test.end(),
-                boolvec.begin(),
-                boolvec.end(),
-                comparator));
-    }
+  using VecType = typename TestFixture::vec_type;
+  for (unsigned int vec_idx = 0; vec_idx < this->random_bitvecs.size(); ++vec_idx) {
+    auto& boolvec = this->random_boolvecs[vec_idx];
+    VecType test = VecType(boolvec.begin(), boolvec.end());
+    EXPECT_TRUE(std::equal(
+        test.begin(),
+        test.end(),
+        boolvec.begin(),
+        boolvec.end(),
+        comparator));
+  }
 }
 
 // Test copy ctor
 TYPED_TEST(VectorTest, CopyConstructor) {
-    using vec_type = typename TestFixture::vec_type;
-    for (unsigned int vec_idx = 0; vec_idx < this->random_bitvecs.size(); ++vec_idx) {
-        auto& bitvec = this->random_bitvecs[vec_idx];
-        auto& boolvec = this->random_boolvecs[vec_idx];
-        vec_type test = vec_type(bitvec);
-        EXPECT_TRUE(std::equal(
-                test.begin(),
-                test.end(),
-                boolvec.begin(),
-                boolvec.end(),
-                comparator));
-    }
+  using VecType = typename TestFixture::vec_type;
+  for (unsigned int vec_idx = 0; vec_idx < this->random_bitvecs.size(); ++vec_idx) {
+    auto& bitvec = this->random_bitvecs[vec_idx];
+    auto& boolvec = this->random_boolvecs[vec_idx];
+    VecType test = VecType(bitvec);
+    EXPECT_TRUE(std::equal(
+        test.begin(),
+        test.end(),
+        boolvec.begin(),
+        boolvec.end(),
+        comparator));
+  }
 }
 
 TYPED_TEST(VectorTest, MoveConstructor) {
-    using vec_type = typename TestFixture::vec_type;
-    for (unsigned int vec_idx = 0; vec_idx < this->random_bitvecs.size(); ++vec_idx) {
-        auto& bitvec = this->random_bitvecs[vec_idx];
-        auto& boolvec = this->random_boolvecs[vec_idx];
-        vec_type test = vec_type(std::move(bitvec));
-        EXPECT_TRUE(std::equal(
-                test.begin(),
-                test.end(),
-                boolvec.begin(),
-                boolvec.end(),
-                comparator));
-    }
+  using VecType = typename TestFixture::vec_type;
+  for (unsigned int vec_idx = 0; vec_idx < this->random_bitvecs.size(); ++vec_idx) {
+    auto& bitvec = this->random_bitvecs[vec_idx];
+    auto& boolvec = this->random_boolvecs[vec_idx];
+    VecType test = VecType(std::move(bitvec));
+    EXPECT_TRUE(std::equal(
+        test.begin(),
+        test.end(),
+        boolvec.begin(),
+        boolvec.end(),
+        comparator));
+  }
 }
 
 // Tests the string c'tor.
@@ -218,9 +218,9 @@ TYPED_TEST(VectorTest, MoveAssignment) {
 // Test the initializer list c'tor
 TYPED_TEST(VectorTest, InitializerListConstructor) {
     bit::bit_vector<typename TestFixture::base_type> v2_copy = this->v2_;
-    using vec_type = typename TestFixture::vec_type;
+    using VecType = typename TestFixture::vec_type;
     std::vector<bool> boolvec {true, false, true, true, true, false, false, true, false, true, true, false};
-    vec_type test {true, false, true, true, true, false, false, true, false, true, true, false};
+    VecType test{true, false, true, true, true, false, false, true, false, true, true, false};
     EXPECT_TRUE(std::equal(
             test.begin(),
             test.end(),

@@ -869,7 +869,6 @@ template <class T, class S>
 constexpr void _bitexch(T& src0, T& src1, S start0, S start1, S len) noexcept
 {
     static_assert(binary_digits<T>::value, "");
-    constexpr auto digits = binary_digits<T>::value;
     const T msk = _mask<T, _mask_len::unknown>(len);
     if (start0 >= start1) {
         src0 = src0 ^ (
