@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.31)
+
 set(BENCHMARK_ENABLE_GTEST_TESTS OFF)
 
 include(FetchContent)

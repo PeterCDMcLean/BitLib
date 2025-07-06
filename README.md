@@ -36,9 +36,10 @@ This project provides convenient and efficient stl-like containers and algorithm
 
 # Requirements <a href="#requirements"></a>
 
-_gcc_ or _clang_
-
-`C++23`
+- _gcc_ or _clang_
+- `C++23`
+- cmake verison 3.20.
+  * cmake version 3.31 if compiling bitlib's benchmark suite
 
 # Example <a href="#example"></a>
 
@@ -155,20 +156,20 @@ auto oct_lit = 037'361100; // 31 bit octal literal
 ## bit_word_pointer_adapter <a href="#bit_word_pointer_adapter"></a>
 ## bit_word_reference_adapter <a href="#bit_word_reference_adapter"></a>
 # Algorithms <a href="#algorithms"></a>
-accumulate
-copy_backward
-copy
-count
-equal
-fill
-find
-move
-reverse
-rotate
-shift
-swap_ranges
-to_string
-transform
+ - accumulate
+ - copy_backward
+ - copy
+ - count
+ - equal
+ - fill
+ - find
+ - move
+ - reverse
+ - rotate
+ - shift
+ - swap_ranges
+ - to_string
+ - transform
 
 
 
