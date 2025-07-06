@@ -111,12 +111,12 @@ class array_ref
   constexpr array_ref(bit_range auto& other, size_type extent)
     requires(N == std::dynamic_extent)
       : base(extent), m_storage(&(*other.begin())) {
-    assert(extent <= (other.end() - other.begin()));
+    assert(extent <= static_cast<size_type>(other.end() - other.begin()));
   }
   constexpr array_ref(bit_range auto& other)
     requires(N != std::dynamic_extent)
       : base(), m_storage(&(*other.begin())) {
-    assert(N <= (other.end() - other.begin()));
+    assert(N <= static_cast<size_type>(other.end() - other.begin()));
   }
 
   /**

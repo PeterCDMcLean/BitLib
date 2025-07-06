@@ -110,12 +110,12 @@ class array : public array_base<array<T, N, W, Policy>, T, N, W, false, Policy, 
   }
 
   constexpr array(const array<T, N, W, Policy>& other) noexcept
-      : storage(other.storage) {}
+      : base(), storage(other.storage) {}
 
   constexpr array(const array<T, N, W, Policy>&& other) noexcept
-      : storage(other.storage) {}
+      : base(), storage(other.storage) {}
 
-  constexpr array(const bit_sized_range auto& other) {
+  constexpr array(const bit_sized_range auto& other) : base() {
     if (other.size() != this->size()) [[unlikely]] {
       throw std::invalid_argument("other bit_range contains an invalid number of bits for array.");
     }
@@ -124,21 +124,21 @@ class array : public array_base<array<T, N, W, Policy>, T, N, W, false, Policy, 
 
   constexpr array(const std::initializer_list<value_type> init)
     requires(!std::is_same_v<value_type, word_type>)
-  {
+      : base() {
     if (init.size() != bitsof(*this)) [[unlikely]] {
       throw std::invalid_argument("initialize_list contains an invalid number of bits for array.");
     }
     std::copy(init.begin(), init.end(), this->begin());
   }
 
-  constexpr array(const std::initializer_list<bool> init) {
+  constexpr array(const std::initializer_list<bool> init) : base() {
     if (init.size() != bitsof(*this)) [[unlikely]] {
       throw std::invalid_argument("initialize_list contains an invalid number of bits for array.");
     }
     std::copy(init.begin(), init.end(), this->begin());
   }
 
-  constexpr array(const std::initializer_list<word_type> init) : storage{} {
+  constexpr array(const std::initializer_list<word_type> init) : base(), storage{} {
     // Make sure we handle the case where init.size() != Words
     auto it = init.begin();
     for (size_type i = 0; i < std::min(Words(N), init.size()); ++i, ++it) {
@@ -148,7 +148,7 @@ class array : public array_base<array<T, N, W, Policy>, T, N, W, false, Policy, 
 
   constexpr array(const std::string_view s)
     requires(std::is_same_v<value_type, bit_value>)
-  {
+      : base() {
     if (bitsof(*this) != static_cast<size_t>(std::count(s.begin(), s.end(), '0') + std::count(s.begin(), s.end(), '1'))) [[unlikely]] {
       throw std::invalid_argument("String contains an invalid number of bits for array.");
     };

@@ -33,8 +33,9 @@ TYPED_TEST(VectorTest, SizeInitializerConstructor) {
     EXPECT_FALSE(bv);
   }
   using WordType = typename TestFixture::base_type;
+  constexpr auto digits = bit::binary_digits<WordType>::value;
   using vec_type = typename TestFixture::vec_type;
-  for (unsigned int veclen = 0; veclen < 4 * this->digits; veclen++) {
+  for (unsigned int veclen = 0; veclen < 4 * digits; veclen++) {
     this->empty_vec = vec_type(veclen);
     for (unsigned int i = 0; i < veclen; ++i) {
       EXPECT_FALSE(this->empty_vec[i]);
@@ -52,23 +53,25 @@ TYPED_TEST(VectorTest, SizeInitializerConstructor) {
 
 TYPED_TEST(VectorTest, CountValueConstructor) {
     using vec_type = typename TestFixture::vec_type;
-    for (unsigned int veclen = 0; veclen < 4*this->digits; veclen++) {
-        this->empty_vec = vec_type(veclen, bit::bit1);
-        unsigned int i = 0;
-        // TODO misplaced test for range-based for loop
-        for (auto bv: this->empty_vec) {
-            EXPECT_TRUE(bv);
-            i++;
-        }
-        EXPECT_EQ(i, veclen);
-        this->empty_vec = vec_type(veclen, bit::bit0);
-        i = 0;
-        // TODO misplaced test for range-based for loop
-        for (auto bv: this->empty_vec) {
-            EXPECT_FALSE(bv);
-            i++;
-        }
-        EXPECT_EQ(i, veclen);
+    using WordType = typename TestFixture::base_type;
+    constexpr auto digits = bit::binary_digits<WordType>::value;
+    for (unsigned int veclen = 0; veclen < 4 * digits; veclen++) {
+      this->empty_vec = vec_type(veclen, bit::bit1);
+      unsigned int i = 0;
+      // TODO misplaced test for range-based for loop
+      for (auto bv : this->empty_vec) {
+        EXPECT_TRUE(bv);
+        i++;
+      }
+      EXPECT_EQ(i, veclen);
+      this->empty_vec = vec_type(veclen, bit::bit0);
+      i = 0;
+      // TODO misplaced test for range-based for loop
+      for (auto bv : this->empty_vec) {
+        EXPECT_FALSE(bv);
+        i++;
+      }
+      EXPECT_EQ(i, veclen);
     }
 }
 
@@ -77,14 +80,15 @@ TYPED_TEST(VectorTest, WordIterPairConstructor) {
     using WordType = typename TestFixture::base_type;
     using vec_type = typename TestFixture::vec_type;
     using iterator_type = typename std::vector<WordType>::iterator;
-    for (unsigned int veclen = 0; veclen < 4*this->digits; veclen++) {
-        std::vector<WordType> word_vec = get_random_vec<WordType>(veclen);
-        vec_type test(word_vec.begin(), word_vec.end());
-        EXPECT_TRUE(std::equal(
-                    test.begin(),
-                    test.end(),
-                    bit::bit_iterator<iterator_type>(word_vec.begin()),
-                    bit::bit_iterator<iterator_type>(word_vec.end())));
+    constexpr auto digits = bit::binary_digits<WordType>::value;
+    for (unsigned int veclen = 0; veclen < 4 * digits; veclen++) {
+      std::vector<WordType> word_vec = get_random_vec<WordType>(veclen);
+      vec_type test(word_vec.begin(), word_vec.end());
+      EXPECT_TRUE(std::equal(
+          test.begin(),
+          test.end(),
+          bit::bit_iterator<iterator_type>(word_vec.begin()),
+          bit::bit_iterator<iterator_type>(word_vec.end())));
     }
 }
 
@@ -140,20 +144,21 @@ TYPED_TEST(VectorTest, StringConstructor) {
     EXPECT_EQ(false, static_cast<bool>(this->v3_[0]));
     EXPECT_EQ(true, static_cast<bool>(this->v3_[8]));
     using WordType = typename TestFixture::base_type;
-    for (unsigned int strlen = 0; strlen < 4*this->digits; strlen++) {
-        std::string rand_bs(strlen, 0);
-        this->empty_vec_bool.clear();
-        for (auto& pos: rand_bs) {
-            pos = generate_random_number('0', '1');
-            this->empty_vec_bool.push_back(pos == '1');
-        }
-        this->empty_vec = bit::bit_vector<WordType>(rand_bs);
-        EXPECT_TRUE(std::equal(
-                    this->empty_vec.begin(),
-                    this->empty_vec.end(),
-                    this->empty_vec_bool.begin(),
-                    this->empty_vec_bool.end(),
-                    comparator));
+    constexpr auto digits = bit::binary_digits<WordType>::value;
+    for (unsigned int strlen = 0; strlen < 4 * digits; strlen++) {
+      std::string rand_bs(strlen, 0);
+      this->empty_vec_bool.clear();
+      for (auto& pos : rand_bs) {
+        pos = generate_random_number('0', '1');
+        this->empty_vec_bool.push_back(pos == '1');
+      }
+      this->empty_vec = bit::bit_vector<WordType>(rand_bs);
+      EXPECT_TRUE(std::equal(
+          this->empty_vec.begin(),
+          this->empty_vec.end(),
+          this->empty_vec_bool.begin(),
+          this->empty_vec_bool.end(),
+          comparator));
     }
 }
 
@@ -262,18 +267,20 @@ TYPED_TEST(VectorTest, BracketWrite) {
 
 // Test at
 TYPED_TEST(VectorTest, AtRead) {
-    EXPECT_EQ(this->v3_.at(0), bit::bit0);
-    EXPECT_EQ(this->v3_.at(8), bit::bit1);
-    for (unsigned int vec_idx = 0; vec_idx < this->random_bitvecs.size(); ++vec_idx) {
-        auto& bitvec = this->random_bitvecs[vec_idx];
-        auto& boolvec = this->random_boolvecs[vec_idx];
-        for (unsigned int i = 0; i < boolvec.size(); i++) {
-            EXPECT_TRUE(comparator(bitvec.at(i), boolvec.at(i)));
-        }
-        for (unsigned int i = boolvec.size(); i < boolvec.size() + 4*this->digits; i++) {
-            EXPECT_THROW(bitvec.at(i), std::out_of_range);
-        }
+  using WordType = typename TestFixture::base_type;
+  constexpr auto digits = bit::binary_digits<WordType>::value;
+  EXPECT_EQ(this->v3_.at(0), bit::bit0);
+  EXPECT_EQ(this->v3_.at(8), bit::bit1);
+  for (unsigned int vec_idx = 0; vec_idx < this->random_bitvecs.size(); ++vec_idx) {
+    auto& bitvec = this->random_bitvecs[vec_idx];
+    auto& boolvec = this->random_boolvecs[vec_idx];
+    for (unsigned int i = 0; i < boolvec.size(); i++) {
+      EXPECT_TRUE(comparator(bitvec.at(i), boolvec.at(i)));
     }
+    for (unsigned int i = boolvec.size(); i < boolvec.size() + 4 * digits; i++) {
+      EXPECT_THROW(bitvec.at(i), std::out_of_range);
+    }
+  }
 }
 
 
@@ -314,20 +321,22 @@ TYPED_TEST(VectorTest, ReserveAndCapacity) {
 
 // Test shrink_to_fit
 TYPED_TEST(VectorTest, ShrinkToFit) {
-    this->empty_vec.shrink_to_fit();
-    EXPECT_EQ(this->empty_vec.capacity(), 0);
-    this->empty_vec.reserve(12345);
-    this->empty_vec.shrink_to_fit();
-    EXPECT_EQ(this->empty_vec.capacity(), 0);
-    for (unsigned int vec_idx = 0; vec_idx < this->random_bitvecs.size(); ++vec_idx) {
-        auto& bitvec = this->random_bitvecs[vec_idx];
-        for (unsigned int _ = 0; _ < this->digits; _++) {
-            bitvec.pop_back();
-        }
-        auto old_cap = bitvec.capacity();
-        bitvec.shrink_to_fit();
-        EXPECT_LT(bitvec.capacity(), old_cap);
+  using WordType = typename TestFixture::base_type;
+  constexpr auto digits = bit::binary_digits<WordType>::value;
+  this->empty_vec.shrink_to_fit();
+  EXPECT_EQ(this->empty_vec.capacity(), 0);
+  this->empty_vec.reserve(12345);
+  this->empty_vec.shrink_to_fit();
+  EXPECT_EQ(this->empty_vec.capacity(), 0);
+  for (unsigned int vec_idx = 0; vec_idx < this->random_bitvecs.size(); ++vec_idx) {
+    auto& bitvec = this->random_bitvecs[vec_idx];
+    for (unsigned int _ = 0; _ < digits; _++) {
+      bitvec.pop_back();
     }
+    auto old_cap = bitvec.capacity();
+    bitvec.shrink_to_fit();
+    EXPECT_LT(bitvec.capacity(), old_cap);
+  }
 }
 
 /*
@@ -356,145 +365,157 @@ TYPED_TEST(VectorTest, Clear) {
 
 // Test insert
 TYPED_TEST(VectorTest, InsertAtEnd1) {
-    // First signature
-    for (auto _ = 64*this->digits; _--;) {
-        bool to_insert_bool = generate_random_number(0, 1) > 0 ? true : false;
-        bit::bit_value to_insert_bit = to_insert_bool ? bit::bit1 : bit::bit0;
-        auto bitret = this->empty_vec.insert(
-                this->empty_vec.end(),
-                to_insert_bit);
-        auto boolret = this->empty_vec_bool.insert(
-                this->empty_vec_bool.end(),
-                to_insert_bool);
-        EXPECT_TRUE(std::equal(
-                    this->empty_vec.begin(),
-                    this->empty_vec.end(),
-                    this->empty_vec_bool.begin(),
-                    this->empty_vec_bool.end(),
-                    comparator));
-        EXPECT_EQ(
-                std::distance(this->empty_vec.begin(), bitret),
-                std::distance(this->empty_vec_bool.begin(), boolret));
-    }
+  using WordType = typename TestFixture::base_type;
+  constexpr auto digits = bit::binary_digits<WordType>::value;
+  // First signature
+  for (auto _ = 64 * digits; _--;) {
+    bool to_insert_bool = generate_random_number(0, 1) > 0 ? true : false;
+    bit::bit_value to_insert_bit = to_insert_bool ? bit::bit1 : bit::bit0;
+    auto bitret = this->empty_vec.insert(
+        this->empty_vec.end(),
+        to_insert_bit);
+    auto boolret = this->empty_vec_bool.insert(
+        this->empty_vec_bool.end(),
+        to_insert_bool);
+    EXPECT_TRUE(std::equal(
+        this->empty_vec.begin(),
+        this->empty_vec.end(),
+        this->empty_vec_bool.begin(),
+        this->empty_vec_bool.end(),
+        comparator));
+    EXPECT_EQ(
+        std::distance(this->empty_vec.begin(), bitret),
+        std::distance(this->empty_vec_bool.begin(), boolret));
+  }
 }
 TYPED_TEST(VectorTest, InsertAtBegin1) {
-    // First signature
-    for (auto _ = 64*this->digits; _--;) {
-        bool to_insert_bool = generate_random_number(0, 1) > 0 ? true : false;
-        bit::bit_value to_insert_bit = to_insert_bool ? bit::bit1 : bit::bit0;
-        auto bitret = this->empty_vec.insert(
-                this->empty_vec.begin(),
-                to_insert_bit);
-        auto boolret = this->empty_vec_bool.insert(
-                this->empty_vec_bool.begin(),
-                to_insert_bool);
-        EXPECT_TRUE(std::equal(
-                    this->empty_vec.begin(),
-                    this->empty_vec.end(),
-                    this->empty_vec_bool.begin(),
-                    this->empty_vec_bool.end(),
-                    comparator));
-        EXPECT_EQ(
-                std::distance(this->empty_vec.begin(), bitret),
-                std::distance(this->empty_vec_bool.begin(), boolret));
-    }
+  using WordType = typename TestFixture::base_type;
+  constexpr auto digits = bit::binary_digits<WordType>::value;
+  // First signature
+  for (auto _ = 64 * digits; _--;) {
+    bool to_insert_bool = generate_random_number(0, 1) > 0 ? true : false;
+    bit::bit_value to_insert_bit = to_insert_bool ? bit::bit1 : bit::bit0;
+    auto bitret = this->empty_vec.insert(
+        this->empty_vec.begin(),
+        to_insert_bit);
+    auto boolret = this->empty_vec_bool.insert(
+        this->empty_vec_bool.begin(),
+        to_insert_bool);
+    EXPECT_TRUE(std::equal(
+        this->empty_vec.begin(),
+        this->empty_vec.end(),
+        this->empty_vec_bool.begin(),
+        this->empty_vec_bool.end(),
+        comparator));
+    EXPECT_EQ(
+        std::distance(this->empty_vec.begin(), bitret),
+        std::distance(this->empty_vec_bool.begin(), boolret));
+  }
 }
 
 TYPED_TEST(VectorTest, InsertAtRand1) {
-    // First signature
-    for (auto _ = 64*this->digits; _--;) {
-        auto insert_location = generate_random_number(0, this->empty_vec.size());
-        bool to_insert_bool = generate_random_number(0, 1) > 0 ? true : false;
-        bit::bit_value to_insert_bit = to_insert_bool ? bit::bit1 : bit::bit0;
-        auto bitret = this->empty_vec.insert(
-                this->empty_vec.begin() + insert_location,
-                to_insert_bit);
-        auto boolret = this->empty_vec_bool.insert(
-                this->empty_vec_bool.begin() + insert_location,
-                to_insert_bool);
-        EXPECT_TRUE(std::equal(
-                    this->empty_vec.begin(),
-                    this->empty_vec.end(),
-                    this->empty_vec_bool.begin(),
-                    this->empty_vec_bool.end(),
-                    comparator));
-        EXPECT_EQ(
-                std::distance(this->empty_vec.begin(), bitret),
-                std::distance(this->empty_vec_bool.begin(), boolret));
-    }
+  using WordType = typename TestFixture::base_type;
+  constexpr auto digits = bit::binary_digits<WordType>::value;
+  // First signature
+  for (auto _ = 64 * digits; _--;) {
+    auto insert_location = generate_random_number(0, this->empty_vec.size());
+    bool to_insert_bool = generate_random_number(0, 1) > 0 ? true : false;
+    bit::bit_value to_insert_bit = to_insert_bool ? bit::bit1 : bit::bit0;
+    auto bitret = this->empty_vec.insert(
+        this->empty_vec.begin() + insert_location,
+        to_insert_bit);
+    auto boolret = this->empty_vec_bool.insert(
+        this->empty_vec_bool.begin() + insert_location,
+        to_insert_bool);
+    EXPECT_TRUE(std::equal(
+        this->empty_vec.begin(),
+        this->empty_vec.end(),
+        this->empty_vec_bool.begin(),
+        this->empty_vec_bool.end(),
+        comparator));
+    EXPECT_EQ(
+        std::distance(this->empty_vec.begin(), bitret),
+        std::distance(this->empty_vec_bool.begin(), boolret));
+  }
 }
 
 TYPED_TEST(VectorTest, InsertAtBegin2) {
-    // Second signature
-    for (auto _ = 16; _--;) {
-        auto to_insert = generate_random_number(0, 4*this->digits);
-        auto bitret = this->empty_vec.insert(
-                this->empty_vec.begin(),
-                to_insert,
-                bit::bit1);
-        auto boolret = this->empty_vec_bool.insert(
-                this->empty_vec_bool.begin(),
-                to_insert,
-                true);
-        EXPECT_TRUE(std::equal(
-                    this->empty_vec.begin(),
-                    this->empty_vec.end(),
-                    this->empty_vec_bool.begin(),
-                    this->empty_vec_bool.end(),
-                    comparator));
-        EXPECT_EQ(
-                std::distance(this->empty_vec.begin(), bitret),
-                std::distance(this->empty_vec_bool.begin(), boolret));
-    }
+  using WordType = typename TestFixture::base_type;
+  constexpr auto digits = bit::binary_digits<WordType>::value;
+  // Second signature
+  for (auto _ = 16; _--;) {
+    auto to_insert = generate_random_number(0, 4 * digits);
+    auto bitret = this->empty_vec.insert(
+        this->empty_vec.begin(),
+        to_insert,
+        bit::bit1);
+    auto boolret = this->empty_vec_bool.insert(
+        this->empty_vec_bool.begin(),
+        to_insert,
+        true);
+    EXPECT_TRUE(std::equal(
+        this->empty_vec.begin(),
+        this->empty_vec.end(),
+        this->empty_vec_bool.begin(),
+        this->empty_vec_bool.end(),
+        comparator));
+    EXPECT_EQ(
+        std::distance(this->empty_vec.begin(), bitret),
+        std::distance(this->empty_vec_bool.begin(), boolret));
+  }
 }
 
 TYPED_TEST(VectorTest, InsertAtEnd2) {
-    // Second signature
-    for (auto _ = 16; _--;) {
-        auto to_insert = generate_random_number(0, 444*this->digits);
-        auto bitret = this->empty_vec.insert(
-                this->empty_vec.end(),
-                to_insert,
-                bit::bit1);
-        auto boolret = this->empty_vec_bool.insert(
-                this->empty_vec_bool.end(),
-                to_insert,
-                true);
-        EXPECT_TRUE(std::equal(
-                    this->empty_vec.begin(),
-                    this->empty_vec.end(),
-                    this->empty_vec_bool.begin(),
-                    this->empty_vec_bool.end(),
-                    comparator));
-        EXPECT_EQ(
-                std::distance(this->empty_vec.begin(), bitret),
-                std::distance(this->empty_vec_bool.begin(), boolret));
-    }
+  using WordType = typename TestFixture::base_type;
+  constexpr auto digits = bit::binary_digits<WordType>::value;
+  // Second signature
+  for (auto _ = 16; _--;) {
+    auto to_insert = generate_random_number(0, 444 * digits);
+    auto bitret = this->empty_vec.insert(
+        this->empty_vec.end(),
+        to_insert,
+        bit::bit1);
+    auto boolret = this->empty_vec_bool.insert(
+        this->empty_vec_bool.end(),
+        to_insert,
+        true);
+    EXPECT_TRUE(std::equal(
+        this->empty_vec.begin(),
+        this->empty_vec.end(),
+        this->empty_vec_bool.begin(),
+        this->empty_vec_bool.end(),
+        comparator));
+    EXPECT_EQ(
+        std::distance(this->empty_vec.begin(), bitret),
+        std::distance(this->empty_vec_bool.begin(), boolret));
+  }
 }
 
 TYPED_TEST(VectorTest, InsertAtRand2) {
-    // Second signature
-    for (auto _ = 16; _--;) {
-        auto to_insert = generate_random_number(0, 4*this->digits);
-        auto insert_location = generate_random_number(0, this->empty_vec.size());
-        auto bitret = this->empty_vec.insert(
-                this->empty_vec.begin() + insert_location,
-                to_insert,
-                bit::bit1);
-        auto boolret = this->empty_vec_bool.insert(
-                this->empty_vec_bool.begin() + insert_location,
-                to_insert,
-                true);
-        EXPECT_TRUE(std::equal(
-                    this->empty_vec.begin(),
-                    this->empty_vec.end(),
-                    this->empty_vec_bool.begin(),
-                    this->empty_vec_bool.end(),
-                    comparator));
-        EXPECT_EQ(
-                std::distance(this->empty_vec.begin(), bitret),
-                std::distance(this->empty_vec_bool.begin(), boolret));
-    }
+  using WordType = typename TestFixture::base_type;
+  constexpr auto digits = bit::binary_digits<WordType>::value;
+  // Second signature
+  for (auto _ = 16; _--;) {
+    auto to_insert = generate_random_number(0, 4 * digits);
+    auto insert_location = generate_random_number(0, this->empty_vec.size());
+    auto bitret = this->empty_vec.insert(
+        this->empty_vec.begin() + insert_location,
+        to_insert,
+        bit::bit1);
+    auto boolret = this->empty_vec_bool.insert(
+        this->empty_vec_bool.begin() + insert_location,
+        to_insert,
+        true);
+    EXPECT_TRUE(std::equal(
+        this->empty_vec.begin(),
+        this->empty_vec.end(),
+        this->empty_vec_bool.begin(),
+        this->empty_vec_bool.end(),
+        comparator));
+    EXPECT_EQ(
+        std::distance(this->empty_vec.begin(), bitret),
+        std::distance(this->empty_vec_bool.begin(), boolret));
+  }
 }
 
 TYPED_TEST(VectorTest, InsertAtBegin3) {
@@ -710,42 +731,46 @@ TYPED_TEST(VectorTest, EraseAtRand2) {
 
 // Test push_back
 TYPED_TEST(VectorTest, PushBack) {
-    // First signature
-    for (unsigned int vec_idx = 0; vec_idx < this->random_bitvecs.size(); ++vec_idx) {
-        for (auto _ = 4*this->digits; _ > 0; _--) {
-            auto& bitvec = this->random_bitvecs[vec_idx];
-            auto& boolvec = this->random_boolvecs[vec_idx];
-            bool to_insert_bool = generate_random_number(0, 1) > 0 ? true : false;
-            bit::bit_value to_insert_bit = to_insert_bool ? bit::bit1 : bit::bit0;
-            bitvec.push_back(to_insert_bit);
-            boolvec.push_back(to_insert_bool);
-            EXPECT_TRUE(std::equal(
-                        bitvec.begin(),
-                        bitvec.end(),
-                        boolvec.begin(),
-                        boolvec.end(),
-                        comparator));
-        }
+  using WordType = typename TestFixture::base_type;
+  constexpr auto digits = bit::binary_digits<WordType>::value;
+  // First signature
+  for (unsigned int vec_idx = 0; vec_idx < this->random_bitvecs.size(); ++vec_idx) {
+    for (auto _ = 4 * digits; _ > 0; _--) {
+      auto& bitvec = this->random_bitvecs[vec_idx];
+      auto& boolvec = this->random_boolvecs[vec_idx];
+      bool to_insert_bool = generate_random_number(0, 1) > 0 ? true : false;
+      bit::bit_value to_insert_bit = to_insert_bool ? bit::bit1 : bit::bit0;
+      bitvec.push_back(to_insert_bit);
+      boolvec.push_back(to_insert_bool);
+      EXPECT_TRUE(std::equal(
+          bitvec.begin(),
+          bitvec.end(),
+          boolvec.begin(),
+          boolvec.end(),
+          comparator));
     }
+  }
 }
 
 // Test pop_back
 TYPED_TEST(VectorTest, PopBack) {
-    // First signature
-    for (unsigned int vec_idx = 0; vec_idx < this->random_bitvecs.size(); ++vec_idx) {
-        auto& bitvec = this->random_bitvecs[vec_idx];
-        auto& boolvec = this->random_boolvecs[vec_idx];
-        for (auto _ = std::min(boolvec.size(), 4*this->digits); _>0; _--) {
-            bitvec.pop_back();
-            boolvec.pop_back();
-            EXPECT_TRUE(std::equal(
-                        bitvec.begin(),
-                        bitvec.end(),
-                        boolvec.begin(),
-                        boolvec.end(),
-                        comparator));
-        }
+  using WordType = typename TestFixture::base_type;
+  constexpr auto digits = bit::binary_digits<WordType>::value;
+  // First signature
+  for (unsigned int vec_idx = 0; vec_idx < this->random_bitvecs.size(); ++vec_idx) {
+    auto& bitvec = this->random_bitvecs[vec_idx];
+    auto& boolvec = this->random_boolvecs[vec_idx];
+    for (auto _ = std::min(boolvec.size(), 4 * digits); _ > 0; _--) {
+      bitvec.pop_back();
+      boolvec.pop_back();
+      EXPECT_TRUE(std::equal(
+          bitvec.begin(),
+          bitvec.end(),
+          boolvec.begin(),
+          boolvec.end(),
+          comparator));
     }
+  }
 }
 
 TEST(BitVectorTest, Slice) {
