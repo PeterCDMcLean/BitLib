@@ -77,11 +77,11 @@ class array_ref
    * @brief Constructs a non-owning reference to a bit array
    *
    * @param storage Pointer to the storage
-   * @param size Number of bits
+   * @param extent Number of bits
    */
-  constexpr array_ref(word_type* storage, size_type size)
+  constexpr array_ref(word_type* storage, size_type extent)
     requires(N == std::dynamic_extent)
-      : base(size), m_storage(storage) {
+      : base(extent), m_storage(storage) {
   }
   constexpr array_ref(word_type* storage)
     requires(N != std::dynamic_extent)
@@ -92,11 +92,11 @@ class array_ref
    * @brief Constructs a non-owning reference to a bit array using a bit_pointer
    *
    * @param storage bit_pointer to the storage
-   * @param size Number of bits
+   * @param extent Number of bits
    */
-  constexpr array_ref(bit_pointer<word_type> storage, size_type size)
+  constexpr array_ref(bit_pointer<word_type> storage, size_type extent)
     requires(N == std::dynamic_extent)
-      : base(size), m_storage(storage) {
+      : base(extent), m_storage(storage) {
   }
   constexpr array_ref(bit_pointer<word_type> storage)
     requires(N != std::dynamic_extent)
@@ -108,10 +108,10 @@ class array_ref
    *
    * @param other bit_sized_range
    */
-  constexpr array_ref(bit_range auto& other, size_type size)
+  constexpr array_ref(bit_range auto& other, size_type extent)
     requires(N == std::dynamic_extent)
-      : base(size), m_storage(&(*other.begin())) {
-    assert(size <= (other.end() - other.begin()));
+      : base(extent), m_storage(&(*other.begin())) {
+    assert(extent <= (other.end() - other.begin()));
   }
   constexpr array_ref(bit_range auto& other)
     requires(N != std::dynamic_extent)
@@ -124,10 +124,10 @@ class array_ref
    *
    * @param other bit_sized_range
    */
-  constexpr array_ref(const bit_range auto& other, size_type size)
+  constexpr array_ref(const bit_range auto& other, size_type extent)
     requires((N == std::dynamic_extent) && std::is_const_v<W>)
-      : base(size), m_storage(&(*other.begin())) {
-    assert(size <= (other.end() - other.begin()));
+      : base(extent), m_storage(&(*other.begin())) {
+    assert(extent <= (other.end() - other.begin()));
   }
   constexpr array_ref(const bit_range auto& other)
     requires((N != std::dynamic_extent) && std::is_const_v<W>)

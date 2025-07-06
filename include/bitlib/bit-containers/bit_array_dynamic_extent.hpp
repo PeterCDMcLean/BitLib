@@ -154,23 +154,23 @@ class array<T, std::dynamic_extent, W, Policy>
   */
   array() = delete;
 
-  constexpr array(const size_type size, const Allocator& allocator = Allocator())
-      : base(size), storage(Words(size), allocator) {
+  constexpr array(const size_type extent, const Allocator& allocator = Allocator())
+      : base(extent), storage(Words(extent), allocator) {
   }
 
   template <std::integral U>
-  constexpr array(const size_type size, const U& integral, const Allocator& allocator = Allocator())
-      : base(size), storage(Words(size), allocator, detail::uninitialized) {
+  constexpr array(const size_type extent, const U& integral, const Allocator& allocator = Allocator())
+      : base(extent), storage(Words(extent), allocator, detail::uninitialized) {
     this->from_integral(integral);
   }
 
-  constexpr array(const size_type size, const word_type val, const Allocator& allocator = Allocator())
-      : base(size), storage(Words(size), val, allocator) {
+  constexpr array(const size_type extent, const word_type val, const Allocator& allocator = Allocator())
+      : base(extent), storage(Words(extent), val, allocator) {
   }
 
-  constexpr array(const size_type size, const value_type bit_val, const Allocator& allocator = Allocator())
+  constexpr array(const size_type extent, const value_type bit_val, const Allocator& allocator = Allocator())
     requires(!std::is_same<value_type, word_type>::value)
-      : base(size), storage(Words(size), allocator, detail::uninitialized) {
+      : base(extent), storage(Words(extent), allocator, detail::uninitialized) {
     this->fill(bit_val);
   }
 
@@ -235,7 +235,7 @@ class array<T, std::dynamic_extent, W, Policy>
    */
   constexpr array<T, std::dynamic_extent, W, Policy>& operator=(const array<T, std::dynamic_extent, W, Policy>& other) {
     if (nullptr == data() || size() != other.size()) {
-      throw std::invalid_argument("Cannot reassign array<std::dynamic_extent,V,W,Policy> size");
+      throw std::invalid_argument("Cannot reassign array<std::dynamic_extent,V,W,Policy> extent");
     }
     if (this == &other) [[unlikely]] {
       return *this;
@@ -254,7 +254,7 @@ class array<T, std::dynamic_extent, W, Policy>
 
   constexpr array<T, std::dynamic_extent, W, Policy>& operator=(array<T, std::dynamic_extent, W, Policy>&& other) {
     if (nullptr == data() || size() != other.size()) {
-      throw std::invalid_argument("Cannot reassign array<std::dynamic_extent,V,W,Policy> size");
+      throw std::invalid_argument("Cannot reassign array<std::dynamic_extent,V,W,Policy> extent");
     }
     array<T, std::dynamic_extent, W, Policy> temp(std::move(other));
     swap(temp);
