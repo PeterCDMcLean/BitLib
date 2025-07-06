@@ -47,7 +47,9 @@ struct bit_word_accessor : private detail::container_size_storage<size_t, false,
   constexpr data_handle_type offset(data_handle_type p, std::size_t i) const noexcept {
     return p + i * this->size();
   }
-  constexpr bit_word_accessor() : detail::container_size_storage<size_t, false, N>() {}
+  constexpr bit_word_accessor()
+    requires(N != std::dynamic_extent)
+      : detail::container_size_storage<size_t, false, N>() {}
   constexpr bit_word_accessor(const size_t& size)
     requires(N == std::dynamic_extent)
       : detail::container_size_storage<size_t, false, N>(size) {}
