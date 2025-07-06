@@ -14,8 +14,6 @@
 
 #include "bitlib/bit-algorithms/accumulate.hpp"
 #include "bitlib/bit-algorithms/count.hpp"
-#include "bitlib/bit-containers/array_dynamic_extent.hpp"
-#include "bitlib/bit-containers/bit_vector.hpp"
 #include "bitlib/bit_concepts.hpp"
 
 namespace bit {
@@ -109,6 +107,9 @@ constexpr std::string to_string(const bit_sized_range auto& bits, std::string pr
   return to_string<meta>(bits.begin(), bits.end(), prefix);
 }
 
+/*
+Commenting this out temporarily as the reference to bit_vector/bit_array messes up include dependency DAG
+
 template <string::metadata_t meta = string::typical(), typename Policy = policy::typical<uintptr_t>, typename RandomAccessIt>
 constexpr void from_string(
     Policy,
@@ -145,7 +146,7 @@ constexpr bit_vector<> from_string(const char* first, const char* last) {
         bits += base_bits;
       }
       if (bits) {
-        vec.append_range(array<>(bits, work));
+        vec.append_range(bit_array<>(bits, work));
       }
     }
     return vec;
@@ -158,6 +159,7 @@ template <string::metadata_t meta = string::typical()>
 constexpr bit_vector<> from_string(const std::string& str) {
   return from_string<meta>(str.c_str(), str.c_str() + str.length());
 }
+*/
 
 }  // namespace bit
 

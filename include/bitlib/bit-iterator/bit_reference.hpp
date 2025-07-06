@@ -49,11 +49,6 @@ class bit_reference {
 
   // Lifecycle
  public:
-  template <class T>
-    requires(std::is_const_v<std::remove_reference_t<WordRef>> == std::is_const_v<std::remove_reference_t<T>>)
-  constexpr bit_reference(const bit_reference<T>& other) noexcept
-      : _ref(other._ref), _mask(other._mask) {
-  }
   constexpr bit_reference(const bit_reference& other) noexcept;
   explicit constexpr bit_reference(WordRef ref) noexcept;
   constexpr bit_reference(WordRef ref, size_type pos);
@@ -80,6 +75,7 @@ class bit_reference {
   // Access
  public:
   constexpr bit_pointer<WordType> operator&() const noexcept;
+  constexpr bit_pointer<WordType> operator&() noexcept;
 
   // Swap members
  public:
@@ -225,6 +221,11 @@ constexpr bit_reference<WordRef>::operator bool() const noexcept {
 // Gets a bit pointer from the bit reference
 template <class WordRef>
 constexpr bit_pointer<std::remove_reference_t<WordRef>> bit_reference<WordRef>::operator&() const noexcept {
+  return bit_pointer<WordType>(&_ref, _tzcnt(_mask));
+}
+
+template <class WordRef>
+constexpr bit_pointer<std::remove_reference_t<WordRef>> bit_reference<WordRef>::operator&() noexcept {
   return bit_pointer<WordType>(&_ref, _tzcnt(_mask));
 }
 // -------------------------------------------------------------------------- //

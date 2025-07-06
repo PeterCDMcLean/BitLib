@@ -39,7 +39,7 @@ template <typename T = bit_value,
                   std::uintptr_t,
                   ceil_integral<N>>,
               T>,
-          typename Policy = policy::typical<W>>
+          typename Policy = policy::typical<std::remove_cvref_t<W>>>
 class array;
 
 template <std::size_t N = std::dynamic_extent,
@@ -47,7 +47,7 @@ template <std::size_t N = std::dynamic_extent,
               (N == std::dynamic_extent),
               std::uintptr_t,
               ceil_integral<N>>,
-          typename Policy = policy::typical<W>>
+          typename Policy = policy::typical<std::remove_cvref_t<W>>>
 using bit_array = array<bit_value, N, W, Policy>;
 
 namespace detail {
@@ -68,10 +68,11 @@ struct array_iterator_types {
 }  // namespace detail
 
 template <typename T, std::size_t N, typename W, typename Policy>
-class array : public array_base<array<T, N, W>, T, N, W, Policy, detail::array_iterator_types<T, W, N>> {
+class array : public array_base<array<T, N, W, Policy>, T, N, W, false, Policy, detail::array_iterator_types<T, W, N>> {
  public:
-  using base = array_base<array<T, N, W>, T, N, W, Policy, detail::array_iterator_types<T, W, N>>;
+  using base = array_base<array<T, N, W, Policy>, T, N, W, false, Policy, detail::array_iterator_types<T, W, N>>;
   using base::end;
+  using base::size;
   using typename base::const_iterator;
   using typename base::const_pointer;
   using typename base::const_reference;
@@ -108,13 +109,13 @@ class array : public array_base<array<T, N, W>, T, N, W, Policy, detail::array_i
     this->from_integral(integral);
   }
 
-  constexpr array(const array<T, N, W>& other) noexcept
-      : storage(other.storage) {}
+  constexpr array(const array<T, N, W, Policy>& other) noexcept
+      : base(), storage(other.storage) {}
 
-  constexpr array(const array<T, N, W>&& other) noexcept
-      : storage(other.storage) {}
+  constexpr array(const array<T, N, W, Policy>&& other) noexcept
+      : base(), storage(other.storage) {}
 
-  constexpr array(const bit_sized_range auto& other) {
+  constexpr array(const bit_sized_range auto& other) : base() {
     if (other.size() != this->size()) [[unlikely]] {
       throw std::invalid_argument("other bit_range contains an invalid number of bits for array.");
     }
@@ -123,21 +124,21 @@ class array : public array_base<array<T, N, W>, T, N, W, Policy, detail::array_i
 
   constexpr array(const std::initializer_list<value_type> init)
     requires(!std::is_same_v<value_type, word_type>)
-  {
+      : base() {
     if (init.size() != bitsof(*this)) [[unlikely]] {
       throw std::invalid_argument("initialize_list contains an invalid number of bits for array.");
     }
     std::copy(init.begin(), init.end(), this->begin());
   }
 
-  constexpr array(const std::initializer_list<bool> init) {
+  constexpr array(const std::initializer_list<bool> init) : base() {
     if (init.size() != bitsof(*this)) [[unlikely]] {
       throw std::invalid_argument("initialize_list contains an invalid number of bits for array.");
     }
     std::copy(init.begin(), init.end(), this->begin());
   }
 
-  constexpr array(const std::initializer_list<word_type> init) : storage{} {
+  constexpr array(const std::initializer_list<word_type> init) : base(), storage{} {
     // Make sure we handle the case where init.size() != Words
     auto it = init.begin();
     for (size_type i = 0; i < std::min(Words(N), init.size()); ++i, ++it) {
@@ -147,7 +148,7 @@ class array : public array_base<array<T, N, W>, T, N, W, Policy, detail::array_i
 
   constexpr array(const std::string_view s)
     requires(std::is_same_v<value_type, bit_value>)
-  {
+      : base() {
     if (bitsof(*this) != static_cast<size_t>(std::count(s.begin(), s.end(), '0') + std::count(s.begin(), s.end(), '1'))) [[unlikely]] {
       throw std::invalid_argument("String contains an invalid number of bits for array.");
     };
@@ -209,7 +210,7 @@ class array : public array_base<array<T, N, W>, T, N, W, Policy, detail::array_i
   /*
     * Operations
     */
-  constexpr void swap(array<T, N, W>& other) noexcept {
+  constexpr void swap(array<T, N, W, Policy>& other) noexcept {
     std::swap(this->storage, other.storage);
   }
 

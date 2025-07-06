@@ -23,7 +23,7 @@
 
 //
 // GoogleTest suite for bit::bit_word_pointer_adapter.
-// Covers both “big‐to‐small” and “small‐to‐large” modes.
+// Covers both "big‐to‐small" and "small‐to‐large" modes.
 //
 
 // Assumes a little‐endian platform (so that reinterpret_cast<…> of bytes
@@ -43,16 +43,6 @@ TEST(IteratorAdapter, Basic) {
     EXPECT_EQ(*adapter, 0x45);
     adapter += 2;
     EXPECT_EQ(*adapter, 0x56);
-}
-
-// -----------------------------------------------------------------------------
-// Helper: Convert a 32‐bit word into its 4 individual bytes (little‐endian)
-// -----------------------------------------------------------------------------
-static void split_u32_le(uint32_t value, uint8_t out_bytes[4]) {
-  out_bytes[0] = static_cast<uint8_t>(value & 0xFFu);
-  out_bytes[1] = static_cast<uint8_t>((value >> 8) & 0xFFu);
-  out_bytes[2] = static_cast<uint8_t>((value >> 16) & 0xFFu);
-  out_bytes[3] = static_cast<uint8_t>((value >> 24) & 0xFFu);
 }
 
 // -----------------------------------------------------------------------------

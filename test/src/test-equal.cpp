@@ -77,11 +77,9 @@ TYPED_TEST(DoubleRangeTest, Equal) {
 
 TYPED_TEST(MixedDoubleRangeTest, Equal) {
   for (size_t idx = 0; idx < this->random_bitvecs1.size(); ++idx) {
-    using FromWordType = typename TestFixture::FromWordType;
-    using ToWordType = typename TestFixture::ToWordType;
-    bit::bit_vector<FromWordType>& bitvec1 = this->random_bitvecs1[idx];
-    bit::bit_vector<ToWordType>& bitvec2 = this->random_bitvecs2[idx];
-    constexpr auto min_digits = std::min(bit::bitsof<FromWordType>(), bit::bitsof<ToWordType>());
+    bit::bit_vector<typename TestFixture::FromWordType>& bitvec1 = this->random_bitvecs1[idx];
+    bit::bit_vector<typename TestFixture::ToWordType>& bitvec2 = this->random_bitvecs2[idx];
+    constexpr auto min_digits = std::min(bit::bitsof<typename TestFixture::FromWordType>(), bit::bitsof<typename TestFixture::ToWordType>());
     std::vector<bool>& boolvec1 = this->random_boolvecs1[idx];
     std::vector<bool>& boolvec2 = this->random_boolvecs2[idx];
     long long start1 = generate_random_number(

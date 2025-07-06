@@ -25,11 +25,11 @@
 
 namespace bit {
 
-template <typename T = bit_value, typename W = std::uintptr_t, typename Policy = policy::typical<W>>
+template <typename T = bit_value, size_t N = std::dynamic_extent, typename W = std::uintptr_t, typename Policy = policy::typical<std::remove_cvref_t<W>>>
 class array_ref;
 
-template <typename W = std::uintptr_t, typename Policy = policy::typical<W>>
-using bit_array_ref = array_ref<bit_value, W, Policy>;
+template <size_t N = std::dynamic_extent, typename W = std::uintptr_t, typename Policy = policy::typical<std::remove_cvref_t<W>>>
+using bit_array_ref = array_ref<bit_value, N, W, Policy>;
 
 namespace detail {
 template <typename word_type>
@@ -48,12 +48,13 @@ struct array_ref_iterator_types {
  * @tparam T The value type (typically bit_value)
  * @tparam W The word type used for storage
  */
-template <typename T, typename W, typename Policy>
+template <typename T, size_t N, typename W, typename Policy>
 class array_ref
-    : public array_base<array_ref<T, W>, T, std::dynamic_extent, W, Policy, detail::array_ref_iterator_types<W>> {
+    : public array_base<array_ref<T, N, W, Policy>, T, N, W, false, Policy, detail::array_ref_iterator_types<W>> {
  public:
-  using base = array_base<array_ref<T, W>, T, std::dynamic_extent, W, Policy, detail::array_ref_iterator_types<W>>;
+  using base = array_base<array_ref<T, N, W, Policy>, T, N, W, false, Policy, detail::array_ref_iterator_types<W>>;
   using base::end;
+  using base::size;
   using typename base::const_iterator;
   using typename base::const_pointer;
   using typename base::const_reference;
@@ -67,7 +68,6 @@ class array_ref
 
  private:
   const bit_pointer<word_type> m_storage;
-  const size_type m_size;
 
  public:
   // Constructors
@@ -77,22 +77,30 @@ class array_ref
    * @brief Constructs a non-owning reference to a bit array
    *
    * @param storage Pointer to the storage
-   * @param size Number of bits
+   * @param extent Number of bits
    */
-  constexpr array_ref(word_type* storage, size_type size)
-      : m_storage(storage),
-        m_size(size) {
+  constexpr array_ref(word_type* storage, size_type extent)
+    requires(N == std::dynamic_extent)
+      : base(extent), m_storage(storage) {
+  }
+  constexpr array_ref(word_type* storage)
+    requires(N != std::dynamic_extent)
+      : base(), m_storage(storage) {
   }
 
   /**
    * @brief Constructs a non-owning reference to a bit array using a bit_pointer
    *
    * @param storage bit_pointer to the storage
-   * @param size Number of bits
+   * @param extent Number of bits
    */
-  constexpr array_ref(bit_pointer<word_type> storage, size_type size)
-      : m_storage(storage),
-        m_size(size) {
+  constexpr array_ref(bit_pointer<word_type> storage, size_type extent)
+    requires(N == std::dynamic_extent)
+      : base(extent), m_storage(storage) {
+  }
+  constexpr array_ref(bit_pointer<word_type> storage)
+    requires(N != std::dynamic_extent)
+      : base(), m_storage(storage) {
   }
 
   /**
@@ -100,10 +108,15 @@ class array_ref
    *
    * @param other bit_sized_range
    */
-  constexpr array_ref(bit_range auto& other, size_type size)
-      : m_storage(&(*other.begin())),
-        m_size(size) {
-    assert(size <= (other.end() - other.begin()));
+  constexpr array_ref(bit_range auto& other, size_type extent)
+    requires(N == std::dynamic_extent)
+      : base(extent), m_storage(&(*other.begin())) {
+    assert(extent <= static_cast<size_type>(other.end() - other.begin()));
+  }
+  constexpr array_ref(bit_range auto& other)
+    requires(N != std::dynamic_extent)
+      : base(), m_storage(&(*other.begin())) {
+    assert(N <= static_cast<size_type>(other.end() - other.begin()));
   }
 
   /**
@@ -111,11 +124,15 @@ class array_ref
    *
    * @param other bit_sized_range
    */
-  constexpr array_ref(const bit_range auto& other, size_type size)
-    requires(std::is_const_v<W>)
-      : m_storage(&(*other.begin())),
-        m_size(size) {
-    assert(size <= (other.end() - other.begin()));
+  constexpr array_ref(const bit_range auto& other, size_type extent)
+    requires((N == std::dynamic_extent) && std::is_const_v<W>)
+      : base(extent), m_storage(&(*other.begin())) {
+    assert(extent <= (other.end() - other.begin()));
+  }
+  constexpr array_ref(const bit_range auto& other)
+    requires((N != std::dynamic_extent) && std::is_const_v<W>)
+      : base(), m_storage(&(*other.begin())) {
+    assert(N <= (other.end() - other.begin()));
   }
 
   /**
@@ -132,7 +149,7 @@ class array_ref
    * @brief Range Assignment operator - copies content but doesn't rebind
    */
   constexpr array_ref& operator=(const bit_sized_range auto& other) {
-    if (m_size != other.size()) {
+    if (size() != other.size()) {
       throw std::invalid_argument("Cannot assign from array_ref of different size");
     }
     ::bit::copy(other.begin(), other.end(), this->begin());
@@ -144,7 +161,7 @@ class array_ref
    */
   constexpr array_ref& operator=(const array_ref& other) {
     if (this != &other) {
-      if (m_size != other.m_size) {
+      if (size() != other.size()) {
         throw std::invalid_argument("Cannot assign from array_ref of different size");
       }
       ::bit::copy(other.begin(), other.end(), this->begin());
@@ -157,7 +174,7 @@ class array_ref
    */
   constexpr array_ref& operator=(array_ref&& other) {
     if (this != &other) {
-      if (m_size != other.size()) {
+      if (size() != other.size()) {
         throw std::invalid_argument("Cannot assign from array_ref of different size");
       }
       ::bit::copy(other.begin(), other.end(), this->begin());
@@ -182,17 +199,10 @@ class array_ref
   }
 
   /*
-   * Capacity
-   */
-  constexpr size_type size() const noexcept {
-    return m_size;
-  }
-
-  /*
    * Operations
    */
   constexpr void swap(array_ref& other) {
-    if (m_size != other.m_size) {
+    if (size() != other.size()) {
       throw std::invalid_argument("Cannot swap array_ref of different sizes");
     }
     swap_ranges(begin(), end(), other.begin());

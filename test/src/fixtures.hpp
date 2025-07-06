@@ -46,11 +46,10 @@ class VectorTest : public testing::Test {
   std::vector<vec_type> random_bitvecs;
   std::vector<std::vector<bool>> random_boolvecs;
   std::vector<WordType> random_vec;
-  const size_t word_size = 4;
-  const size_t digits = bit::binary_digits<WordType>::value;
-  const size_t bit_size = word_size * digits;
-
   void SetUp() override {
+    const size_t digits = bit::binary_digits<WordType>::value;
+    const size_t word_size = 4;
+    const size_t bit_size = word_size * digits;
     empty_vec = vec_type();
     random_vec = get_random_vec<WordType>(word_size);
     for (size_t cont_size = 1; cont_size < bit_size; ++cont_size) {
@@ -79,53 +78,53 @@ TYPED_TEST_SUITE(VectorTest, BaseTypes);
 
 template<typename WordType>
 class SingleRangeTest : public testing::Test {
-    protected:
+ protected:
+  using base_type = WordType;
 
-    using base_type = WordType;
+  std::vector<bit::bit_vector<WordType>> random_bitvecs;
+  std::vector<std::vector<bool>> random_boolvecs;
+  std::vector<WordType> random_vec;
 
-    std::vector<bit::bit_vector<WordType>> random_bitvecs;
-    std::vector<std::vector<bool>> random_boolvecs;
-    std::vector<WordType> random_vec;
+ protected:
+  void SetUp() override {
+    const size_t digits = bit::binary_digits<WordType>::value;
     size_t word_size = 4;
-    size_t digits = bit::binary_digits<WordType>::value;
-    size_t bit_size = word_size*digits;
+    size_t bit_size = word_size * digits;
+    random_vec = get_random_vec<WordType>(word_size);
+    for (size_t cont_size = 1; cont_size < bit_size; ++cont_size) {
+      auto bitvec = bit::bit_vector<WordType>(bit_size);
+      std::copy(random_vec.begin(), random_vec.end(), bitvec.begin().base());
+      bitvec.resize(cont_size);
 
-    void SetUp() override {
-        random_vec = get_random_vec<WordType>(word_size);
-        for (size_t cont_size = 1; cont_size < bit_size; ++cont_size) {
-            auto bitvec = bit::bit_vector<WordType>(bit_size);
-            std::copy(random_vec.begin(), random_vec.end(), bitvec.begin().base());
-            bitvec.resize(cont_size);
-
-            auto boolvec = boolvec_from_bitvec(bitvec);
-            random_bitvecs.push_back(bitvec);
-            random_boolvecs.push_back(boolvec);
-        }
-        word_size = 2*64*64;
-        random_vec = get_random_vec<WordType>(word_size);
-        size_t bit_size = (word_size)*digits;
-        for (size_t cont_size = bit_size - digits - 4; cont_size < bit_size - digits + 4; ++cont_size) {
-            auto bitvec = bit::bit_vector<WordType>(bit_size);
-            std::copy(random_vec.begin(), random_vec.end(), bitvec.begin().base());
-            bitvec.resize(cont_size);
-
-            auto boolvec = boolvec_from_bitvec(bitvec);
-            random_bitvecs.push_back(bitvec);
-            random_boolvecs.push_back(boolvec);
-        }
-
-        auto zeros = bit::bit_vector<WordType>(bit_size);
-        std::fill(zeros.begin(), zeros.end(), bit::bit0);
-        *(zeros.end() - 1024 - digits - 4) = bit::bit1;
-        random_bitvecs.push_back(zeros);
-        random_boolvecs.push_back(boolvec_from_bitvec(zeros));
-
-        auto ones = bit::bit_vector<WordType>(bit_size);
-        std::fill(ones.begin(), ones.end(), bit::bit1);
-        *(ones.end() - 1024 - digits - 4) = bit::bit0;
-        random_bitvecs.push_back(ones);
-        random_boolvecs.push_back(boolvec_from_bitvec(ones));
+      auto boolvec = boolvec_from_bitvec(bitvec);
+      random_bitvecs.push_back(bitvec);
+      random_boolvecs.push_back(boolvec);
     }
+    word_size = 2 * 64 * 64;
+    bit_size = word_size * digits;
+    random_vec = get_random_vec<WordType>(word_size);
+    for (size_t cont_size = bit_size - digits - 4; cont_size < bit_size - digits + 4; ++cont_size) {
+      auto bitvec = bit::bit_vector<WordType>(bit_size);
+      std::copy(random_vec.begin(), random_vec.end(), bitvec.begin().base());
+      bitvec.resize(cont_size);
+
+      auto boolvec = boolvec_from_bitvec(bitvec);
+      random_bitvecs.push_back(bitvec);
+      random_boolvecs.push_back(boolvec);
+    }
+
+    auto zeros = bit::bit_vector<WordType>(bit_size);
+    std::fill(zeros.begin(), zeros.end(), bit::bit0);
+    *(zeros.end() - 1024 - digits - 4) = bit::bit1;
+    random_bitvecs.push_back(zeros);
+    random_boolvecs.push_back(boolvec_from_bitvec(zeros));
+
+    auto ones = bit::bit_vector<WordType>(bit_size);
+    std::fill(ones.begin(), ones.end(), bit::bit1);
+    *(ones.end() - 1024 - digits - 4) = bit::bit0;
+    random_bitvecs.push_back(ones);
+    random_boolvecs.push_back(boolvec_from_bitvec(ones));
+  }
 };
 TYPED_TEST_SUITE(SingleRangeTest, BaseTypes);
 
@@ -141,24 +140,25 @@ class DoubleRangeTest : public testing::Test {
     std::vector<std::vector<bool>> random_boolvecs2;
     std::vector<WordType> random_vec;
     std::vector<WordType> random_vec_big;
-    size_t digits = bit::binary_digits<WordType>::value;
-    size_t word_size = 4;
-    size_t bit_size = word_size*bit::binary_digits<WordType>::value;
-    size_t big_size = 64*64*2;
 
     void SetUp() override {
-        // TODO this is ugly, need to refactor
-        random_vec = get_random_vec<WordType>(word_size);
-        random_vec_big = get_random_vec<WordType>(big_size);
-        for (size_t cont_size = 1; cont_size < bit_size; ++cont_size) {
-            auto bitvec = bit::bit_vector<WordType>(bit_size);
-            std::copy(random_vec.begin(), random_vec.end(), bitvec.begin().base());
-            bitvec.resize(cont_size);
+      const size_t word_size = 4;
+      const size_t big_size = 64 * 64 * 2;
+      const size_t digits = bit::binary_digits<WordType>::value;
+      const size_t bit_size = word_size * digits;
 
-            auto boolvec = boolvec_from_bitvec(bitvec);
-            random_bitvecs1.push_back(bitvec);
-            random_boolvecs1.push_back(boolvec);
-        }
+      // TODO this is ugly, need to refactor
+      random_vec = get_random_vec<WordType>(word_size);
+      random_vec_big = get_random_vec<WordType>(big_size);
+      for (size_t cont_size = 1; cont_size < bit_size; ++cont_size) {
+        auto bitvec = bit::bit_vector<WordType>(bit_size);
+        std::copy(random_vec.begin(), random_vec.end(), bitvec.begin().base());
+        bitvec.resize(cont_size);
+
+        auto boolvec = boolvec_from_bitvec(bitvec);
+        random_bitvecs1.push_back(bitvec);
+        random_boolvecs1.push_back(boolvec);
+      }
         for (int i = -4; i < 4; ++i) {
             size_t cont_size = (big_size-1)*digits + i;
             auto bitvec = bit::bit_vector<WordType>(big_size*digits);
@@ -199,9 +199,7 @@ class MixedDoubleRangeTest : public testing::Test {
   using FromWordType = typename FromToPair::first_type;
   using ToWordType = typename FromToPair::second_type;
 
-  static constexpr size_t digits = bit::binary_digits<FromWordType>::value;
   static constexpr size_t word_size = 4;
-  static constexpr size_t bit_size = word_size * digits;
   static constexpr size_t big_size = 64 * 64 * 2;
 
   // test data
@@ -231,7 +229,7 @@ class MixedDoubleRangeTest : public testing::Test {
         bitvecs.push_back(bv);
         boolvecs.push_back(boolvec_from_bitvec(bv));
       }
-      // “big” runs around (big_size-1)*digits +/-4
+      // "big" runs around (big_size-1)*digits +/-4
       const auto max_digits = std::max(bit::bitsof<FromWordType>(), bit::bitsof<ToWordType>());
       for (int i = -4; i < 4; ++i) {
         size_t cont_size = big_bit_size - max_digits + i;

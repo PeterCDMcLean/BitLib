@@ -202,7 +202,7 @@ constexpr auto operator-(
     auto main = (lhs._source - rhs._source);
     return main * static_cast<std::common_type_t<lhs_type, rhs_type>>(bit_word_pointer_adapter<T, U>::ratio) + (static_cast<lhs_type>(lhs._index) - static_cast<lhs_type>(rhs._index));
   } else {
-    // “small→large” mode: each base‐step is 1 small word, but difference is in big words:
+    // "small→large" mode: each base‐step is 1 small word, but difference is in big words:
     auto small_diff = (lhs._source - rhs._source);
     return small_diff / static_cast<std::common_type_t<lhs_type, rhs_type>>(bit_word_pointer_adapter<T, U>::ratio);
   }
