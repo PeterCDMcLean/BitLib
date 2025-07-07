@@ -9,6 +9,7 @@ This project provides convenient and efficient stl-like containers and algorithm
 # Example<a href="#example"></a>
 
 ```c++
+#include "bitlib/bitlib.hpp"
 
 auto fp_half_num = 0x10'3DAE_b;
 auto exponent = fp_half_num(10, 15);
