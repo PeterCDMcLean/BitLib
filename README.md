@@ -2,15 +2,27 @@
 
 ![Actions](https://github.com/PeterCDMcLean/BitLib/actions/workflows/cmake-multi-platform.yml/badge.svg?branch=master)[![Coverage Status](https://coveralls.io/repos/github/PeterCDMcLean/BitLib/badge.svg?branch=master)](https://coveralls.io/github/PeterCDMcLean/BitLib?branch=master)
 
-# Overview
+# Overview<a href="#overview"></a>
 
 This project provides convenient and efficient stl-like containers and algorithms for bit access.
 
+# Example<a href="#example"></a>
+
+```c++
+
+auto fp_half_num = 0x10'3DAE_b;
+auto exponent = fp_half_num(10, 15);
+auto mantissa = fp_half_num(0, 10);
+auto twos_complement_exponent = static_cast<uint8_t>(exponent) - ((1 << 5)-1);
+
+```
+
 # Table of Contents
 
-- [Contributors](#contributors)
-- [Requirements](#requirements)
+- [Overview](#overview)
 - [Example](#example)
+- [Table of Contents](#table-of-contents)
+- [Requirements](#requirements)
 - [CMake](#cmake)
 - [Sized Literal](#literal)
 - [Slice Operator](#slice-operator)
@@ -29,23 +41,17 @@ This project provides convenient and efficient stl-like containers and algorithm
   - [bit_word_reference_adapter](#bit_word_reference_adapter)
 - [Algorithms](#algorithms)
 - [Testing](#testing)
+- [Contributors](#contributors)
 - [License](#license)
 
-# Contributors <a href="#contributors"></a>
-- Vincent Reverdy
-- Bryce Kille
-- Peter McLean
-
-# Requirements <a href="#requirements"></a>
+# Requirements<a href="#requirements"></a>
 
 - _gcc_ or _clang_
 - `C++23`
 - cmake verison 3.20.
   * cmake version 3.31 if compiling bitlib's benchmark suite
 
-# Example <a href="#example"></a>
-
-# CMake <a href="#cmake"></a>
+# CMake<a href="#cmake"></a>
 ### options
 bitlib provides the following cmake options and their defaults
 ```cmake
@@ -91,7 +97,7 @@ target_sources(example PRIVATE example.cpp)
 target_link_libraries(example PRIVATE bitlib::bitlib)
 ```
 
-# Literal <a href="#literal"></a>
+# Literal<a href="#literal"></a>
 
 This provides a sized literal for compile-time bit_array.
 
@@ -150,7 +156,7 @@ auto bin_lit = 0b11111'11110001001000000_b; //31 bit binary literal
 auto oct_lit = 037'361100_b; // 31 bit octal literal
 ```
 
-# Slice Operator <a href="#slice-operator"></a>
+# Slice Operator<a href="#slice-operator"></a>
 
 All containers and views provide a slice operator which take a half-open range and
 return a [mutable view](#bit_array_ref) of the given range.
@@ -166,7 +172,7 @@ assert(lit == 0x1F'1E2A0_b);
 assert(ref(1,4) == 0x5); // array_ref can be sliced further
 ```
 
-# Policy <a href="#policy"></a>
+# Policy<a href="#policy"></a>
 
 Template class controlling behavior such as expansion (aka sign-extension) and truncation
 The containers can be specialized with a custom policy type to
@@ -174,9 +180,13 @@ throwing an exception on loss of data or clamping instead of truncation
 
 The default policy truncates when necessary and sign extends for conversion to/from signed integrals
 
-# Owning Containers <a href="#owning-containers"></a>
+# Owning Containers<a href="#owning-containers"></a>
 
-## bit_array <a href="#bit_array"></a>
+ - `bit::bit_array` is an alias for `bit::array<bit::bit_value, ...>`
+ - `bit::array` is a fixed-size and non-rebindable container with similar API to `std::array`
+ - `bit::bit_vector` is a resizable container with similar API to `std::vector`
+
+## bit_array<a href="#bit_array"></a>
 
 Provides compile-time or construction time container for an array of bits.
 
@@ -205,13 +215,17 @@ The storage word size is by default uintptr_t.
 The container will perform small buffer optimization
 when the number of bits is equal or less than `bitsof<uintptr_t>()` typically 64.
 
-## bit_vector <a href="#bit_vector"></a>
-# Non-Owning Views <a href="#non-owning-views"></a>
-## bit_array_ref <a href="#bit_array_ref"></a>
-## bit_span <a href="#bit_span"></a>
-## mdspan with bit accessors <a href="#mdspan-with-bit-accessors"></a>
+## bit_vector<a href="#bit_vector"></a>
+# Non-Owning Views<a href="#non-owning-views"></a>
+## bit_array_ref<a href="#bit_array_ref"></a>
+## bit_span<a href="#bit_span"></a>
+## mdspan with bit accessors<a href="#mdspan-with-bit-accessors"></a>
 
-The std::mdspan container (C++23) can be used with a custom accessors that
+> [!TIP]
+> When building bitlib unit tests/benchmark,
+> cmake mdspan support can be enabled/disabled with cmake variable `ENABLE_MDSPAN`
+
+The `std::mdspan` container (C++23) can be used with a custom accessors that
 use proxy pointers and references. This makes it suitable for accessing multi-dimensional
 bit dense data.
 
@@ -223,6 +237,7 @@ There are three flavours of accessors:
 > The dynamic_extent `bit_word_accessor` requires a non-default constructor to the accessor.
 > The mdspan must use the mdspan constructor which takes the
 > container pointer, extent instance and accessor instance.
+
 bit_value:
 ```c++
 bit_array<7*8*9> bits();
@@ -270,12 +285,12 @@ myspan[7, 8] = 0x7'7F_b; // set last 7 bit word to all ones.
 assert(bits(7*8*9-7, 7*8*9) == 0x7F);
 ```
 
-# Iterators and References <a href="#iterators-and-references"></a>
-## bit_iterator <a href="#bit_iterator"></a>
-## bit_reference <a href="#bit_reference"></a>
-## bit_word_pointer_adapter <a href="#bit_word_pointer_adapter"></a>
-## bit_word_reference_adapter <a href="#bit_word_reference_adapter"></a>
-# Algorithms <a href="#algorithms"></a>
+# Iterators and References<a href="#iterators-and-references"></a>
+## bit_iterator<a href="#bit_iterator"></a>
+## bit_reference<a href="#bit_reference"></a>
+## bit_word_pointer_adapter<a href="#bit_word_pointer_adapter"></a>
+## bit_word_reference_adapter<a href="#bit_word_reference_adapter"></a>
+# Algorithms<a href="#algorithms"></a>
  - accumulate
  - copy_backward
  - copy
@@ -291,7 +306,12 @@ assert(bits(7*8*9-7, 7*8*9) == 0x7F);
  - to_from_string
  - transform
 
-# License <a href="#license"></a>
+# Contributors<a href="#contributors"></a>
+- Vincent Reverdy
+- Bryce Kille
+- Peter McLean
+
+# License<a href="#license"></a>
 
 This open source library is license under [BSD 3-Clause License](./LICENSE).
 
