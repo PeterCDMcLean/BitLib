@@ -658,7 +658,7 @@ constexpr void bit_vector<WordType, Allocator>::append_range(R&& range) {
 */
 template <class WordType, class Allocator>
 constexpr auto bit_vector<WordType, Allocator>::operator()(size_type begin, size_type end) const noexcept {
-  return bit_array_ref<bit_value, WordType>(&this->at(begin), end - begin);
+  return bit_array_ref<std::dynamic_extent, WordType /*, Policy*/>(&this->at(begin), end - begin);
 }
 
 // ------------------------ BIT VECTOR: DEBUGGING -------------------------- //

@@ -170,9 +170,9 @@ struct sign_extend {
       const bit_iterator<RandomAccessIt>& last,
       const U& integral) noexcept {
     if constexpr (N == std::dynamic_extent) {
-      ::bit::fill(value.begin() + bitsof<U>(), value.end(), (integral < 0) ? bit1 : bit0);
+      ::bit::fill(first + bitsof<U>(), last, (integral < 0) ? bit1 : bit0);
     } else {
-      ::bit::fill(value.begin() + N, value.end(), (integral < 0) ? bit1 : bit0);
+      ::bit::fill(first + N, last, (integral < 0) ? bit1 : bit0);
     }
   }
 
