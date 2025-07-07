@@ -10,7 +10,9 @@
 #ifndef _BIT_TO_STRING_HPP_INCLUDED
 #define _BIT_TO_STRING_HPP_INCLUDED
 
+#include <array>
 #include <bit>
+#include <string>
 
 #include "bitlib/bit-algorithms/accumulate.hpp"
 #include "bitlib/bit-algorithms/count.hpp"
