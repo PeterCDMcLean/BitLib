@@ -25,7 +25,7 @@ constexpr auto make_digit_map() {
   static_assert((Base >= 2) && ((Base & (Base - 1)) == 0), "Base must be power of 2 >= 2");
   static_assert(Base <= 64, "Base too large for simple char mapping");
 
-  std::array<char, Base> map = {};
+  ::std::array<char, Base> map = {};
   for (std::size_t i = 0; i < Base; ++i) {
     map[i] = (i < 10) ? ('0' + i) : ('A' + (i - 10));
   }
@@ -37,7 +37,7 @@ constexpr auto make_from_digit_map() {
   static_assert((Base >= 2) && ((Base & (Base - 1)) == 0), "Base must be power of 2 >= 2");
   static_assert(Base <= 64, "Base too large for simple char mapping");
 
-  std::array<char, 128> map = {};
+  ::std::array<char, 128> map = {};
   for (std::size_t i = 0; i < 128; ++i) {
     map[i] = ~0;
     if (i >= '0' && i <= '9') {
