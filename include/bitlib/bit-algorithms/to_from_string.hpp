@@ -81,7 +81,7 @@ constexpr std::string to_string(const bit_iterator<RandomAccessIt>& first, const
     int skip_leading_bits = meta.str_sign_extend_zeros ? 0 : count_msb(first, last, bit0);
 
     int str_len = (distance(first, last) - skip_leading_bits);
-    str_len = (str_len / base_bits) + ((0 != (str_len % base_bits)) ? 1 : 0);
+    str_len = (str_len + base_bits - 1) / base_bits;  // Round up to nearest base digit
     if (0 == str_len) {
       return prefix + "0";
     }
