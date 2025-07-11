@@ -15,9 +15,15 @@
 
 // ================================ PREAMBLE ================================ //
 // C++ standard library
+
+#if __has_include(<immintrin.h>)
 #include <immintrin.h>
+#else
+#define NO_X86_INTRINSICS
+#endif
 
 #include <algorithm>
+#include <bit>
 #include <cassert>
 #include <concepts>
 #include <cstddef>
@@ -121,170 +127,6 @@ struct _cv_iterator_traits
 };
 /* ************************************************************************** */
 
-#if 0
-/* *********** IMPLEMENTATION DETAILS: NARROWEST AND WIDEST TYPES *********** */
-// Narrowest type structure declaration
-template <class... T>
-struct _narrowest_type;
-
-// Narrowest type structure specialization: selects the only passed type
-template <class T>
-struct _narrowest_type<T>
-: std::common_type<T>
-{
-    static_assert(binary_digits<T>::value, "");
-};
-
-// Narrowest type structure specialization: selects the type with less bits
-template <class T, class U>
-struct _narrowest_type<T, U>
-: _narrowest_type<
-    typename std::conditional<
-        (binary_digits<T>::value < binary_digits<U>::value),
-        T,
-        typename std::conditional<
-            (binary_digits<T>::value > binary_digits<U>::value),
-            U,
-            typename std::common_type<T, U>::type
-        >::type
-    >::type
->
-{
-};
-
-// Narrowest type structure specialization: recursively selects the right type
-template <class T, class... U>
-struct _narrowest_type<T, U...>
-: _narrowest_type<T, typename _narrowest_type<U...>::type>
-{
-};
-
-// Narrowest type alias
-template <class... T>
-using _narrowest_type_t = typename _narrowest_type<T...>::type;
-
-// Widest type structure declaration
-template <class... X>
-struct _widest_type;
-
-// Widest type structure specialization: selects the only passed type
-template <class T>
-struct _widest_type<T>
-: std::common_type<T>
-{
-    static_assert(binary_digits<T>::value, "");
-};
-
-// Widest type structure specialization: selects the type with more bits
-template <class T, class U>
-struct _widest_type<T, U>
-: _widest_type<
-    typename std::conditional<
-        (binary_digits<T>::value > binary_digits<U>::value),
-        T,
-        typename std::conditional<
-            (binary_digits<T>::value < binary_digits<U>::value),
-            U,
-            typename std::common_type<T, U>::type
-        >::type
-    >::type
->
-{
-};
-
-// Widest type structure specialization: recursively selects the right type
-template <class T, class... X>
-struct _widest_type<T, X...>
-: _widest_type<T, typename _widest_type<X...>::type>
-{
-};
-
-// Widest type alias
-template <class... T>
-using _widest_type_t = typename _widest_type<T...>::type;
-/* ************************************************************************** */
-
-
-
-/* ************ IMPLEMENTATION DETAILS: NARROWER AND WIDER TYPES ************ */
-// Narrower type structure definition
-template <class T, int I = 0>
-struct _narrower_type
-{
-    using tuple = std::tuple<
-        unsigned long long int,
-        unsigned long int,
-        unsigned int,
-        unsigned short int,
-        unsigned char
-    >;
-    using lhs_bits = binary_digits<T>;
-    using rhs_bits = binary_digits<typename std::tuple_element<I, tuple>::type>;
-    using type = typename std::conditional<
-        (lhs_bits::value > rhs_bits::value),
-        typename std::tuple_element<I, tuple>::type,
-        typename std::conditional<
-            (I + 1 < std::tuple_size<tuple>::value),
-            typename _narrower_type<
-                T,
-                (I + 1 < std::tuple_size<tuple>::value ? I + 1 : -1)
-            >::type,
-            typename std::tuple_element<I, tuple>::type
-        >::type
-    >::type;
-};
-
-// Narrower type structure specialization: not found
-template <class T>
-struct _narrower_type<T, -1>
-{
-    using type = T;
-};
-
-// Narrower type alias
-template <class T>
-using _narrower_type_t = typename _narrower_type<T>::type;
-
-// Wider type structure definition
-template <class T, int I = 0>
-struct _wider_type
-{
-    using tuple = std::tuple<
-        unsigned char,
-        unsigned short int,
-        unsigned int,
-        unsigned long int,
-        unsigned long long int
-    >;
-    using lhs_bits = binary_digits<T>;
-    using rhs_bits = binary_digits<typename std::tuple_element<I, tuple>::type>;
-    using type = typename std::conditional<
-        (lhs_bits::value < rhs_bits::value),
-        typename std::tuple_element<I, tuple>::type,
-        typename std::conditional<
-            (I + 1 < std::tuple_size<tuple>::value),
-            typename _narrower_type<
-                T,
-                (I + 1 < std::tuple_size<tuple>::value ? I + 1 : -1)
-            >::type,
-            typename std::tuple_element<I, tuple>::type
-        >::type
-    >::type;
-};
-
-// Wider type structure specialization: not found
-template <class T>
-struct _wider_type<T, -1>
-{
-    using type = T;
-};
-
-// Wider type alias
-template <class T>
-using _wider_type_t = typename _wider_type<T>::type;
-/* ************************************************************************** */
-#endif
-
 /*
 exact_floor_integral is used to determine the exact integral type that a proxy reference
 can be implicitly converted to.
@@ -338,53 +180,11 @@ template <class Iterator>
 constexpr bool _assert_range_viability(Iterator first, Iterator last);
 /* ************************************************************************** */
 
-
-
-/* ****************** IMPLEMENTATION DETAILS: INSTRUCTIONS ****************** */
-// Population count
-template <class T, class = decltype(__builtin_popcountll(T()))>
-constexpr T _popcnt(T src) noexcept;
-template <class T, class... X>
-constexpr T _popcnt(T src, X...) noexcept;
-
-// Leading zeros count
-template <class T, class = decltype(__builtin_clzll(T()))>
-constexpr T _lzcnt(T src) noexcept;
-template <class T, class... X>
-constexpr T _lzcnt(T src, X...) noexcept;
-
-// Trailing zeros count
-template <class T, class = decltype(__builtin_ctzll(T()))>
-constexpr T _tzcnt(T src) noexcept;
-template <class T, class... X>
-constexpr T _tzcnt(T src, X...) noexcept;
-
 // Bit field extraction
 template <class T, class = decltype(__builtin_ia32_bextr_u64(T(), T(), T()))>
 constexpr T _bextr(T src, T start, T len) noexcept;
 template <class T, class... X>
 constexpr T _bextr(T src, T start, T len, X...) noexcept;
-
-#if 0
-// Parallel bits deposit
-template <class T, class = decltype(_pdep_u64(T()))>
-constexpr T _pdep(T src, T msk) noexcept;
-template <class T, class... X>
-constexpr T _pdep(T src, T msk, X...) noexcept;
-
-// Parallel bits extract
-template <class T, class = decltype(_pext_u64(T()))>
-constexpr T _pext(T src, T msk) noexcept;
-template <class T, class... X>
-constexpr T _pext(T src, T msk, X...) noexcept;
-
-// Byte swap
-template <class T, class T128 = decltype(__uint128_t(__builtin_bswap64(T())))>
-constexpr T _byteswap(T src) noexcept;
-template <class T, class... X>
-constexpr T _byteswap(T src, X...) noexcept;
-
-#endif
 
 // Bit swap
 template <class T>
@@ -402,10 +202,6 @@ constexpr void _bitexch(T& src0, T& src1, S start, S len) noexcept;
 template <class T, class S>
 constexpr void _bitexch(T& src0, T& src1, S start0, S start1, S len) noexcept;
 
-// Bit compare
-template <class T>
-constexpr T _bitcmp(T src0, T src1, T start0, T start1, T len) noexcept;
-
 // Double precision shift left
 template <class T>
 constexpr T _shld(T dst, T src, T cnt) noexcept;
@@ -413,26 +209,6 @@ constexpr T _shld(T dst, T src, T cnt) noexcept;
 // Double precision shift right
 template <class T>
 constexpr T _shrd(T dst, T src, T cnt) noexcept;
-
-// Add carry
-template <class... T>
-using _supports_adc = decltype(__builtin_ia32_addcarryx_u64(T()...));
-template <class C, class T, class = _supports_adc<C, T, T, std::nullptr_t>>
-constexpr C _addcarry(C carry, T src0, T src1, T* dst) noexcept;
-template <class C, class T, class... X>
-constexpr C _addcarry(C carry, T src0, T src1, T* dst, X...) noexcept;
-
-// Sub borrow
-template <class... T>
-using _supports_sbb = decltype(__builtin_ia32_sbb_u64(T()...));
-template <class... T>
-using _supports_sbb_alt = decltype(__builtin_ia32_subborrow_u64(T()...));
-template <class B, class T, class = _supports_sbb<B, T, T, std::nullptr_t>>
-constexpr B _subborrow(B borrow, T src0, T src1, T* dst) noexcept;
-template <class B, class T, class = _supports_sbb_alt<B, T, T, std::nullptr_t>>
-constexpr B _subborrow(const B& borrow, T src0, T src1, T* dst) noexcept;
-template <class B, class T, class... X>
-constexpr B _subborrow(B borrow, T src0, T src1, T* dst, X...) noexcept;
 
 // Multiword multiply
 template <class T, class T128 = decltype(__uint128_t(T()))>
@@ -449,6 +225,9 @@ constexpr T lsr(const T val, const size_type shift) {
   return static_cast<T>(static_cast<std::make_unsigned_t<T>>(val) >> shift);
 }
 
+/*
+Logic shift right when `val` operand is a proxy reference
+*/
 template <typename T, typename size_type = size_t>
 constexpr exact_floor_integral_t<T> lsr(const T val, const size_type shift) {
   static_assert(!std::is_same_v<exact_floor_integral_t<T>, void>,
@@ -489,112 +268,6 @@ constexpr bool _assert_range_viability(Iterator first, Iterator last) {
 }
 // -------------------------------------------------------------------------- //
 
-// --------- IMPLEMENTATION DETAILS: INSTRUCTIONS: POPULATION COUNT --------- //
-// Counts the number of bits set to 1 with compiler intrinsics
-template <class T, class>
-constexpr T _popcnt(T src) noexcept {
-  static_assert(binary_digits<T>::value, "");
-  constexpr T digits = binary_digits<T>::value;
-  if (digits <= std::numeric_limits<unsigned int>::digits) {
-    src = __builtin_popcount(static_cast<std::make_unsigned_t<T>>(src));
-  } else if (digits <= std::numeric_limits<unsigned long int>::digits) {
-    src = __builtin_popcountl(static_cast<std::make_unsigned_t<T>>(src));
-  } else if (digits <= std::numeric_limits<unsigned long long int>::digits) {
-    src = __builtin_popcountll(static_cast<std::make_unsigned_t<T>>(src));
-  } else {
-    src = _popcnt(src, std::ignore);
-  }
-  return src;
-}
-
-// Counts the number of bits set to 1 without compiler intrinsics
-template <class T, class... X>
-constexpr T _popcnt(T src, X...) noexcept {
-  static_assert(binary_digits<T>::value, "");
-  T dst = T();
-  for (dst = T(); src; src = lsr(src, 1)) {
-    dst += src & 1;
-  }
-  return dst;
-}
-// -------------------------------------------------------------------------- //
-
-// ------- IMPLEMENTATION DETAILS: INSTRUCTIONS: LEADING ZEROS COUNT -------- //
-// Counts the number of leading zeros with compiler intrinsics
-template <class T, class>
-constexpr T _lzcnt(T src) noexcept {
-  static_assert(binary_digits<T>::value, "");
-  constexpr T digits = binary_digits<T>::value;
-  T dst = T();
-  if (digits < std::numeric_limits<unsigned int>::digits) {
-    dst = src ? __builtin_clz(src) - (std::numeric_limits<unsigned int>::digits - digits)
-              : digits;
-  } else if (digits == std::numeric_limits<unsigned int>::digits) {
-    dst = src ? __builtin_clz(src) : digits;
-  } else if (digits < std::numeric_limits<unsigned long int>::digits) {
-    dst = src ? __builtin_clzl(src) - (std::numeric_limits<unsigned long int>::digits - digits)
-              : digits;
-  } else if (digits == std::numeric_limits<unsigned long int>::digits) {
-    dst = src ? __builtin_clzl(src) : digits;
-  } else if (digits < std::numeric_limits<unsigned long long int>::digits) {
-    dst = src ? __builtin_clzll(src) - (std::numeric_limits<unsigned long long int>::digits - digits)
-              : digits;
-  } else if (digits == std::numeric_limits<unsigned long long int>::digits) {
-    dst = src ? __builtin_clzll(src) : digits;
-  } else {
-    dst = _lzcnt(src, std::ignore);
-  }
-  return dst;
-}
-
-// Counts the number of leading zeros without compiler intrinsics
-template <class T, class... X>
-constexpr T _lzcnt(T src, X...) noexcept {
-  static_assert(binary_digits<T>::value, "");
-  constexpr T digits = binary_digits<T>::value;
-  T dst = src != T();
-  while ((src = lsr(src, 1))) {
-    ++dst;
-  }
-  return digits - dst;
-}
-// -------------------------------------------------------------------------- //
-
-// ------- IMPLEMENTATION DETAILS: INSTRUCTIONS: TRAILING ZEROS COUNT ------- //
-// Counts the number of trailing zeros with compiler intrinsics
-template <class T, class>
-constexpr T _tzcnt(T src) noexcept {
-  static_assert(binary_digits<T>::value, "");
-  constexpr T digits = binary_digits<T>::value;
-  T dst = T();
-  if (digits <= std::numeric_limits<unsigned int>::digits) {
-    dst = src ? __builtin_ctz(src) : digits;
-  } else if (digits <= std::numeric_limits<unsigned long int>::digits) {
-    dst = src ? __builtin_ctzl(src) : digits;
-  } else if (digits <= std::numeric_limits<unsigned long long int>::digits) {
-    dst = src ? __builtin_ctzll(src) : digits;
-  } else {
-    dst = _tzcnt(src, std::ignore);
-  }
-  return dst;
-}
-
-// Counts the number of trailing zeros without compiler intrinsics
-template <class T, class... X>
-constexpr T _tzcnt(T src, X...) noexcept {
-  static_assert(binary_digits<T>::value, "");
-  constexpr T digits = binary_digits<T>::value;
-  T dst = digits;
-  if (src) {
-    src = lsr((src ^ (src - 1)), 1);
-    for (dst = T(); src; dst++) {
-      src = lsr(src, 1);
-    }
-  }
-  return dst;
-}
-// -------------------------------------------------------------------------- //
-
 // ------- IMPLEMENTATION DETAILS: INSTRUCTIONS: BIT FIELD EXTRACTION ------- //
 // Extacts to lsbs a field of contiguous bits with compiler intrinsics
 template <class T, class>
@@ -623,128 +296,6 @@ constexpr T _bextr(T src, T start, T len, X...) noexcept {
 }
 // -------------------------------------------------------------------------- //
 
-#if 0
-// ------- IMPLEMENTATION DETAILS: INSTRUCTIONS: PARALLEL BIT DEPOSIT ------- //
-// Deposits bits according to a mask with compiler instrinsics
-template <class T, class>
-constexpr T _pdep(T src, T msk) noexcept {
-  static_assert(binary_digits<T>::value, "");
-  constexpr T digits = binary_digits<T>::value;
-  T dst = T();
-  if (digits <= std::numeric_limits<unsigned int>::digits) {
-    dst = _pdep_u32(src, msk);
-  } else if (digits <= std::numeric_limits<unsigned long long int>::digits) {
-    dst = _pdep_u64(src, msk);
-  } else {
-    dst = _pdep(src, msk, std::ignore);
-  }
-  return dst;
-}
-
-// Deposits bits according to a mask without compiler instrinsics
-template <class T, class... X>
-constexpr T _pdep(T src, T msk, X...) noexcept {
-  static_assert(binary_digits<T>::value, "");
-  constexpr T digits = binary_digits<T>::value;
-  T dst = T();
-  T cnt = T();
-  while (msk) {
-    dst = lsr(dst, 1);
-    if (msk & 1) {
-      dst |= src << (digits - 1);
-      src = lsr(src, 1);
-    }
-    msk = lsr(msk, 1);
-    ++cnt;
-  }
-  dst = lsr(dst, (digits - cnt) * (cnt > 0));
-  return dst;
-}
-// -------------------------------------------------------------------------- //
-
-// ------- IMPLEMENTATION DETAILS: INSTRUCTIONS: PARALLEL BIT EXTRACT ------- //
-// Extracts bits according to a mask with compiler instrinsics
-template <class T, class>
-constexpr T _pext(T src, T msk) noexcept {
-  static_assert(binary_digits<T>::value, "");
-  constexpr T digits = binary_digits<T>::value;
-  T dst = T();
-  if (digits <= std::numeric_limits<unsigned int>::digits) {
-    dst = _pext_u32(src, msk);
-  } else if (digits <= std::numeric_limits<unsigned long long int>::digits) {
-    dst = _pext_u64(src, msk);
-  } else {
-    dst = _pext(src, msk, std::ignore);
-  }
-  return dst;
-}
-
-// Extracts bits according to a mask without compiler instrinsics
-template <class T, class... X>
-constexpr T _pext(T src, T msk, X...) noexcept {
-  static_assert(binary_digits<T>::value, "");
-  constexpr T digits = binary_digits<T>::value;
-  T dst = T();
-  T cnt = T();
-  while (msk) {
-    if (msk & 1) {
-      dst = lsr(dst, 1);
-      dst |= src << (digits - 1);
-      ++cnt;
-    }
-    src = lsr(src, 1);
-    msk = lsr(msk, 1);
-  }
-  dst = lsr(dst, (digits - cnt) * (cnt > 0));
-  return dst;
-}
-// -------------------------------------------------------------------------- //
-
-// ------------ IMPLEMENTATION DETAILS: INSTRUCTIONS: BYTE SWAP ------------- //
-// Reverses the order of the underlying bytes with compiler intrinsics
-template <class T, class T128>
-constexpr T _byteswap(T src) noexcept {
-  static_assert(binary_digits<T>::value, "");
-  using byte_t = unsigned char;
-  constexpr T digits = sizeof(T) * std::numeric_limits<byte_t>::digits;
-  std::uint64_t tmp64 = 0;
-  std::uint64_t* ptr64 = nullptr;
-  if (std::is_same<T, T128>::value) {
-    ptr64 = reinterpret_cast<std::uint64_t*>(&src);
-    tmp64 = __builtin_bswap64(*ptr64);
-    *ptr64 = __builtin_bswap64(*(ptr64 + 1));
-    *(ptr64 + 1) = tmp64;
-  } else if (digits == std::numeric_limits<std::uint16_t>::digits) {
-    src = __builtin_bswap16(src);
-  } else if (digits == std::numeric_limits<std::uint32_t>::digits) {
-    src = __builtin_bswap32(src);
-  } else if (digits == std::numeric_limits<std::uint64_t>::digits) {
-    src = __builtin_bswap64(src);
-  } else if (digits > std::numeric_limits<byte_t>::digits) {
-    src = _byteswap(src, std::ignore);
-  }
-  return src;
-}
-
-// Reverses the order of the underlying bytes without compiler intrinsics
-template <class T, class... X>
-constexpr T _byteswap(T src, X...) noexcept {
-  static_assert(binary_digits<T>::value, "");
-  using byte_t = unsigned char;
-  constexpr T half = sizeof(T) / 2;
-  constexpr T end = sizeof(T) - 1;
-  unsigned char* bytes = reinterpret_cast<byte_t*>(&src);
-  unsigned char byte = 0;
-  for (T i = T(); i < half; ++i) {
-    byte = bytes[i];
-    bytes[i] = bytes[end - i];
-    bytes[end - i] = byte;
-  }
-  return src;
-}
-// -------------------------------------------------------------------------- //
-#endif
-
 // ------------- IMPLEMENTATION DETAILS: INSTRUCTIONS: BIT SWAP ------------- //
 // Reverses the order of the bits with or without of compiler intrinsics
 template <class T>
@@ -760,7 +311,7 @@ constexpr T _bitswap(T src) noexcept {
   constexpr bool is_size1 = sizeof(T) == 1;
   constexpr bool is_byte = digits == std::numeric_limits<byte_t>::digits;
   constexpr bool is_octet = std::numeric_limits<byte_t>::digits == 8;
-  constexpr bool is_pow2 = _popcnt(digits, ignore) == 1;
+  constexpr bool is_pow2 = std::has_single_bit(static_cast<std::make_unsigned_t<T>>(digits));
   T dst = src;
   T i = digits - 1;
   if (is_size1 && is_byte && is_octet) {
@@ -908,15 +459,6 @@ constexpr void _bitexch(T& src0, T& src1, S start0, S start1, S len) noexcept
 // clang-format on
 // -------------------------------------------------------------------------- //
 
-// ----------- IMPLEMENTATION DETAILS: INSTRUCTIONS: BIT COMPARE ------------ //
-// Compares a subsequence of bits within src0 and src1 and returns 0 if equal
-template <class T>
-constexpr T _bitcmp(T src0, T src1, T start0, T start1, T len) noexcept {
-  static_assert(binary_digits<T>::value, "");
-  return _bextr(src0, start0, len) == _bextr(src1, start1, len);
-}
-// -------------------------------------------------------------------------- //
-
 // --- IMPLEMENTATION DETAILS: INSTRUCTIONS: DOUBLE PRECISION SHIFT LEFT ---- //
 // Left shifts dst by cnt bits, filling the lsbs of dst by the msbs of src
 template <class T>
@@ -947,6 +489,28 @@ constexpr T _shrd(T dst, T src, T cnt) noexcept {
 }
 // -------------------------------------------------------------------------- //
 
+#if defined(NO_X86_INTRINSICS)
+template <bool Add, std::integral U>
+static inline unsigned char add_carry_sub_borrow(unsigned char c_in, U a, U b, U* out) noexcept {
+  static_assert(std::is_unsigned_v<U>, "Only unsigned types are supported");
+
+  if constexpr (Add) {
+    U sum1 = a + b;
+    U sum2 = sum1 + static_cast<U>(c_in);
+    *out = sum2;
+
+    // Carry occurs if either sum1 overflows a+b or sum2 overflows sum1+carry
+    return static_cast<unsigned char>((sum1 < a) || (sum2 < sum1));
+  } else {
+    U diff1 = a - b;
+    U diff2 = diff1 - static_cast<U>(c_in);
+    *out = diff2;
+
+    // Borrow occurs if a < b or a - b < carry_in
+    return static_cast<unsigned char>((a < b) || (diff1 < c_in));
+  }
+}
+#else
 #if defined(__ADX__)
 template <bool Add>
 unsigned char ADDCARRYSUBBORROW32(unsigned char c, uint32_t a, uint32_t b, uint32_t* out) {
@@ -1000,6 +564,7 @@ static inline unsigned char add_carry_sub_borrow(unsigned char c_in, U a, U b, U
     assert(((void)"add carry intrinsics support only support powers of 2 bits", false));
   }
 }
+#endif  // NO_X86_INTRINSICS
 
 template <std::integral U>
 static inline unsigned char add_carry(unsigned char c_in, U a, U b, U* out) noexcept {

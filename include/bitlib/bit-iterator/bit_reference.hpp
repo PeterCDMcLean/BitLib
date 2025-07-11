@@ -15,6 +15,7 @@
 // ================================ PREAMBLE ================================ //
 // C++ standard library
 // Project sources
+#include <bit>
 #include <type_traits>
 
 #include "bit_details.hpp"
@@ -221,12 +222,12 @@ constexpr bit_reference<WordRef>::operator bool() const noexcept {
 // Gets a bit pointer from the bit reference
 template <class WordRef>
 constexpr bit_pointer<std::remove_reference_t<WordRef>> bit_reference<WordRef>::operator&() const noexcept {
-  return bit_pointer<WordType>(&_ref, _tzcnt(_mask));
+  return bit_pointer<WordType>(&_ref, std::countr_zero(_mask));
 }
 
 template <class WordRef>
 constexpr bit_pointer<std::remove_reference_t<WordRef>> bit_reference<WordRef>::operator&() noexcept {
-  return bit_pointer<WordType>(&_ref, _tzcnt(_mask));
+  return bit_pointer<WordType>(&_ref, std::countr_zero(_mask));
 }
 // -------------------------------------------------------------------------- //
 
