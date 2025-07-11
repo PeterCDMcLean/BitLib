@@ -9,6 +9,7 @@
 
 // ============================== PREAMBLE ================================== //
 // C++ standard library
+#include <bit>
 #include <iterator>
 // Project sources
 #include "bitlib/bit-iterator/bit.hpp"
@@ -37,6 +38,7 @@ constexpr bit_iterator<RandomAccessIt> find(
 ) {
 
     using word_type = typename bit_iterator<RandomAccessIt>::word_type;
+    using uword_type = std::make_unsigned_t<word_type>;
     using size_type = typename bit_iterator<RandomAccessIt>::size_type;
     const std::size_t digits = binary_digits<word_type>::value;
 
@@ -48,8 +50,8 @@ constexpr bit_iterator<RandomAccessIt> find(
     if (!is_first_aligned) {
       word_type shifted_first = lsr(*first.base(), first.position());
       size_type num_trailing_complementary_bits = (bv == bit0)
-                                                      ? _tzcnt(static_cast<word_type>(~shifted_first))
-                                                      : _tzcnt(static_cast<word_type>(shifted_first));
+                                                      ? std::countr_zero(static_cast<uword_type>(~shifted_first))
+                                                      : std::countr_zero(static_cast<uword_type>(shifted_first));
       if (std::next(first.base(), is_last_aligned) == last.base()) {
         return first + std::min(num_trailing_complementary_bits, static_cast<size_type>(distance(first, last)));
       } else if (num_trailing_complementary_bits + first.position() < digits) {
@@ -72,8 +74,8 @@ constexpr bit_iterator<RandomAccessIt> find(
         }
 
         size_type num_trailing_complementary_bits = (bv == bit0)
-            ? _tzcnt(static_cast<word_type>(~*it))
-            : _tzcnt(static_cast<word_type>(*it));
+                                                        ? std::countr_zero(static_cast<uword_type>(~*it))
+                                                        : std::countr_zero(static_cast<uword_type>(*it));
         return bit_iterator(it, (size_type) num_trailing_complementary_bits);
     }
 
@@ -92,8 +94,8 @@ constexpr bit_iterator<RandomAccessIt> find(
         {
             it += hn::FindKnownFirstTrue(d, found);
             size_type num_trailing_complementary_bits = (bv == bit0)
-                ? _tzcnt(static_cast<word_type>(~*it))
-                : _tzcnt(static_cast<word_type>(*it));
+                                                            ? std::countr_zero(static_cast<uword_type>(~*it))
+                                                            : std::countr_zero(static_cast<uword_type>(*it));
             return bit_iterator(it, (size_type) num_trailing_complementary_bits);
         }
     }
@@ -106,18 +108,18 @@ constexpr bit_iterator<RandomAccessIt> find(
     }
 
     if (it != last.base()) {
-        size_type num_trailing_complementary_bits = (bv == bit0)
-            ? _tzcnt(static_cast<word_type>(~*it))
-            : _tzcnt(static_cast<word_type>(*it));
-        return bit_iterator(it, static_cast<size_type>(num_trailing_complementary_bits));
+      size_type num_trailing_complementary_bits = (bv == bit0)
+                                                      ? std::countr_zero(static_cast<uword_type>(~*it))
+                                                      : std::countr_zero(static_cast<uword_type>(*it));
+      return bit_iterator(it, static_cast<size_type>(num_trailing_complementary_bits));
     }
 
     // Deal with any unaligned boundaries
     if (!is_last_aligned) {
-        size_type num_trailing_complementary_bits = (bv == bit0)
-            ? _tzcnt(static_cast<word_type>(~*it))
-            : _tzcnt(static_cast<word_type>(*it));
-        return bit_iterator(it, static_cast<size_type>(std::min(num_trailing_complementary_bits, last.position())));
+      size_type num_trailing_complementary_bits = (bv == bit0)
+                                                      ? std::countr_zero(static_cast<uword_type>(~*it))
+                                                      : std::countr_zero(static_cast<uword_type>(*it));
+      return bit_iterator(it, static_cast<size_type>(std::min(num_trailing_complementary_bits, last.position())));
     }
     return last;
 }

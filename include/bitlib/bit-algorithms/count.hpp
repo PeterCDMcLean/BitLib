@@ -57,7 +57,7 @@ count(
 
       if (first.position() != 0) {
         word_type first_value = lsr(*first.base(), first.position());
-        result = _popcnt(first_value);
+        result = std::popcount(static_cast<std::make_unsigned_t<word_type>>(first_value));
         ++it;
       }
 // The SIMD implementation here is actually slower than the standard
@@ -67,46 +67,44 @@ count(
         //{
             //// Align to boundary
             //for (; it != last.base() && !is_aligned(&(*it), 64); ++it) {
-                //result += _popcnt(*it);
-            //}
+      //result += std::popcount(*it);
+      //}
 
-            //// SIMD
-            //hn::ScalableTag<word_type> d;
-            //for (; std::distance(it, last.base()) >= hn::Lanes(d); it += hn::Lanes(d))
-            //{
-                //const auto popcntV = hn::PopulationCount(hn::Load(d, &*it));
-                //result += hn::ReduceSum(d, popcntV);
-            //}
+      //// SIMD
+      //hn::ScalableTag<word_type> d;
+      //for (; std::distance(it, last.base()) >= hn::Lanes(d); it += hn::Lanes(d))
+      //{
+      //const auto popcntV = hn::PopulationCount(hn::Load(d, &*it));
+      //result += hn::ReduceSum(d, popcntV);
+      //}
 
-            //// Remaining
-            //for (; it != last.base(); ++it) {
-                //result += _popcnt(*it);
-            //}
-        //} else
-//#endif
-        {
-            // std:: version
-            //result += std::transform_reduce(
-                    //it,
-                    //last.base(),
-                    //0,
-                    //std::plus{},
-                    //[](word_type word) {return _popcnt(word); }
-            //);
+      //// Remaining
+      //for (; it != last.base(); ++it) {
+      //result += std::popcount(*it);
+      //}
+      //} else
+      //#endif
+      {
+        // std:: version
+        //result += std::transform_reduce(
+        //it,
+        //last.base(),
+        //0,
+        //std::plus{},
+        //[](word_type word) {return std::popcount(word); }
+        //);
 
-            // libpopcnt
-            result += popcnt(&*it, (digits / 8) * std::distance(it, last.base()));
-        }
+        // libpopcnt
+        result += popcnt(&*it, (digits / 8) * std::distance(it, last.base()));
+      }
         if (last.position() != 0) {
             word_type last_value = *last.base() << (digits - last.position());
-            result += _popcnt(last_value);
+            result += std::popcount(static_cast<std::make_unsigned_t<word_type>>(last_value));
         }
     // Computation when bits belong to the same underlying word
     } else {
-        result = _popcnt(
-            _bextr<word_type>(*first.base(), first.position(), last.position()
-              - first.position())
-        );
+      result = std::popcount(static_cast<std::make_unsigned_t<word_type>>(
+          _bextr<word_type>(*first.base(), first.position(), last.position() - first.position())));
     }
 
     // Negates when the number of zero bits is requested
