@@ -170,7 +170,7 @@ Typical bit integrals are represented as 'Bit Bit Endian'
 ```
 
 Several parts of the API that take or output sequences of bits may be sensitive to bit endian
-or use the less-than-intuitive little bit endian.
+or use the unintuitive little bit endian.
  - initializer list of `bit_value` is in little bit endian.
      ex: `{bit1, bit0, bit1, bit1}` == `0b1101`;
  - `to_string` can be templated with a programmable endian. By default it is big bit endian
