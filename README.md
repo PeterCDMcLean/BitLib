@@ -360,40 +360,40 @@ auto bitret = bit::transform(
         bitvec3.begin()
         binary_op);
 ```
- - accumulate
+ #### accumulate
 Order sensitive lambda reduction operation.
- - copy_backward
- - copy
+ #### copy_backward
+ #### copy
 
- - count
+ #### count
 Count bit1 or bit0
 
- - equal
+ #### equal
 Compare two bit sequences
 
- - fill
+ #### fill
 Fill with bit1 or bit0
 
- - find
+ #### find
 Get the position of the first bit1 or bit0
 
- - move
+ #### move
 Alias of copy
 
- - reverse
+ #### reverse
 Reverse the bit sequence in-place
 
- - rotate
+ #### rotate
 Rotate the bit sequence in-place
 
- - shift
+ #### shift
 
- - swap_ranges
+ #### swap_ranges
 
- - to_from_string
+ #### to_from_string
 Convert to string or from string
 
- - transform
+ #### transform
 Word-by-word lambda operation on single or double operand
 
 # Contributors<a href="#contributors"></a>
