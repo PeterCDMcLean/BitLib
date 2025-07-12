@@ -163,6 +163,16 @@ struct exact_floor_integral {
 template <typename T>
 using exact_floor_integral_t = typename exact_floor_integral<T>::type;
 
+template <typename From, typename To, typename = void>
+struct is_static_castable : std::false_type {};
+
+template <typename From, typename To>
+struct is_static_castable<From, To, std::void_t<decltype(static_cast<To>(std::declval<From>()))>>
+    : std::true_type {};
+
+template <typename From, typename To>
+constexpr bool is_static_castable_v = is_static_castable<From, To>::value;
+
 /* ***************************** BINARY DIGITS ****************************** */
 // Binary digits structure definition
 // Implementation template: only instantiates static_asserts for non-byte types.

@@ -30,7 +30,7 @@
 // Miscellaneous
 // ========================================================================== //
 
-
+static_assert(std::is_same_v<typename bit::bit_iterator<bit::bit_word_pointer_adapter<uint8_t*, uint16_t*>>::word_type, uint8_t>);
 
 // ========================================================================== //
 #endif // _BIT_HPP_INCLUDED

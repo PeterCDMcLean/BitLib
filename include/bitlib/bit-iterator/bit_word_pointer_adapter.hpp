@@ -208,6 +208,8 @@ constexpr auto operator-(
   }
 }
 
+static_assert(std::is_same_v<std::iter_value_t<bit_word_pointer_adapter<uint8_t*, uint16_t*>>, uint8_t>);
+
 } // namespace bit
 
 #endif  // _BIT_WORD_POINTER_ADAPTER_HPP_

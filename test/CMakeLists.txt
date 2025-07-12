@@ -24,6 +24,7 @@ add_executable(bitlib-tests)
 
 set(TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/src/fixtures.hpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/test-addition.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/test-array.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/test-bitwise.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/test-copy_backward.cpp"
@@ -36,6 +37,7 @@ set(TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/src/test-iterator_adapter.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/test-literal.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/test-move.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/test-multiplication.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/test-reverse.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/test-rotate.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/test-shift.cpp"
