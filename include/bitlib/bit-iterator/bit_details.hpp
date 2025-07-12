@@ -55,30 +55,6 @@ class bit_word_pointer_adapter;
 
 // ========================================================================== //
 
-/* ***************************** BINARY DIGITS ****************************** */
-// Binary digits structure definition
-// Implementation template: only instantiates static_asserts for non-byte types.
-template <typename T, bool = std::is_same<T, std::byte>::value>
-struct binary_digits_impl : std::integral_constant<std::size_t, std::numeric_limits<std::make_unsigned_t<T>>::digits> {
-  static_assert(std::is_integral<T>::value, "Type must be integral");
-  //static_assert(std::is_unsigned<T>::value, "Type must be unsigned");
-  static_assert(!std::is_same<T, bool>::value, "Type must not be bool");
-  static_assert(!std::is_same<T, char>::value, "Type must not be char");
-};
-
-// Specialization for std::byte.
-template <>
-struct binary_digits_impl<std::byte, true> : std::integral_constant<std::size_t, std::numeric_limits<unsigned char>::digits> {};
-
-// Public interface that removes cv-qualifiers.
-template <typename UIntType>
-struct binary_digits : binary_digits_impl<std::remove_cv_t<UIntType>> {};
-
-// Binary digits value
-template <class T>
-constexpr std::size_t binary_digits_v = binary_digits<T>::value;
-/*************************************************************************** */
-
 template <size_t N>
 using ceil_integral = std::conditional_t<
     (N <= bitsof<std::uint8_t>()),
@@ -173,6 +149,30 @@ struct exact_floor_integral {
 // Helper alias
 template <typename T>
 using exact_floor_integral_t = typename exact_floor_integral<T>::type;
+
+/* ***************************** BINARY DIGITS ****************************** */
+// Binary digits structure definition
+// Implementation template: only instantiates static_asserts for non-byte types.
+template <typename T, bool = std::is_same<T, std::byte>::value>
+struct binary_digits_impl : std::integral_constant<std::size_t, std::numeric_limits<std::make_unsigned_t<exact_floor_integral_t<T>>>::digits> {
+  static_assert(std::is_integral<exact_floor_integral_t<T>>::value, "Type must be integral");
+  //static_assert(std::is_unsigned<T>::value, "Type must be unsigned");
+  static_assert(!std::is_same<exact_floor_integral_t<T>, bool>::value, "Type must not be bool");
+  static_assert(!std::is_same<exact_floor_integral_t<T>, char>::value, "Type must not be char");
+};
+
+// Specialization for std::byte.
+template <>
+struct binary_digits_impl<std::byte, true> : std::integral_constant<std::size_t, std::numeric_limits<unsigned char>::digits> {};
+
+// Public interface that removes cv-qualifiers.
+template <typename UIntType>
+struct binary_digits : binary_digits_impl<std::remove_cv_t<UIntType>> {};
+
+// Binary digits value
+template <class T>
+constexpr std::size_t binary_digits_v = binary_digits<T>::value;
+/*************************************************************************** */
 
 /* ******************* IMPLEMENTATION DETAILS: UTILITIES ******************** */
 // Assertions
@@ -627,11 +627,11 @@ constexpr T _mulx(T src0, T src1, T* hi, X...) noexcept
 }
 // -------------------------------------------------------------------------- //
 
-template <typename AlgoFunc, typename SrcIt, typename DstIt>
+template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
 constexpr auto with_bit_iterator_adapter(
-    bit_iterator<SrcIt> first,
-    bit_iterator<SrcIt> last,
-    bit_iterator<DstIt> d_first) {
+    const bit_iterator<SrcIt>& first,
+    const bit_iterator<SrcIt>& last,
+    const bit_iterator<DstIt>& d_first) {
   using dst_word_type = typename bit_iterator<DstIt>::word_type;
   using src_word_type = typename bit_iterator<SrcIt>::word_type;
   if constexpr (!std::is_same_v<src_word_type, dst_word_type> && bitsof<src_word_type>() != bitsof<dst_word_type>()) {
@@ -651,10 +651,26 @@ constexpr auto with_bit_iterator_adapter(
   }
 }
 
-template <typename AlgoFunc, typename SrcIt, typename DstIt>
+template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
 constexpr auto with_bit_iterator_adapter(
-    bit_iterator<SrcIt> first,
-    bit_iterator<DstIt> last) {
+    const SrcIt& first,
+    const SrcIt& last,
+    const bit_iterator<DstIt>& d_first) {
+  return with_bit_iterator_adapter<AlgoFunc>(bit_iterator(first), bit_iterator(last), d_first);
+}
+
+template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
+constexpr auto with_bit_iterator_adapter(
+    const bit_iterator<SrcIt>& first,
+    const bit_iterator<SrcIt>& last,
+    const DstIt& d_first) {
+  return with_bit_iterator_adapter<AlgoFunc>(first, last, bit_iterator(d_first));
+}
+
+template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
+constexpr auto with_bit_iterator_adapter(
+    const bit_iterator<SrcIt>& first,
+    const bit_iterator<DstIt>& last) {
   using dst_word_type = typename bit_iterator<DstIt>::word_type;
   using src_word_type = typename bit_iterator<SrcIt>::word_type;
   if constexpr (!std::is_same_v<src_word_type, dst_word_type> && bitsof<src_word_type>() != bitsof<dst_word_type>()) {
@@ -670,6 +686,20 @@ constexpr auto with_bit_iterator_adapter(
   } else {
     return AlgoFunc{}(first, last);
   }
+}
+
+template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
+constexpr auto with_bit_iterator_adapter(
+    const SrcIt& first,
+    const bit_iterator<DstIt>& last) {
+  return with_bit_iterator_adapter<AlgoFunc>(bit_iterator(first), last);
+}
+
+template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
+constexpr auto with_bit_iterator_adapter(
+    const bit_iterator<SrcIt>& first,
+    const DstIt& last) {
+  return with_bit_iterator_adapter<AlgoFunc>(first, bit_iterator(last));
 }
 
 namespace detail {

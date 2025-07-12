@@ -41,18 +41,14 @@ class bit_word_reference_adapter {
     requires(is_big_to_small)
       : _source(source), _index(index) {
   }
-  explicit constexpr bit_word_reference_adapter(const bit_word_reference_adapter& other) {
-    if constexpr (is_small_to_big) {
-      *reinterpret_cast<target_word*>(&_source) = *reinterpret_cast<const target_word*>(&_source);
-    } else {
-      *(reinterpret_cast<target_word*>(&_source) + _index) = *(reinterpret_cast<const target_word*>(&_source) + other._index);
-    }
+  explicit constexpr bit_word_reference_adapter(const bit_word_reference_adapter& other)
+      : _source(other._source), _index(other._index) {
   }
   constexpr bit_word_reference_adapter& operator=(const bit_word_reference_adapter& other) {
     if constexpr (is_small_to_big) {
-      *reinterpret_cast<target_word*>(&_source) = *reinterpret_cast<const target_word*>(&_source);
+      *reinterpret_cast<target_word*>(&_source) = *reinterpret_cast<const target_word*>(&other._source);
     } else {
-      *(reinterpret_cast<target_word*>(&_source) + _index) = *(reinterpret_cast<const target_word*>(&_source) + other._index);
+      *(reinterpret_cast<target_word*>(&_source) + _index) = *(reinterpret_cast<const target_word*>(&other._source) + other._index);
     }
     return *this;
   }

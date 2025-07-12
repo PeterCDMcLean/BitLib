@@ -25,7 +25,8 @@ auto twos_complement_exponent = static_cast<uint8_t>(exponent) - ((1 << 5)-1);
 - [Table of Contents](#table-of-contents)
 - [Requirements](#requirements)
 - [CMake](#cmake)
-- [Sized Literal](#literal)
+- [Sized Literal](#sized-literal)
+- [Bit Endian](#endian)
 - [Slice Operator](#slice-operator)
 - [Policy](#policy)
 - [Owning Containers](#owning-containers)
@@ -42,6 +43,7 @@ auto twos_complement_exponent = static_cast<uint8_t>(exponent) - ((1 << 5)-1);
   - [bit_word_reference_adapter](#bit_word_reference_adapter)
 - [Algorithms](#algorithms)
 - [Testing](#testing)
+- [Future Work](#future-work)
 - [Contributors](#contributors)
 - [License](#license)
 
@@ -98,7 +100,7 @@ target_sources(example PRIVATE example.cpp)
 target_link_libraries(example PRIVATE bitlib::bitlib)
 ```
 
-# Literal<a href="#literal"></a>
+# Sized Literal<a href="#sized-literal"></a>
 
 This provides a sized literal for compile-time bit_array.
 
@@ -157,6 +159,30 @@ auto bin_lit = 0b11111'11110001001000000_b; //31 bit binary literal
 auto oct_lit = 037'361100_b; // 31 bit octal literal
 ```
 
+# Bit Endian<a href="#bit-endian"></a>
+
+'Bit Endian' is the format of a sequence of bits:
+ - 'Big Bit Endian' (BBE) the left-most bit is the most-significant-bit and right-most bit is the least-significant-bit
+ - 'Little Bit Endian' (LBE) the left-most bit is the least-significant-bit and right-most is the most-significant-bit
+
+Typical bit integrals are represented as 'Bit Bit Endian'
+```c++
+  int bits = 0b10101000;
+  //     MSB --|      |-- LSB
+```
+
+Several parts of the API that take or output sequences of bits may be sensitive to bit endian
+or use the unintuitive little bit endian.
+ - initializer list of `bit_value` is in little bit endian.
+     ex: `{bit1, bit0, bit1, bit1}` == `0b1101`;
+ - `to_string` can be templated with a programmable endian. By default it is big bit endian
+ - `shift_left` and `shift_right` mimic std::shift and work in _little bit endian_.
+```c++
+    auto bits = 0b1000'10101000_b;
+    bit::shift_left(bits.begin(), bits.end(), 3); // a left shift in _little bit endian_
+    bits == 0b1000'00010101_b; // is actually a right shift in big bit endian
+```
+
 # Slice Operator<a href="#slice-operator"></a>
 
 All containers and views provide a slice operator which take a half-open range and
@@ -185,7 +211,7 @@ The default policy truncates when necessary and sign extends for conversion to/f
 
  - `bit::bit_array` is an alias for `bit::array<bit::bit_value, ...>`
  - `bit::array` is a fixed-size and non-rebindable container with similar API to `std::array`
- - `bit::bit_vector` is a resizable container with similar API to `std::vector`
+ - `bit::bit_vector` is a resizable container with similar API to `std::vector<bool>`
 
 ## bit_array<a href="#bit_array"></a>
 
@@ -194,12 +220,12 @@ Provides compile-time or construction time container for an array of bits.
 ### Compile-time:
 Storage is on the stack. The number of bytes is the nearest power of two integral size.
 ```c++
-bit_array<11> vec_11(0x123); // Will use a uint16_t to hold the data
-bit_array<65> vec_65(); // Will use a uint64_t to hold the data
+bit::bit_array<11> vec_11(0x123); // Will use a uint16_t to hold the data
+bit::bit_array<65> vec_65(); // Will use a uint64_t to hold the data
 ```
 The storage word type can be specified:
 ```c++
-bit_array<65, uint8_t> vec_65_bytes(); // 9 bytes on stack
+bit::bit_array<65, uint8_t> vec_65_bytes(); // 9 bytes on stack
 ```
 
 ### Construction-time
@@ -209,14 +235,29 @@ Since the N template parameter is by default std::dynamic_extent this is the
 default template specialization `bit_array<>`.
 
 ```c++
-bit_array<> vec_11(11, 0x123); // 8 bytes on stack for data, 8 bytes for size
-bit_array<> vec_64(65); // same stack size as above + 16 bytes in heap
+bit::bit_array<> vec_11(11, 0x123); // 8 bytes on stack for data, 8 bytes for size
+bit::bit_array<> vec_64(65); // same stack size as above + 16 bytes in heap
 ```
 The storage word size is by default uintptr_t.
 The container will perform small buffer optimization
 when the number of bits is equal or less than `bitsof<uintptr_t>()` typically 64.
 
 ## bit_vector<a href="#bit_vector"></a>
+
+bit_vector provides similar API to `std::vector<bool>`. It owns runtime reallocatable storage.
+The first template parameter is the integral datatype of the underlying storage.
+
+```c++
+bit::bit_vector<uint32_t> vec(199, bit::bit1);
+vec.push_back(bit0);
+vec.insert(98, bit0);
+vec(0, 7) = 7'7_b; // supports slice operator
+```
+
+> [!IMPORTANT]
+> bit_vector does not support construction from integral or implicit cast to integral
+> bit_vector is also lacking bit operators such as ~, <<, >>, &, | ...
+
 # Non-Owning Views<a href="#non-owning-views"></a>
 ## bit_array_ref<a href="#bit_array_ref"></a>
 ## bit_span<a href="#bit_span"></a>
@@ -241,7 +282,7 @@ There are three flavours of accessors:
 
 bit_value:
 ```c++
-bit_array<7*8*9> bits();
+bit::bit_array<7*8*9> bits();
 std::mdspan<
   bit::bit_value,
   std::extents<size_t, 7, 8, 9>,
@@ -271,7 +312,7 @@ assert(bits(7*8*9-7, 7*8*9) == 0x7F);
 
 Construction-time:
 ```c++
-bit_array<> bits(7*8*9);
+bit::bit_array<> bits(7*8*9);
 std::mdspan<
   bit::bit_word_accessor<>::element_type,
   std::dextents<size_t, 2>,
@@ -291,21 +332,85 @@ assert(bits(7*8*9-7, 7*8*9) == 0x7F);
 ## bit_reference<a href="#bit_reference"></a>
 ## bit_word_pointer_adapter<a href="#bit_word_pointer_adapter"></a>
 ## bit_word_reference_adapter<a href="#bit_word_reference_adapter"></a>
+
 # Algorithms<a href="#algorithms"></a>
- - accumulate
- - copy_backward
- - copy
- - count
- - equal
- - fill
- - find
- - move
- - reverse
- - rotate
- - shift
- - swap_ranges
- - to_from_string
- - transform
+The algorithms again work in the same manner as the STL.
+The functions provided here have the same interface as those in the STL.
+However, they take advantage of bit-parallelism.
+It should be noted that if there is an STL algorithm that is not supported yet by BitLib,
+the STL implementation should work. For example:
+```c++
+using WordType = uint64_t;
+bit::bit_vector<WordType> bvec1 ("011111010010");
+bit::bit_vector<WordType> bvec2 = bvec1;
+bit::equal(bvec1.begin(), bvec1.end(), bvec2.begin(), bvec1.end());
+std::equal(bvec1.begin(), bvec1.end(), bvec2.begin(), bvec1.end()); // Also works, but much slower as it works bit-by-bit
+```
+
+For algorithms which take a function (i.e. `bit::transform`),
+the function should have `WordType` as the input types as well as the return type.
+For example, to compute the intersection of two bitvectors:
+```c++
+using WordType = uint64_t;
+auto binary_op = std::bit_and<WordType>();
+
+// Store the AND of bitvec1 and bitvec2 in bitvec3
+auto bitret = bit::transform(
+        bitvec1.begin(),
+        bitvec1.end(),
+        bitvec2.begin(),
+        bitvec3.begin()
+        binary_op);
+```
+ #### accumulate
+Order sensitive lambda reduction operation.
+ #### copy_backward
+ #### copy
+
+ #### count
+Count bit1 or bit0
+
+ #### equal
+Compare two bit sequences
+
+ #### fill
+Fill with bit1 or bit0
+
+ #### find
+Get the position of the first bit1 or bit0
+
+ #### move
+Alias of copy
+
+ #### reverse
+Reverse the bit sequence in-place
+
+ #### rotate
+Rotate the bit sequence in-place
+
+ #### shift
+
+ #### swap_ranges
+
+ #### to_from_string
+Convert to string or from string
+
+ #### transform
+Word-by-word lambda operation on single or double operand
+
+# Future Work<a href="#future-work"></a>
+
+Some features in-mind for this library:
+
+- bit_integer
+  * A compile-time/construction-time integer with support for all numeric operators
+
+- bit_vector
+  * Alias to a `bit::vector<...>` class which will support any vector-like container (ex: folly:small_vector)
+
+- bit_float
+  * Arbitrary precision floating point type
+
 
 # Contributors<a href="#contributors"></a>
 - Vincent Reverdy
