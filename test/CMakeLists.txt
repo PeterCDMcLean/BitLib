@@ -24,6 +24,7 @@ add_executable(bitlib-tests)
 
 target_sources(bitlib-tests PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/src/fixtures.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-addition.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-array.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-bitwise.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-copy_backward.cpp
@@ -36,12 +37,13 @@ target_sources(bitlib-tests PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-iterator_adapter.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-literal.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-move.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-multiplication.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-reverse.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-rotate.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-shift.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-span.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-swap_ranges.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-to_string.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-to_from_string.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-transform.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-usecase.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-array_ref.cpp

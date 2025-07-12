@@ -62,7 +62,7 @@ constexpr bit_iterator<RandomAccessItOut> transform(
         *it,
         unary_op(
             static_cast<word_type>(
-                get_word<word_type>(first, partial_bits_to_op)
+                get_masked_word<word_type>(first, partial_bits_to_op)
                 << static_cast<word_type>(d_first.position()))),
         static_cast<word_type>(d_first.position()),
         static_cast<word_type>(partial_bits_to_op));
@@ -116,7 +116,7 @@ constexpr bit_iterator<RandomAccessItOut> transform(
         if (remaining_bits_to_op > 0) {
           *it = _bitblend(
               *it,
-              unary_op(get_word<word_type>(first, remaining_bits_to_op)),
+              unary_op(get_masked_word<word_type>(first, remaining_bits_to_op)),
               _mask<word_type>(remaining_bits_to_op));
         }
   }
@@ -155,10 +155,10 @@ constexpr bit_iterator<RandomAccessItOut> transform(
         *it,
         binary_op(
             static_cast<word_type>(
-                get_word<word_type>(first1, partial_bits_to_op)
+                get_masked_word<word_type>(first1, partial_bits_to_op)
                 << static_cast<word_type>(d_first.position())),
             static_cast<word_type>(
-                get_word<word_type>(first2, partial_bits_to_op)
+                get_masked_word<word_type>(first2, partial_bits_to_op)
                 << static_cast<word_type>(d_first.position()))),
         static_cast<word_type>(d_first.position()),
         static_cast<word_type>(partial_bits_to_op));
@@ -193,8 +193,8 @@ constexpr bit_iterator<RandomAccessItOut> transform(
       *it = _bitblend(
           *it,
           binary_op(
-              get_word<word_type>(first1, remaining_bits_to_op),
-              get_word<word_type>(first2, remaining_bits_to_op)),
+              get_masked_word<word_type>(first1, remaining_bits_to_op),
+              get_masked_word<word_type>(first2, remaining_bits_to_op)),
           _mask<word_type>(remaining_bits_to_op));
     }
   }
