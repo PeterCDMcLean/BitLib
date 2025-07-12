@@ -111,9 +111,27 @@ template <string::metadata_t meta = string::typical()>
 constexpr std::string to_string(const bit_sized_range auto& bits, std::string prefix = "") {
   return to_string<meta>(bits.begin(), bits.end(), prefix);
 }
+#if 0
+template <string::metadata_t meta = string::typical(), typename Policy = policy::typical<uintptr_t>, typename RandomAccessIt>
+constexpr size_t pessimistic_bits_for_string(
+    const char* str_first, const char* str_last) {
+  const char* it = str_first;
+  for (; (it != str_last) && (*it == '0'); ++it) {
+  }
+  const size_t non_zero_str_len = str_last - it;
+  if (non_zero_str_len == 0) {
+    return meta.is_signed ? 1 : 0;  // All zeros
+  }
+  if constexpr (std::has_single_bit(meta.base)) {
+    constexpr const auto base_bits = std::bit_width(meta.base - 1);
+    static constexpr auto base_from_digits = string::make_from_digit_map<meta.base>();
+    return non_zero_str_len * base_bits + meta.is_signed;
+  } else {
+    constexpr double base_in_base2 = std::log2(meta.base);
 
-/*
-Commenting this out temporarily as the reference to bit_vector/bit_array messes up include dependency DAG
+    return static_cast<size_t>(std::floor(base_in_base2 * non_zero_str_len)) + 1 + meta.is_signed;
+  }
+}
 
 template <string::metadata_t meta = string::typical(), typename Policy = policy::typical<uintptr_t>, typename RandomAccessIt>
 constexpr void from_string(
@@ -121,7 +139,29 @@ constexpr void from_string(
     const char* str_first, const char* str_last,
     bit_iterator<RandomAccessIt> bit_first, bit_iterator<RandomAccessIt> bit_last) {
   const auto str_len = str_last - str_first;
+  const auto store_bits = distance(bit_first, bit_last);
+  if constexpr (std::has_single_bit(meta.base)) {
+    constexpr const auto base_bits = std::bit_width(meta.base - 1);
+    static constexpr auto base_from_digits = string::make_from_digit_map<meta.base>();
+    constexpr const auto str_bits = str_len * base_bits;
+    if (store_bits < str_bits) {
+      Policy::truncation::template from_string<std::dynamic_extent>(
+          str_first, str_last, str_cur, bit_first, bit_last);
+    } else if (store_bits > str_bits) {
+      Policy::extension::template from_string<std::dynamic_extent>(
+          str_first, str_last, str_cur, bit_first, bit_last);
+    } else {
+      char str_cur = str_last - 1;
+      bit_iterator<RandomAccessIt> bit_cur = bit_first;
+      while (str_cur >= str_first) {
+        str_cur--;
+      }
+    }
+  }
 }
+#endif
+/*
+Commenting this out temporarily as the reference to bit_vector/bit_array messes up include dependency DAG
 
 template <string::metadata_t meta = string::typical()>
 constexpr bit_vector<> from_string(const char* first, const char* last) {
