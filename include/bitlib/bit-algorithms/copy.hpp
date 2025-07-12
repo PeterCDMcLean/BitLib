@@ -24,12 +24,27 @@ namespace bit {
 
 struct copy_impl;
 
-// Status: Does not work for Input/Output iterators due to distance call
-template <typename RandomAccessIt1, typename RandomAccessIt2>
-constexpr bit_iterator<RandomAccessIt2> copy(
-    const bit_iterator<RandomAccessIt1>& first,
-    const bit_iterator<RandomAccessIt1>& last,
-    const bit_iterator<RandomAccessIt2>& d_first) {
+template <typename It1, typename It2>
+constexpr bit_iterator<It2> copy(
+    const bit_iterator<It1>& first,
+    const bit_iterator<It1>& last,
+    const It2& d_first) {
+  return with_bit_iterator_adapter<copy_impl>(first, last, d_first);
+}
+
+template <typename It1, typename It2>
+constexpr bit_iterator<It2> copy(
+    const It1& first,
+    const It1& last,
+    const bit_iterator<It2>& d_first) {
+  return with_bit_iterator_adapter<copy_impl>(first, last, d_first);
+}
+
+template <typename It1, typename It2>
+constexpr bit_iterator<It2> copy(
+    const bit_iterator<It1>& first,
+    const bit_iterator<It1>& last,
+    const bit_iterator<It2>& d_first) {
   return with_bit_iterator_adapter<copy_impl>(first, last, d_first);
 }
 

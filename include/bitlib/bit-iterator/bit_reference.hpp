@@ -32,7 +32,8 @@ namespace bit {
 template <typename WordRef = uintptr_t&>
 class bit_reference {
  public:
-  using WordType = std::remove_reference_t<WordRef>;
+  using WordType = exact_floor_integral_t<std::remove_cv_t<WordRef>>;
+  using const_word_type = std::add_const_t<WordType>;
 
  private:
   // Assertions
@@ -46,7 +47,7 @@ class bit_reference {
  public:
   using word_type = WordType;
   using size_type = std::size_t;
-  using mask_type = std::make_unsigned_t<std::remove_cv_t<word_type>>;
+  using mask_type = std::make_unsigned_t<word_type>;
 
   // Lifecycle
  public:
@@ -75,7 +76,7 @@ class bit_reference {
 
   // Access
  public:
-  constexpr bit_pointer<WordType> operator&() const noexcept;
+  constexpr bit_pointer<const_word_type> operator&() const noexcept;
   constexpr bit_pointer<WordType> operator&() noexcept;
 
   // Swap members
@@ -221,12 +222,12 @@ constexpr bit_reference<WordRef>::operator bool() const noexcept {
 // ------------------------- BIT REFERENCE: ACCESS -------------------------- //
 // Gets a bit pointer from the bit reference
 template <class WordRef>
-constexpr bit_pointer<std::remove_reference_t<WordRef>> bit_reference<WordRef>::operator&() const noexcept {
-  return bit_pointer<WordType>(&_ref, std::countr_zero(_mask));
+constexpr bit_pointer<typename bit_reference<WordRef>::const_word_type> bit_reference<WordRef>::operator&() const noexcept {
+  return bit_pointer<const_word_type>(&_ref, std::countr_zero(_mask));
 }
 
 template <class WordRef>
-constexpr bit_pointer<std::remove_reference_t<WordRef>> bit_reference<WordRef>::operator&() noexcept {
+constexpr bit_pointer<typename bit_reference<WordRef>::WordType> bit_reference<WordRef>::operator&() noexcept {
   return bit_pointer<WordType>(&_ref, std::countr_zero(_mask));
 }
 // -------------------------------------------------------------------------- //
