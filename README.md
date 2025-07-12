@@ -25,7 +25,8 @@ auto twos_complement_exponent = static_cast<uint8_t>(exponent) - ((1 << 5)-1);
 - [Table of Contents](#table-of-contents)
 - [Requirements](#requirements)
 - [CMake](#cmake)
-- [Sized Literal](#literal)
+- [Sized Literal](#sized-literal)
+- [Bit Endian](#endian)
 - [Slice Operator](#slice-operator)
 - [Policy](#policy)
 - [Owning Containers](#owning-containers)
@@ -42,6 +43,7 @@ auto twos_complement_exponent = static_cast<uint8_t>(exponent) - ((1 << 5)-1);
   - [bit_word_reference_adapter](#bit_word_reference_adapter)
 - [Algorithms](#algorithms)
 - [Testing](#testing)
+- [Future Work](#future-work)
 - [Contributors](#contributors)
 - [License](#license)
 
@@ -98,7 +100,7 @@ target_sources(example PRIVATE example.cpp)
 target_link_libraries(example PRIVATE bitlib::bitlib)
 ```
 
-# Literal<a href="#literal"></a>
+# Sized Literal<a href="#sized-literal"></a>
 
 This provides a sized literal for compile-time bit_array.
 
@@ -157,7 +159,7 @@ auto bin_lit = 0b11111'11110001001000000_b; //31 bit binary literal
 auto oct_lit = 037'361100_b; // 31 bit octal literal
 ```
 
-# Bit Endian <a href="#bit-endian"></a>
+# Bit Endian<a href="#bit-endian"></a>
 
 'Bit Endian' is the format of a sequence of bits:
  - 'Big Bit Endian' (BBE) the left-most bit is the most-significant-bit and right-most bit is the least-significant-bit
@@ -395,6 +397,20 @@ Convert to string or from string
 
  #### transform
 Word-by-word lambda operation on single or double operand
+
+# Future Work<a href="#future-work"></a>
+
+Some features in-mind for this library:
+
+- bit_integer
+A compile-time/construction-time integer with support for all numeric operators
+
+- bit_vector
+Alias to a `bit::vector<...>` class which will support any vector-like container (ex: folly:small_vector)
+
+- bit_float
+Arbitrary precision floating point type
+
 
 # Contributors<a href="#contributors"></a>
 - Vincent Reverdy
