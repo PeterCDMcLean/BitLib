@@ -411,7 +411,6 @@ Some features in-mind for this library:
 - bit_float
   * Arbitrary precision floating point type
 
-
 # Contributors<a href="#contributors"></a>
 - Vincent Reverdy
 - Bryce Kille
