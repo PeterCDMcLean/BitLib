@@ -403,13 +403,13 @@ Word-by-word lambda operation on single or double operand
 Some features in-mind for this library:
 
 - bit_integer
-A compile-time/construction-time integer with support for all numeric operators
+  * A compile-time/construction-time integer with support for all numeric operators
 
 - bit_vector
-Alias to a `bit::vector<...>` class which will support any vector-like container (ex: folly:small_vector)
+  * Alias to a `bit::vector<...>` class which will support any vector-like container (ex: folly:small_vector)
 
 - bit_float
-Arbitrary precision floating point type
+  * Arbitrary precision floating point type
 
 
 # Contributors<a href="#contributors"></a>
