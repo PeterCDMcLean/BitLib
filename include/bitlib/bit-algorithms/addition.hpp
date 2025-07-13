@@ -33,9 +33,12 @@ constexpr unsigned char addition(
   using word_type = typename bit_iterator<It>::word_type;
   unsigned char carry = 0;
   transform(first, last, d_first,
-            [&carry, integral_operand](auto word) -> word_type {
+            [&carry, integral_operand](auto word, auto bits = bitsof<word_type>()) -> word_type {
               word_type result_word;
               carry = add_carry(carry, static_cast<word_type>(integral_operand), word, &result_word);
+              if (bits < bitsof<word_type>()) {
+                carry = carry | (0 != lsr(result_word, bits));
+              }
               return result_word;
             });
   return carry;

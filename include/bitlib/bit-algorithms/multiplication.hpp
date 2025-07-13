@@ -23,7 +23,7 @@ namespace bit {
 template <typename It, typename U>
   requires(
       (is_static_castable_v<U, typename bit_iterator<It>::word_type>) &&
-      (bitsof<U>() < bitsof<typename bit_iterator<It>::word_type>()))
+      (bitsof<U>() <= bitsof<typename bit_iterator<It>::word_type>()))
 constexpr typename bit_iterator<It>::word_type multiplication(
     const bit_iterator<It>& first,
     const bit_iterator<It>& last,
@@ -32,8 +32,12 @@ constexpr typename bit_iterator<It>::word_type multiplication(
   using word_type = typename bit_iterator<It>::word_type;
   word_type carry = 0;
   transform(first, last, d_first,
-            [&carry, integral_operand](auto word) -> word_type {
-              return (carry + _mulx(static_cast<word_type>(integral_operand), word, &carry));
+            [&carry, integral_operand](auto word, auto bits = bitsof<word_type>()) -> word_type {
+              word_type result_word = (carry + _mulx(static_cast<word_type>(integral_operand), word, &carry));
+              if (bits < bitsof<word_type>()) {
+                carry = (carry << (bitsof<word_type>() - bits)) | lsr(result_word, bits);
+              }
+              return result_word;
             });
   return carry;
 }
@@ -41,7 +45,7 @@ constexpr typename bit_iterator<It>::word_type multiplication(
 template <typename It, typename U>
   requires(
       (is_static_castable_v<U, typename bit_iterator<It>::word_type>) &&
-      (bitsof<U>() < bitsof<typename bit_iterator<It>::word_type>()))
+      (bitsof<U>() <= bitsof<typename bit_iterator<It>::word_type>()))
 constexpr typename bit_iterator<It>::word_type multiplication(
     const bit_iterator<It>& first,
     const bit_iterator<It>& last,
