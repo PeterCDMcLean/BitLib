@@ -23,7 +23,7 @@ namespace bit {
 template <typename It, typename U>
   requires(
       (is_static_castable_v<U, typename bit_iterator<It>::word_type>) &&
-      (bitsof<exact_floor_integral_t<U>>() < bitsof<typename bit_iterator<It>::word_type>()))
+      (bitsof<U>() < bitsof<typename bit_iterator<It>::word_type>()))
 constexpr typename bit_iterator<It>::word_type multiplication(
     const bit_iterator<It>& first,
     const bit_iterator<It>& last,
@@ -41,7 +41,7 @@ constexpr typename bit_iterator<It>::word_type multiplication(
 template <typename It, typename U>
   requires(
       (is_static_castable_v<U, typename bit_iterator<It>::word_type>) &&
-      (bitsof<exact_floor_integral_t<U>>() < bitsof<typename bit_iterator<It>::word_type>()))
+      (bitsof<U>() < bitsof<typename bit_iterator<It>::word_type>()))
 constexpr typename bit_iterator<It>::word_type multiplication(
     const bit_iterator<It>& first,
     const bit_iterator<It>& last,
