@@ -24,7 +24,7 @@ namespace bit {
 template <typename It, typename U>
   requires(
       (is_static_castable_v<U, typename bit_iterator<It>::word_type>) &&
-      (bitsof<exact_floor_integral_t<U>>() <= bitsof<typename bit_iterator<It>::word_type>()))
+      (bitsof<U>() <= bitsof<typename bit_iterator<It>::word_type>()))
 constexpr unsigned char addition(
     const bit_iterator<It>& first,
     const bit_iterator<It>& last,
@@ -44,7 +44,7 @@ constexpr unsigned char addition(
 template <typename It, typename U>
   requires(
       (is_static_castable_v<U, typename bit_iterator<It>::word_type>) &&
-      (bitsof<exact_floor_integral_t<U>>() <= bitsof<typename bit_iterator<It>::word_type>()))
+      (bitsof<U>() <= bitsof<typename bit_iterator<It>::word_type>()))
 constexpr unsigned char addition(
     const bit_iterator<It>& first,
     const bit_iterator<It>& last,
