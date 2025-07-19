@@ -52,8 +52,8 @@ class bit_reference {
   // Lifecycle
  public:
   constexpr bit_reference(const bit_reference& other) noexcept;
-  explicit constexpr bit_reference(WordRef ref) noexcept;
-  constexpr bit_reference(WordRef ref, size_type pos);
+  explicit constexpr bit_reference(const WordRef& ref) noexcept;
+  constexpr bit_reference(const WordRef& ref, size_type pos);
 
   // Assignment
  public:
@@ -129,13 +129,13 @@ constexpr bit_reference<WordRef>::bit_reference(const bit_reference<WordRef>& ot
 
 // Explicitly constructs an aligned bit reference
 template <class WordRef>
-constexpr bit_reference<WordRef>::bit_reference(WordRef ref) noexcept
+constexpr bit_reference<WordRef>::bit_reference(const WordRef& ref) noexcept
     : _ref(ref), _mask(1) {
 }
 
 // Explicitly constructs an unaligned bit reference
 template <class WordRef>
-constexpr bit_reference<WordRef>::bit_reference(WordRef ref, size_type pos)
+constexpr bit_reference<WordRef>::bit_reference(const WordRef& ref, size_type pos)
     : _ref(ref), _mask(static_cast<word_type>(1) << pos) {
   assert(pos < binary_digits<word_type>::value);
 }
