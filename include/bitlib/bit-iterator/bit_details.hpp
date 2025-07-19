@@ -234,10 +234,14 @@ template <class T>
 constexpr T _shrd(T dst, T src, T cnt) noexcept;
 
 // Multiword multiply
-template <class T, class T128 = decltype(__uint128_t(T()))>
+template <typename T, typename T128 = decltype(__uint128_t(T()))>
 constexpr T _mulx(T src0, T src1, T* hi) noexcept;
-template <class T, class... X>
+template <typename T, typename... X>
 constexpr T _mulx(T src0, T src1, T* hi, X...) noexcept;
+template <typename T, typename T128 = decltype(__uint128_t(T()))>
+constexpr T _divx(const T& numerator_hi, const T& numerator_lo, const T& denominator, T* remainder) noexcept;
+template <typename T, typename... X>
+constexpr T _divx(const T& numerator_hi, const T& numerator_lo, const T& denominator, T* remainder, X...) noexcept;
 /* ************************************************************************** */
 
 /*
@@ -245,6 +249,9 @@ Logical shift right
 */
 template <std::integral T, typename size_type = size_t>
 constexpr T lsr(const T val, const size_type shift) {
+#ifdef BITLIB_DETECT_UNDEFINED_SHIFT
+  assert(shift < bitsof<T>());
+#endif
   return static_cast<T>(static_cast<std::make_unsigned_t<T>>(val) >> shift);
 }
 
@@ -255,7 +262,34 @@ template <typename T, typename size_type = size_t>
 constexpr exact_floor_integral_t<T> lsr(const T val, const size_type shift) {
   static_assert(!std::is_same_v<exact_floor_integral_t<T>, void>,
                 "Type T must be convertible to an integral type");
+#ifdef BITLIB_DETECT_UNDEFINED_SHIFT
+  assert(shift < bitsof<exact_floor_integral_t<T>>());
+#endif
   return static_cast<exact_floor_integral_t<T>>(static_cast<std::make_unsigned_t<exact_floor_integral_t<T>>>(val) >> shift);
+}
+
+/*
+Logical shift left
+*/
+template <std::integral T, typename size_type = size_t>
+constexpr T lsl(const T val, const size_type shift) {
+#ifdef BITLIB_DETECT_UNDEFINED_SHIFT
+  assert(shift < bitsof<T>());
+#endif
+  return static_cast<T>(static_cast<std::make_unsigned_t<T>>(val) << shift);
+}
+
+/*
+Logic shift left when `val` operand is a proxy reference
+*/
+template <typename T, typename size_type = size_t>
+constexpr exact_floor_integral_t<T> lsl(const T val, const size_type shift) {
+  static_assert(!std::is_same_v<exact_floor_integral_t<T>, void>,
+                "Type T must be convertible to an integral type");
+#ifdef BITLIB_DETECT_UNDEFINED_SHIFT
+  assert(shift < bitsof<exact_floor_integral_t<T>>());
+#endif
+  return static_cast<exact_floor_integral_t<T>>(static_cast<std::make_unsigned_t<exact_floor_integral_t<T>>>(val) << shift);
 }
 
 enum class _mask_len {
@@ -267,6 +301,9 @@ template <std::integral T, _mask_len len_in_range = _mask_len::in_range, typenam
 constexpr T _mask(const size_type len) {
   constexpr std::make_unsigned_t<T> one = std::make_unsigned_t<T>(1);
   if constexpr (len_in_range != _mask_len::unknown) {
+#ifdef BITLIB_DETECT_UNDEFINED_SHIFT
+    assert(len < bitsof<T>());
+#endif
     return static_cast<T>((one << len) - one);
   } else {
     // The digits_mask is solely here to prevent Undefined Sanitizer
@@ -489,9 +526,9 @@ constexpr T _shld(T dst, T src, T cnt) noexcept {
   static_assert(binary_digits<T>::value, "");
   constexpr T digits = binary_digits<T>::value;
   if (cnt < digits) {
-    dst = (dst << cnt) | (lsr(src, (digits - cnt)));
+    dst = lsl(dst, cnt) | (lsr(src, (digits - cnt)));
   } else {
-    dst = (src << (cnt - digits)) * (cnt < digits + digits);
+    dst = lsl(src, cnt - digits) * (cnt < (digits + digits));
   }
   return dst;
 }
@@ -504,9 +541,9 @@ constexpr T _shrd(T dst, T src, T cnt) noexcept {
   static_assert(binary_digits<T>::value, "");
   constexpr T digits = binary_digits<T>::value;
   if (cnt < digits) {
-    dst = (lsr(dst, cnt)) | (src << (digits - cnt));
+    dst = (lsr(dst, cnt)) | lsl(src, (digits - cnt));
   } else {
-    dst = (lsr(src, (cnt - digits))) * (cnt < digits + digits);
+    dst = (lsr(src, (cnt - digits))) * (cnt < (digits + digits));
   }
   return dst;
 }
@@ -601,42 +638,159 @@ static inline unsigned char sub_borrow(unsigned char c_in, U a, U b, U* out) noe
 
 // -------------------------------------------------------------------------- //
 
-// -------- IMPLEMENTATION DETAILS: INSTRUCTIONS: MULTIWORD MULTIPLY -------- //
-// Multiplies src0 and src1 and gets the full result with compiler intrinsics
-template <class T, class T128>
-constexpr T _mulx(T src0, T src1, T* hi) noexcept
-{
-    static_assert(binary_digits<T>::value, "");
-    using wider_t = ceil_integral<bitsof<T>() + bitsof<T>()>;
-    constexpr T digits = binary_digits<T>::value;
-    wider_t tmp = 0;
-    T128 tmp128 = 0;
-    T lo = 0;
-    if (digits == std::numeric_limits<std::uint64_t>::digits) {
-        tmp128 = static_cast<T128>(src0) * static_cast<T128>(src1);
-        *hi = tmp128 >> digits;
-        lo = tmp128;
-    } else if (digits + digits == binary_digits<wider_t>::value) {
-        tmp = static_cast<wider_t>(src0) * static_cast<wider_t>(src1);
-        *hi = tmp >> digits;
-        lo = tmp;
-    } else {
-        lo = _mulx(src0, src1, hi, std::ignore);
+template <typename T, typename T128>
+constexpr T _divx(const T& numerator_hi, const T& numerator_lo, const T& denominator, T* remainder) noexcept {
+  constexpr auto digits = bitsof<T>();
+  if constexpr (digits > bitsof<uint32_t>()) {
+    T128 tmp128 = (static_cast<T128>(numerator_hi) << digits) | static_cast<T128>(numerator_lo);
+    T quotient = static_cast<T>(tmp128 / static_cast<T128>(denominator));
+    if (remainder) {
+      *remainder = static_cast<T>(tmp128 % static_cast<T128>(denominator));
     }
-    return lo;
+    return quotient;
+  } else {
+    return _divx(numerator_hi, numerator_lo, denominator, remainder, std::ignore);
+  }
 }
 
-// Multiplies src0 and src1 and gets the full result without compiler intrinsics
-template <class T, class... X>
-constexpr T _mulx(T src0, T src1, T* hi, X...) noexcept
-{
-    static_assert(binary_digits<T>::value, "");
-    constexpr T digits = binary_digits<T>::value;
+template <typename T, typename... X>
+constexpr T _divx(const T& numerator_hi, const T& numerator_lo, const T& denominator, T* remainder, X...) noexcept {
+  constexpr auto digits = bitsof<T>();
+  using wider_t = ceil_integral<digits + digits>;
+  if constexpr ((digits + digits) <= binary_digits<wider_t>::value) {
+    wider_t tmp = (static_cast<wider_t>(numerator_hi) << digits) | static_cast<wider_t>(numerator_lo);
+    T quotient = static_cast<T>(tmp / static_cast<wider_t>(denominator));
+    if (remainder) {
+      *remainder = static_cast<T>(tmp % static_cast<wider_t>(denominator));
+    }
+    return quotient;
+  } else if constexpr (digits > bitsof<uint32_t>()) {
+    const T& numhi = numerator_hi;
+    const T& numlo = numerator_lo;
+    const T& den = denominator;
+    // We work in base 2**32.
+    // A uint32 holds a single digit. A uint64 holds two digits.
+    // Our numerator is conceptually [num3, num2, num1, num0].
+    // Our denominator is [den1, den0].
+    const uint64_t b = (1ull << 32);
+
+    // The high and low digits of our computed quotient.
+    uint32_t q1;
+    uint32_t q0;
+
+    // The normalization shift factor.
+    int shift;
+
+    // The high and low digits of our denominator (after normalizing).
+    // Also the low 2 digits of our numerator (after normalizing).
+    uint32_t den1;
+    uint32_t den0;
+    uint32_t num1;
+    uint32_t num0;
+
+    // A partial remainder.
+    uint64_t rem;
+
+    // The estimated quotient, and its corresponding remainder (unrelated to true remainder).
+    uint64_t qhat;
+    uint64_t rhat;
+
+    // Variables used to correct the estimated quotient.
+    uint64_t c1;
+    uint64_t c2;
+
+    // Check for overflow and divide by 0.
+    if (numhi >= den) {
+      if (remainder != nullptr) {
+        *remainder = ~0ull;
+      }
+      return ~0ull;
+    }
+
+    // Determine the normalization factor. We multiply den by this, so that its leading digit is at
+    // least half b. In binary this means just shifting left by the number of leading zeros, so that
+    // there's a 1 in the MSB.
+    // We also shift numer by the same amount. This cannot overflow because numhi < den.
+    // The expression (-shift & 63) is the same as (64 - shift), except it avoids the UB of shifting
+    // by 64. The funny bitwise 'and' ensures that numlo does not get shifted into numhi if shift is 0.
+    // clang 11 has an x86 codegen bug here: see LLVM bug 50118. The sequence below avoids it.
+    shift = __builtin_clzll(den);
+    den <<= shift;
+    numhi <<= shift;
+    numhi |= (numlo >> (-shift & 63)) & (-(int64_t)shift >> 63);
+    numlo <<= shift;
+
+    // Extract the low digits of the numerator and both digits of the denominator.
+    num1 = (uint32_t)(numlo >> 32);
+    num0 = (uint32_t)(numlo & 0xFFFFFFFFu);
+    den1 = (uint32_t)(den >> 32);
+    den0 = (uint32_t)(den & 0xFFFFFFFFu);
+
+    // We wish to compute q1 = [n3 n2 n1] / [d1 d0].
+    // Estimate q1 as [n3 n2] / [d1], and then correct it.
+    // Note while qhat may be 2 digits, q1 is always 1 digit.
+    qhat = numhi / den1;
+    rhat = numhi % den1;
+    c1 = qhat * den0;
+    c2 = rhat * b + num1;
+    if (c1 > c2) {
+      qhat -= (c1 - c2 > den) ? 2 : 1;
+    }
+    q1 = (uint32_t)qhat;
+
+    // Compute the true (partial) remainder.
+    rem = numhi * b + num1 - q1 * den;
+
+    // We wish to compute q0 = [rem1 rem0 n0] / [d1 d0].
+    // Estimate q0 as [rem1 rem0] / [d1] and correct it.
+    qhat = rem / den1;
+    rhat = rem % den1;
+    c1 = qhat * den0;
+    c2 = rhat * b + num0;
+    if (c1 > c2) {
+      qhat -= (c1 - c2 > den) ? 2 : 1;
+    }
+    q0 = (uint32_t)qhat;
+
+    // Return remainder if requested.
+    if (remainder != nullptr) {
+      *remainder = (rem * b + num0 - q0 * den) >> shift;
+    }
+    return ((uint64_t)q1 << 32) | q0;
+  } else {
+    assert(false);
+  }
+}
+
+// -------- IMPLEMENTATION DETAILS: INSTRUCTIONS: MULTIWORD MULTIPLY -------- //
+// Multiplies src0 and src1 and gets the full result with compiler intrinsics
+template <typename T, typename T128>
+constexpr T _mulx(T src0, T src1, T* hi) noexcept {
+  using wider_t = ceil_integral<bitsof<T>() + bitsof<T>()>;
+  constexpr auto digits = bitsof<T>();
+  if constexpr (digits > bitsof<uint32_t>()) {
+    T128 tmp128 = static_cast<T128>(src0) * static_cast<T128>(src1);
+    *hi = static_cast<T>(tmp128 >> digits);
+    return static_cast<T>(tmp128);
+  } else {
+    return _mulx(src0, src1, hi, std::ignore);
+  }
+}
+
+template <typename T, typename... X>
+constexpr T _mulx(T src0, T src1, T* hi, X...) noexcept {
+  constexpr T digits = bitsof<T>();
+  using wider_t = ceil_integral<bitsof<T>() + bitsof<T>()>;
+  if constexpr ((digits + digits) <= bitsof<wider_t>()) {
+    wider_t tmp = static_cast<wider_t>(src0) * static_cast<wider_t>(src1);
+    *hi = tmp >> digits;
+    return static_cast<T>(tmp);
+  } else {
+    // Multiplies src0 and src1 and gets the full result without compiler intrinsics
     constexpr T offset = digits / 2;
-    constexpr T ones = ~static_cast<T>(0);
-    const T lsbs0 = src0 & static_cast<T>(lsr(ones, (digits - offset)));
+    const T lsbs0 = src0 & _mask<T>(digits - offset);
     const T msbs0 = lsr(src0, offset);
-    const T lsbs1 = src1 & static_cast<T>(lsr(ones, (digits - offset)));
+    const T lsbs1 = src1 & _mask<T>(digits - offset);
     const T msbs1 = lsr(src1, offset);
     const T llsbs = lsbs0 * lsbs1;
     const T mlsbs = msbs0 * lsbs1;
@@ -647,6 +801,7 @@ constexpr T _mulx(T src0, T src1, T* hi, X...) noexcept
     const T mcarry = static_cast<T>(mi < mlsbs || mi < lmsbs) << offset;
     *hi = static_cast<T>(lsr(mi, offset)) + msbs0 * msbs1 + mcarry + lcarry;
     return lo;
+  }
 }
 // -------------------------------------------------------------------------- //
 
