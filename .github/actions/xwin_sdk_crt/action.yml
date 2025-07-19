@@ -78,8 +78,11 @@ runs:
       if: steps.sdkcache.outputs.cache-hit != 'true'
       shell: bash
       run: |
+        set -euo pipefail
+
         mkdir -p ${{ inputs.cache-path }}
-        ${{ inputs.cargo-home }}/bin/xwin --accept-license \
+
+        "${{ inputs.cargo-home }}/bin/xwin" --accept-license \
           --cache-dir ./.xwin-cache \
           --log-level info \
           --sdk-version ${{ inputs.sdk-version }} \
@@ -87,6 +90,7 @@ runs:
           splat \
           --include-debug-libs \
           --output ${{ inputs.cache-path }}
+
         rm -rf ./.xwin-cache
 
 
