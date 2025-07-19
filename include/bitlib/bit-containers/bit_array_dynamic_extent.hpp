@@ -148,7 +148,8 @@ class array<T, std::dynamic_extent, W, Policy>
       storage.m_allocator.deallocate(storage.pointer, Words(size()));
     } else if constexpr (!std::is_fundamental_v<T>) {
       for (size_type i = 0; i < Words(size()); ++i) {
-        storage.fixed[i].~word_type();
+        // W is 'word_type', but MSVC is unhappy with using an alias
+        storage.fixed[i].~W();
       }
     }
   }
