@@ -59,10 +59,14 @@ class array<T, std::dynamic_extent, W, Policy>
 
  private:
   using word_type_ptr = word_type*;
-  #pragma GCC diagnostic push
-  #pragma GCC diagnostic ignored "-Wsizeof-pointer-div"
+#if defined(__clang__) || defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsizeof-pointer-div"
+#endif
   static const size_type FixedWords = sizeof(word_type_ptr) / sizeof(word_type);
-  #pragma GCC diagnostic pop
+#if defined(__clang__) || defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
   static const size_type FixedBits = FixedWords * bitsof<word_type>();
 
   struct Storage {

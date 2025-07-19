@@ -18,8 +18,15 @@
 
 #if __has_include(<immintrin.h>)
 #include <immintrin.h>
+#if __has_include(<intrin.h>)
+#include <intrin.h>
+#endif
+#else
+#if __has_include(<intrin.h>)
+#include <intrin.h>
 #else
 #define NO_X86_INTRINSICS
+#endif
 #endif
 
 #include <algorithm>
