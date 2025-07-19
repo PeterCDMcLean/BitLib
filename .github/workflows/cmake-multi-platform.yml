@@ -30,6 +30,15 @@ jobs:
       # To add more build types (Release, Debug, RelWithDebInfo, etc.) customize the build_type list.
       matrix:
         include:
+          - distro: windows-latest
+            os: windows
+            compiler: msvc
+            c_compiler: cl.exe
+            cpp_compiler: cl.exe
+            stdlib: msvcstl
+            preset: tests
+            target: bitlib-tests
+            build_type: Release
           - distro: ubuntu-latest
             os: linux
             compiler: gcc

@@ -25,7 +25,7 @@ jobs:
 
       - name: Verify installs
         run: |
-          echo "xwin version: $(~/.cargo/bin/xwin --version)"
+          echo "xwin version: $(${{ github.workspace }}/.cargo/bin/xwin --version)"
           echo "SDK contents:"
           ls ./.xwin_sdk_crt/sdk
           ls -R ./.xwin_sdk_crt/sdk
