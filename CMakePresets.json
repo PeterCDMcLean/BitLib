@@ -33,7 +33,7 @@
       "name": "msvc_base",
       "hidden": true,
       "environment": {
-        "CC_FLAGS": "/bigobj"
+        "CC_FLAGS": "/bigobj /EHsc /GL"
       },
       "cacheVariables": {
         "CMAKE_C_COMPILER": "cl",
