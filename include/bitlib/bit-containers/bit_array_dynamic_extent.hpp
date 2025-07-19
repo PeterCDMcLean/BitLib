@@ -146,7 +146,7 @@ class array<T, std::dynamic_extent, W, Policy>
   ~array() {
     if (size() > FixedBits) {
       storage.m_allocator.deallocate(storage.pointer, Words(size()));
-    } else {
+    } else if constexpr (!std::is_fundamental_v<T>) {
       for (size_type i = 0; i < Words(size()); ++i) {
         storage.fixed[i].~word_type();
       }
