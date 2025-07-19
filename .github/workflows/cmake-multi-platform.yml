@@ -117,6 +117,7 @@ jobs:
 
     - name: "Install Clang 19"
       if: matrix.os == 'linux' && matrix.c_compiler == 'clang-19'
+      shell: bash
       run: |
         sudo apt-get update
         sudo apt-get install -y wget gnupg lsb-release
@@ -141,6 +142,7 @@ jobs:
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
+      shell: bash
       run: |
         # Configure
         cmake -B ${{ steps.strings.outputs.build-output-dir }} -S ${{ github.workspace }} \
@@ -154,13 +156,16 @@ jobs:
         find ${{ steps.strings.outputs.build-output-dir }} \( -name '*.gcno' -o -name '*.gcda' \) -delete
 
     - name: Register Compiler Problem Matcher
+      shell: bash
       run: echo "::add-matcher::.github/problem_matchers/${{ matrix.compiler}}_problem_matcher.json"
 
     - name: Build
+      shell: bash
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --target ${{ matrix.target }} --config ${{ matrix.build_type }} --parallel
 
     - name: Unregister Compiler Problem Matcher
+      shell: bash
       run: echo "::remove-matcher owner=${{ matrix.compiler}}::"
 
     - name: Run coverage for Clang
@@ -181,6 +186,7 @@ jobs:
       if: matrix.preset != 'coverage'
       # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+      shell: bash
       run: ctest --test-dir ${{ steps.strings.outputs.build-output-dir }} --build-config ${{ matrix.build_type }} --output-on-failure --parallel
 
     - uses: ./.github/actions/benchmark_epilogue
