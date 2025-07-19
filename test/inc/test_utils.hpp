@@ -93,27 +93,23 @@ inline unsigned long long generate_random_number(size_t min, size_t max) {
   return dist(mersenne_engine);
 }
 
+// clang-format off
 template <typename T>
   requires std::integral<T>
 struct uniform_dist_type {
   static constexpr bool is_signed = std::is_signed_v<T>;
   static constexpr std::size_t size = sizeof(T);
 
-  using type = std::conditional_t<
-      size == 1,
-      std::conditional_t<is_signed, signed char, unsigned char>,
-      std::conditional_t<
-          size == 2,
-          std::conditional_t<is_signed, short, unsigned short>,
-          std::conditional_t<
-              size == 4,
-              std::conditional_t<is_signed, int, unsigned int>,
-              std::conditional_t<
-                  size == 8,
-                  std::conditional_t<is_signed, long long, unsigned long long>,
-                  void  // fallback (shouldn't happen for standard integral types)
-                  >>>>;
+  using type = std::conditional_t<size <= 2,
+                 std::conditional_t<is_signed, short, unsigned short>,
+                 std::conditional_t<size == 4,
+                   std::conditional_t<is_signed, int, unsigned int>,
+                   std::conditional_t<size == 8,
+                     std::conditional_t<is_signed, long long, unsigned long long>,
+                     void  // fallback (shouldn't happen for standard integral types)
+                     >>>;
 };
+// clang-format on
 
 template <typename T>
 using uniform_dist_type_t = typename uniform_dist_type<T>::type;
