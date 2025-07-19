@@ -137,7 +137,7 @@ jobs:
       id: strings
       shell: bash
       run: |
-        echo "build-output-dir=$(readlink -f "${{ github.workspace }}/../build")" >> "$GITHUB_OUTPUT"
+        echo "build-output-dir=$(readlink -f '${{ github.workspace }}/../build')" >> "$GITHUB_OUTPUT"
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
@@ -145,15 +145,15 @@ jobs:
       shell: bash
       run: |
         # Configure
-        cmake -B ${{ steps.strings.outputs.build-output-dir }} -S ${{ github.workspace }} \
+        cmake -B '${{ steps.strings.outputs.build-output-dir }}' -S '${{ github.workspace }}' \
         --preset=${{ matrix.preset }}_${{ matrix.os }}_${{ matrix.compiler }}_${{ matrix.stdlib }} \
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} \
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
 
         # Delete any coverage files created from CMake probing
-        find ${{ github.workspace }} \( -name '*.gcno' -o -name '*.gcda' \) -delete
-        find ${{ steps.strings.outputs.build-output-dir }} \( -name '*.gcno' -o -name '*.gcda' \) -delete
+        find '${{ github.workspace }}' \( -name '*.gcno' -o -name '*.gcda' \) -delete
+        find '${{ steps.strings.outputs.build-output-dir }}' \( -name '*.gcno' -o -name '*.gcda' \) -delete
 
     - name: Register Compiler Problem Matcher
       shell: bash
@@ -162,7 +162,7 @@ jobs:
     - name: Build
       shell: bash
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --target ${{ matrix.target }} --config ${{ matrix.build_type }} --parallel
+      run: cmake --build '${{ steps.strings.outputs.build-output-dir }}' --target ${{ matrix.target }} --config ${{ matrix.build_type }} --parallel
 
     - name: Unregister Compiler Problem Matcher
       shell: bash
