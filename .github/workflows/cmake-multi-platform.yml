@@ -39,6 +39,15 @@ jobs:
             preset: tests
             target: bitlib-tests
             build_type: Release
+          - distro: windows-latest
+            os: windows
+            compiler: msvc
+            c_compiler: cl.exe
+            cpp_compiler: cl.exe
+            stdlib: msvcstl
+            preset: tests
+            target: bitlib-tests
+            build_type: Debug
           - distro: ubuntu-latest
             os: linux
             compiler: gcc
