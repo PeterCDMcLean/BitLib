@@ -93,16 +93,37 @@ inline unsigned long long generate_random_number(size_t min, size_t max) {
   return dist(mersenne_engine);
 }
 
+// clang-format off
+template <typename T>
+  requires std::integral<T>
+struct uniform_dist_type {
+  static constexpr bool is_signed = std::is_signed_v<T>;
+  static constexpr std::size_t size = sizeof(T);
+
+  using type = std::conditional_t<size <= 2,
+                 std::conditional_t<is_signed, short, unsigned short>,
+                 std::conditional_t<size == 4,
+                   std::conditional_t<is_signed, int, unsigned int>,
+                   std::conditional_t<size == 8,
+                     std::conditional_t<is_signed, long long, unsigned long long>,
+                     void  // fallback (shouldn't happen for standard integral types)
+                     >>>;
+};
+// clang-format on
+
+template <typename T>
+using uniform_dist_type_t = typename uniform_dist_type<T>::type;
+
 template <typename WordType, std::size_t N>
 std::array<WordType, N> get_random_arr(
     WordType min = std::numeric_limits<WordType>::min(),
     WordType max = std::numeric_limits<WordType>::max()) {
   // Specify the engine and distribution.
   std::mt19937 mersenne_engine = GetSeededRNGFromTestName();
-  std::uniform_int_distribution<WordType> dist{min, max};
+  std::uniform_int_distribution<uniform_dist_type_t<WordType>> dist{min, max};
 
   auto gen = [&dist, &mersenne_engine]() {
-    return dist(mersenne_engine);
+    return static_cast<WordType>(dist(mersenne_engine));
   };
   std::array<WordType, N> arr{};
   generate(begin(arr), end(arr), gen);
@@ -116,10 +137,10 @@ std::vector<WordType> get_random_vec(
         WordType max = std::numeric_limits<WordType>::max()
 ) {
   std::mt19937 mersenne_engine = GetSeededRNGFromTestName();
-  std::uniform_int_distribution<WordType> dist{min, max};
+  std::uniform_int_distribution<uniform_dist_type_t<WordType>> dist{min, max};
 
   auto gen = [&dist, &mersenne_engine]() {
-    return dist(mersenne_engine);
+    return static_cast<WordType>(dist(mersenne_engine));
   };
   std::vector<WordType> vec(size);
   generate(begin(vec), end(vec), gen);

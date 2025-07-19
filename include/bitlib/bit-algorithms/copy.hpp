@@ -84,7 +84,7 @@ struct copy_impl {
       size_type partial_bits_to_copy = ::std::min(
           remaining_bits_to_copy,
           digits - d_first.position());
-      *it = _bitblend(
+      *it = _bitblend<word_type>(
           *it,
           static_cast<word_type>(
               get_word<word_type>(first, partial_bits_to_copy)
@@ -115,7 +115,7 @@ struct copy_impl {
             }
         }
         if (remaining_bits_to_copy > 0) {
-          *it = _bitblend(
+          *it = _bitblend<word_type>(
               *it,
               get_word<word_type>(first, remaining_bits_to_copy),
               _mask<word_type>(remaining_bits_to_copy));

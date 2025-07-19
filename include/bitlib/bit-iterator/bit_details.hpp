@@ -15,12 +15,25 @@
 
 // ================================ PREAMBLE ================================ //
 // C++ standard library
-
-#if __has_include(<immintrin.h>)
-#include <immintrin.h>
+// clang-format off
+#if defined(_MSC_VER)
+  #if __has_include(<intrin.h>)
+    #include <intrin.h>
+  #else
+    #define NO_X86_INTRINSICS
+  #endif
 #else
-#define NO_X86_INTRINSICS
-#endif
+  #if __has_include(<x86intrin.h>)
+      #include <x86intrin.h>
+  #else
+    #if __has_include(<immintrin.h>)
+      #include <immintrin.h>
+    #else
+      #define NO_X86_INTRINSICS
+    #endif
+  #endif
+#endif  // defined(_MSC_VER)
+// clang-format on
 
 #include <algorithm>
 #include <bit>
@@ -742,4 +755,4 @@ struct container_size_storage<size_type, resizeable, std::dynamic_extent> {
 // ========================================================================== //
 }  // namespace bit
 #endif // _BIT_DETAILS_HPP_INCLUDED
-// ========================================================================== //
+       // ========================================================================== //

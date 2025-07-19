@@ -110,7 +110,7 @@ T get_word(const bit_iterator<InputIt>& first, size_t len = binary_digits<T>::va
   assert(digits >= len);
   using non_const_T = std::remove_cvref_t<T>;
   non_const_T offset = digits - first.position();
-  non_const_T ret_word = lsr(*first.base(), first.position());
+  non_const_T ret_word = lsr<T>(*first.base(), first.position());
 
   // We've already assigned enough bits
   if (len <= offset) {
