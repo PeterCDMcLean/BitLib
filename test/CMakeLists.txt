@@ -31,6 +31,7 @@ target_sources(bitlib-tests PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-copy.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-count.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-count_leading.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-division.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-equal.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-fill.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/test-find.cpp
