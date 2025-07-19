@@ -16,6 +16,9 @@
 
 #include "bitlib/bit-algorithms/accumulate.hpp"
 #include "bitlib/bit-algorithms/count.hpp"
+#include "bitlib/bit-algorithms/division.hpp"
+#include "bitlib/bit-algorithms/multiplication.hpp"
+#include "bitlib/bit-containers/bit_policy.hpp"
 #include "bitlib/bit_concepts.hpp"
 
 namespace bit {
@@ -160,23 +163,94 @@ constexpr void from_string(
   }
 }
 #endif
-/*
-Commenting this out temporarily as the reference to bit_vector/bit_array messes up include dependency DAG
+
+template <string::metadata_t meta = string::typical(), typename RandomAccessIt, typename Policy = policy::typical<typename RandomAccessIt::value_type>>
+constexpr void from_string(
+    const char* str_first, const char* str_last,
+    const bit_iterator<RandomAccessIt>& bit_first, const bit_iterator<RandomAccessIt>& bit_last) {
+  static_assert(meta.endian == std::endian::big, "Only bit big endian support (MSB on the left)");
+  if constexpr (std::has_single_bit(meta.base)) {
+    constexpr const auto base_bits = std::bit_width(meta.base - 1);
+    static constexpr auto base_from_digits = string::make_from_digit_map<meta.base>();
+    using word_type = uint64_t;
+    std::vector<word_type> vec;
+    size_t store_bits = distance(bit_first, bit_last);
+
+    bit_iterator<RandomAccessIt> bit_it = bit_first;
+    str_last--;
+    while (str_last >= str_first && store_bits) {
+      word_type work = 0;
+      size_t bits = 0;
+      for (; (bits < bitsof<word_type>()) && (str_last >= str_first); str_last--) {
+        char c = *str_last;
+        // TODO: This should be a policy
+        if (c >= base_from_digits.size()) {
+          continue;
+        }
+        auto digit = base_from_digits[c];
+        // TODO: This should be a policy
+        if (~0 == digit) {
+          continue;
+        }
+        work |= (digit << bits);
+        bits += base_bits;
+      }
+      if (store_bits < bits) {
+        Policy::truncation::template from_integral<word_type, std::dynamic_extent, RandomAccessIt>(
+            bit_it, bit_last, work);
+        return;
+      } else if ((store_bits > bits) && (str_last < str_first)) {
+        const bit_iterator<word_type*> p_integral(&work);
+        bit_it = ::bit::copy(p_integral, p_integral + bits, bit_it);
+        Policy::extension::template from_integral<word_type, std::dynamic_extent, RandomAccessIt>(
+            bit_it, bit_last, work);
+      } else if (store_bits >= bits) {
+        const bit_iterator<word_type*> p_integral(&work);
+        bit_it = ::bit::copy(p_integral, p_integral + bits, bit_it);
+      }
+    }
+  } else {
+    if (meta.base != 10) {
+      throw std::runtime_error("Base not implemented");
+    }
+    using word_type = typename bit_iterator<RandomAccessIt>::word_type;
+    std::vector<word_type> vec;
+    size_t store_bits = distance(bit_first, bit_last);
+
+    // TODO: template with uninitialized_t
+    ::bit::fill(bit_first, bit_last, bit0);  // Clear the bits first
+
+    while (str_first != str_last) {
+      unsigned char c = (*str_first - '0');
+      if (c <= 9) {
+        auto overflow_mult = ::bit::multiplication(bit_first, bit_last, word_type{10});
+        auto overflow_add = ::bit::addition(bit_first, bit_last, c);
+        if (overflow_mult || overflow_add) {
+          //Policy::truncation::template overflow(bit_first, bit_last);
+          return;
+        }
+      }
+      str_first++;
+    }
+    //Policy::extension::template extend(bit_first, bit_last);
+  }
+}
 
 template <string::metadata_t meta = string::typical()>
-constexpr bit_vector<> from_string(const char* first, const char* last) {
+constexpr std::vector<uintptr_t> from_string(
+    const char* first, const char* last) {
   static_assert(meta.endian == std::endian::big, "Only bit big endian support (MSB on the left)");
   if constexpr (std::has_single_bit(meta.base)) {
     constexpr const auto base_bits = std::bit_width(meta.base - 1);
     static constexpr auto base_from_digits = string::make_from_digit_map<meta.base>();
 
-    bit_vector<> vec;
+    std::vector<uintptr_t> vec;
 
     last--;
     while (last >= first) {
-      uint64_t work = 0;
+      uintptr_t work = 0;
       size_t bits = 0;
-      for (; (bits < bitsof<uint64_t>()) && (last >= first); last--) {
+      for (; (bits < bitsof<uintptr_t>()) && (last >= first); last--) {
         char c = *last;
         // TODO: This should be a policy
         if (c >= base_from_digits.size()) {
@@ -191,20 +265,31 @@ constexpr bit_vector<> from_string(const char* first, const char* last) {
         bits += base_bits;
       }
       if (bits) {
-        vec.append_range(bit_array<>(bits, work));
+        vec.push_back(work);
       }
     }
     return vec;
   } else {
     //from_string base 10 not implemented yet;
+    return {};
   }
 }
 
-template <string::metadata_t meta = string::typical()>
-constexpr bit_vector<> from_string(const std::string& str) {
-  return from_string<meta>(str.c_str(), str.c_str() + str.length());
+template <string::metadata_t meta = string::typical(), typename RandomAccessIt, typename Policy = policy::typical<typename RandomAccessIt::value_type>>
+constexpr void from_string(
+    const std::string& str,
+    const bit_iterator<RandomAccessIt>& bit_first, const bit_iterator<RandomAccessIt>& bit_last) {
+  from_string<meta, RandomAccessIt, Policy>(str.c_str(), str.c_str() + str.length(), bit_first, bit_last);
 }
-*/
+
+template <string::metadata_t meta = string::typical(), bit_range RangeT, typename Policy = policy::typical<typename std::ranges::iterator_t<RangeT>::value_type>>
+constexpr void from_string(
+    const std::string& str,
+    RangeT& bits) {
+  using range_iterator_t = std::ranges::iterator_t<RangeT>;
+  using RandomAccessIt = typename range_iterator_t::iterator_type;
+  from_string<meta, RandomAccessIt, Policy>(str.c_str(), str.c_str() + str.length(), bits.begin(), bits.end());
+}
 
 }  // namespace bit
 

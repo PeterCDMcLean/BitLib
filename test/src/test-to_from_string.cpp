@@ -27,9 +27,13 @@ TEST(ToString, Blah) {
   EXPECT_EQ(str, "10EADBEEF");
 }
 
-/*
 TEST(FromString, Blah) {
-  auto t = bit::from_string<bit::string::typical(16)>("DEADBEEF");
-  EXPECT_EQ(t, 0x20'DEADBEEF_b);
+  bit::bit_array<16> arr_16;
+  bit::from_string<bit::string::typical(16)>("DEADBEEF", arr_16);
+  EXPECT_EQ(arr_16, 0x10'BEEF_b);
+  bit::bit_array<18> arr_18;
+  bit::from_string<bit::string::typical(16)>("BEEF", arr_18);
+  EXPECT_EQ(arr_18, 0x12'0BEEF_b);
+  bit::from_string<bit::string::typical(10)>("123", arr_16);
+  EXPECT_EQ(arr_16, 16'123_b);
 }
-*/
