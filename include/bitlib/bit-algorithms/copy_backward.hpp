@@ -70,22 +70,21 @@ constexpr bit_iterator<RandomAccessIt2> copy_backward(bit_iterator<RandomAccessI
         const bool is_last_aligned = last.position() == 0;
         //size_type words_to_copy = ::std::ceil(remaining_bits_to_copy / static_cast<float>(digits));
         // d_last will be aligned at this point
-        if (is_last_aligned && remaining_bits_to_copy > digits) {
-            auto N = ::std::distance(first.base(), last.base()) - 1;
-            it = ::std::copy_backward(first.base() + 1, last.base(), it);
-            last -= digits * N;
-            remaining_bits_to_copy -= digits * N;
-            it--;
+        if (is_last_aligned && remaining_bits_to_copy >= digits) {
+          auto N = ::std::distance(first.base(), last.base()) - 1;
+          it = ::std::copy_backward(first.base() + 1, last.base(), it);
+          last -= digits * N;
+          remaining_bits_to_copy -= digits * N;
         } else {
-            // TODO benchmark if its faster to ::std::copy the entire range then shift
-            while (remaining_bits_to_copy >= digits) {
-                *(--it) = get_word<word_type>(last - digits, digits);
-                remaining_bits_to_copy -= digits;
-                advance(last, -digits);
-            }
-            it--;
+          // TODO benchmark if its faster to ::std::copy the entire range then shift
+          while (remaining_bits_to_copy >= digits) {
+            *(--it) = get_word<word_type>(last - digits, digits);
+            remaining_bits_to_copy -= digits;
+            advance(last, -digits);
+          }
         }
         if (remaining_bits_to_copy > 0) {
+          it--;
           *it = _bitblend<word_type>(
               *it,
               static_cast<word_type>(get_word<word_type>(last - remaining_bits_to_copy, remaining_bits_to_copy)
