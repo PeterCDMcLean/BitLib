@@ -10,9 +10,8 @@ on:
       - '.github/actions/xwin_sdk_crt/**'
 
 jobs:
-  setup-windows-sdk:
+  build_cross:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -23,12 +22,46 @@ jobs:
           sdk-version: '10.0.26100'
           crt-version: '14.44.17.14'
 
-      - name: Verify installs
+      - name: "Install Clang 19"
+        shell: bash
         run: |
-          echo "xwin version: $(${{ github.workspace }}/.cargo/bin/xwin --version)"
-          echo "SDK contents:"
-          ls ./.xwin_sdk_crt/sdk
-          ls -R ./.xwin_sdk_crt/sdk
-          echo "CRT contents:"
-          ls ./.xwin_sdk_crt/crt
-          find ./.xwin_sdk_crt -iname '*manifest*' -exec cat {} \;
+          sudo apt-get update
+          sudo apt-get install -y wget gnupg lsb-release
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 19 all
+          # Install libc++ and libc++abi for Clang 19
+          sudo apt-get install -y libc++-19-dev libc++abi-19-dev
+          sudo ln -sf /usr/bin/llvm-cov-19 /usr/local/bin/llvm-cov
+          sudo ln -sf /usr/bin/llvm-profdata-19 /usr/local/bin/llvm-profdata
+          sudo ln -sf /usr/bin/clang-19 /usr/local/bin/clang
+          sudo ln -sf /usr/bin/clang++-19 /usr/local/bin/clang++
+          sudo ln -sf /usr/bin/clang-format-19 /usr/local/bin/clang-format
+          sudo ln -sf /usr/bin/clang-cl-19 /usr/local/bin/clang-cl
+          sudo ln -sf /usr/bin/llvm-lib-19 /usr/local/bin/llvm-lib
+          sudo ln -sf /usr/bin/lld-link-19 /usr/local/bin/lld-link
+          sudo ln -sf /usr/bin/llvm-mt-19 /usr/local/bin/llvm-mt
+          /usr/local/bin/clang-cl --version
+          clang-cl --version
+
+      - name: Set reusable strings
+        # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
+        id: strings
+        shell: bash
+        run: |
+          echo "CMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/.github/workflows/clang_cl_cross_toolchain.cmake" >> "$GITHUB_ENV"
+          echo "WINSDKDIR=${{ github.workspace }}/.xwin_sdk_crt/sdk" >> "$GITHUB_ENV"
+          echo "VCTOOLSDIR=${{ github.workspace }}/.xwin_sdk_crt/crt" >> "$GITHUB_ENV"
+          echo "build-output-dir=$(readlink -f '${{ github.workspace }}/../build')" >> "$GITHUB_OUTPUT"
+
+      - name: Configure CMake
+        # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+        # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
+        shell: bash
+        run: |
+          # Configure
+          cmake -B '${{ steps.strings.outputs.build-output-dir }}' -S '${{ github.workspace }}' \
+          --preset=tests_windows_msvc_msvcstl \
+          -DCMAKE_CXX_COMPILER=clang-cl \
+          -DCMAKE_C_COMPILER=clang-cl \
+          -DCMAKE_BUILD_TYPE=Debug

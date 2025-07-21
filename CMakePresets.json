@@ -14,9 +14,19 @@
       "hidden": true,
       "inherits": "base",
       "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Windows"
+        "type": "anyOf",
+        "conditions": [
+          {
+            "type": "equals",
+            "lhs": "${hostSystemName}",
+            "rhs": "Windows"
+          },
+          {
+            "type": "notEquals",
+            "lhs": "$env{CMAKE_TOOLCHAIN_FILE}",
+            "rhs": ""
+          }
+        ]
       }
     },
     {
@@ -264,7 +274,7 @@
       "configurePreset": "tests_windows_msvc_msvcstl",
       "targets": "bitlib-tests",
       "configuration": "Debug",
-      "jobs": 0,
+      "jobs": 1,
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -276,7 +286,7 @@
       "configurePreset": "benchmark_windows_msvc_msvcstl",
       "targets": "bitlib-bench",
       "configuration": "Release",
-      "jobs": 0,
+      "jobs": 1,
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",

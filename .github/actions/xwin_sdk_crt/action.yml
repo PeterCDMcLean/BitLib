@@ -76,7 +76,7 @@ runs:
     # 5) Download SDK & CRT via xwin if cache miss
     - name: Download SDK & CRT via xwin
       id: xwin
-      #if: steps.sdkcache.outputs.cache-hit != 'true'
+      if: steps.sdkcache.outputs.cache-hit != 'true'
       shell: bash
       run: |
         set -euo pipefail
@@ -99,8 +99,7 @@ runs:
 
     # 6) Save SDK/CRT cache on miss
     - name: Save SDK/CRT cache
-      #if: steps.sdkcache.outputs.cache-hit != 'true'
-      if: steps.xwin.outputs.result == 'success'
+      if: steps.sdkcache.outputs.cache-hit != 'true' && steps.xwin.outputs.result == 'success'
       uses: actions/cache@v4
       with:
         path: ${{ inputs.cache-path }}
