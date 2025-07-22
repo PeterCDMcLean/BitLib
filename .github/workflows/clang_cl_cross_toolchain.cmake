@@ -2,9 +2,9 @@ set(CMAKE_SYSTEM_NAME Windows)
 set(CMAKE_SYSTEM_PROCESSOR amd64)
 
 set(CMAKE_C_COMPILER clang-cl)
-set(CMAKE_C_FLAGS "/winsdkdir:$ENV{WINSDKDIR} /vctoolsdir:$ENV{VCTOOLSDIR} --target=x86_64-pc-windows-msvc -fuse-ld=lld-link /imsvc $ENV{VCTOOLSDIR}/include /imsvc $ENV{WINSDKDIR}/include/ucrt /imsvc $ENV{WINSDKDIR}/include/um /imsvc $ENV{WINSDKDIR}/include/shared ${CMAKE_C_FLAGS}")
+set(CMAKE_C_FLAGS "/winsdkdir:$ENV{WINSDKDIR} /vctoolsdir:$ENV{VCTOOLSDIR} --target=x86_64-pc-windows-msvc -fuse-ld=lld-link /imsvc $ENV{VCTOOLSDIR}/include /imsvc $ENV{WINSDKDIR}/include/ucrt /imsvc $ENV{WINSDKDIR}/include/um /imsvc $ENV{WINSDKDIR}/include/shared -Wno-unused-command-line-argument ${CMAKE_C_FLAGS}")
 set(CMAKE_CXX_COMPILER clang-cl)
-set(CMAKE_CXX_FLAGS "/winsdkdir:$ENV{WINSDKDIR} /vctoolsdir:$ENV{VCTOOLSDIR} --target=x86_64-pc-windows-msvc -fuse-ld=lld-link /imsvc $ENV{VCTOOLSDIR}/include /imsvc $ENV{WINSDKDIR}/include/ucrt /imsvc $ENV{WINSDKDIR}/include/um /imsvc $ENV{WINSDKDIR}/include/shared ${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "/winsdkdir:$ENV{WINSDKDIR} /vctoolsdir:$ENV{VCTOOLSDIR} --target=x86_64-pc-windows-msvc -fuse-ld=lld-link /imsvc $ENV{VCTOOLSDIR}/include /imsvc $ENV{WINSDKDIR}/include/ucrt /imsvc $ENV{WINSDKDIR}/include/um /imsvc $ENV{WINSDKDIR}/include/shared -Wno-unused-command-line-argument ${CMAKE_CXX_FLAGS}")
 
 set(CMAKE_AR llvm-lib)
 set(CMAKE_LINKER lld-link)
