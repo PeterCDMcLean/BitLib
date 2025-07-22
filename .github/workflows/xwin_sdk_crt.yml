@@ -73,6 +73,8 @@ jobs:
           VCTOOLSDIR: ${{ env.VCTOOLSDIR }}
         shell: bash
         run: |
+          # Clean to be sure toolchain takes effect
+          rm -rf "${{ steps.strings.outputs.build-output-dir }}"
           # Configure
           cmake -B '${{ steps.strings.outputs.build-output-dir }}' -S '${{ github.workspace }}' \
           --preset=tests_windows_msvc_msvcstl \
