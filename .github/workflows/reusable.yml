@@ -122,9 +122,12 @@ jobs:
       id: strings
       shell: bash
       run: |
+        ls -al ${{ github.workspace }}/../build/
         if [[ "${{ inputs.preset }}" == "coverage" || "${{ inputs.preset }}" == "tests" ]]; then
+          ls -al ${{ github.workspace }}/../build/test
           chmod +x '${{ github.workspace }}/../build/test/${{ inputs.target }}*'
         else
+          ls -al ${{ github.workspace }}/../build/benchmark
           chmod +x '${{ github.workspace }}/../build/benchmark/${{ inputs.target }}*'
         fi
         echo "build-output-dir=$(readlink -f '${{ github.workspace }}/../build')" >> "$GITHUB_OUTPUT"
