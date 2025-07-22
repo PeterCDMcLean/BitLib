@@ -84,7 +84,7 @@ jobs:
       - name: Build
         shell: bash
         # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
-        run: cmake --build '${{ steps.strings.outputs.build-output-dir }}' --target bitlib-tests --config Debug --parallel --verbose
+        run: cmake --build '${{ steps.strings.outputs.build-output-dir }}' --target bitlib-tests --config Debug --parallel
 
       - name: Upload executable
         uses: actions/upload-artifact@v4
@@ -105,5 +105,4 @@ jobs:
         shell: powershell
         run: |
           dir
-          dir ../
-          "bitlib-tests.exe"
+          ./bitlib-tests.exe
