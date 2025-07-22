@@ -9,6 +9,7 @@ set(CMAKE_CXX_FLAGS "/winsdkdir:$ENV{WINSDKDIR} /vctoolsdir:$ENV{VCTOOLSDIR} --t
 set(CMAKE_AR llvm-lib)
 set(CMAKE_LINKER lld-link)
 set(CMAKE_MT llvm-mt)
+set(CMAKE_RC_COMPILER llvm-rc)
 
 set(CMAKE_EXE_LINKER_FLAGS_INIT "/winsdkdir:$ENV{WINSDKDIR}")
 set(CMAKE_EXE_LINKER_FLAGS_INIT "${CMAKE_EXE_LINKER_FLAGS_INIT} /vctoolsdir:$ENV{VCTOOLSDIR}")
