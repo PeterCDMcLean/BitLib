@@ -69,6 +69,12 @@ if (NOT BITLIB_GTEST_REPEAT)
   set(BITLIB_GTEST_REPEAT 1)
 endif()
 
-gtest_discover_tests(
+if (CMAKE_CROSSCOMPILING)
+  gtest_add_tests(
+    TARGET bitlib-tests
+  )
+else()
+  gtest_discover_tests(
     bitlib-tests
     EXTRA_ARGS --gtest_repeat=${BITLIB_GTEST_REPEAT})
+endif()
