@@ -7,6 +7,7 @@ on:
     # re-run whenever this workflow or the composite action changes
     paths:
       - '.github/workflows/xwin_sdk_crt.yml'
+      - '.github/workflows/clang_cl_cross_toolchain.cmake'
       - '.github/actions/xwin_sdk_crt/**'
 
 jobs:

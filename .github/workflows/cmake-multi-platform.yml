@@ -9,12 +9,14 @@ on:
     paths-ignore:
       - '**/*.md'
       - '.github/workflows/xwin_sdk_crt.yml'
+      - '.github/workflows/clang_cl_cross_toolchain.cmake'
       - '.github/actions/xwin_sdk_crt/**'
   pull_request:
     branches: [ "master" ]
     paths-ignore:
       - '**/*.md'
       - '.github/workflows/xwin_sdk_crt.yml'
+      - '.github/workflows/clang_cl_cross_toolchain.cmake'
       - '.github/actions/xwin_sdk_crt/**'
 
 
