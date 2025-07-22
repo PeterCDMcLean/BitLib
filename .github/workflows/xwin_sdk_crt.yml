@@ -103,4 +103,5 @@ jobs:
       - name: Run tests
         shell: powershell
         run: |
+          dir
           ./build/tests/bitlib-tests.exe
