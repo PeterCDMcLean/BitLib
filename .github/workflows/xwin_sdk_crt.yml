@@ -23,16 +23,6 @@ jobs:
           sdk-version: '10.0.26100'
           crt-version: '14.44.17.14'
 
-      - name: "Check paths"
-        shell: bash
-        run: |
-          ls -l "${{ github.workspace }}/.xwin_sdk_crt/sdk"
-          ls -l "${{ github.workspace }}/.xwin_sdk_crt/crt"
-          ls -l "${{ github.workspace }}/.xwin_sdk_crt/sdk/lib/um/x86_64"
-          ls -l "${{ github.workspace }}/.xwin_sdk_crt/sdk/lib/ucrt/x86_64"
-          ls -l "${{ github.workspace }}/.xwin_sdk_crt/crt/lib/x86_64"
-
-
       - name: "Install Clang 19"
         shell: bash
         run: |
@@ -99,6 +89,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: bitlib-tests
+          path: ${{ github.workspace }}/build
 
       - name: Run tests
         shell: powershell
