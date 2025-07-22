@@ -25,6 +25,7 @@ jobs:
     runs-on: ${{ matrix.distro }}
     outputs:
       build-output-dir: ${{ steps.strings.outputs.build-output-dir }}
+      distro: ${{ matrix.distro }}
       compiler: ${{ matrix.compiler }}
       c_compiler: ${{ matrix.c_compiler }}
       cpp_compiler: ${{ matrix.cpp_compiler }}
@@ -191,6 +192,18 @@ jobs:
       shell: bash
       run: echo "::remove-matcher owner=${{ matrix.compiler}}::"
 
+    - name: Upload build dir
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-dir
+        path: '${{ steps.strings.outputs.build-output-dir }}'
+
+    #- name: Download build dir
+    #  uses: actions/download-artifact@v4
+    #  with:
+    #    name: build-dir
+    #    path: '${{ steps.strings.outputs.build-output-dir }}'
+#
     - name: Run coverage for Clang
       if: matrix.preset == 'coverage' && matrix.compiler == 'clang'
       uses: ./.github/actions/coverage_clang

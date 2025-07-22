@@ -1,0 +1,124 @@
+# .github/workflows/main.yaml
+name: CI
+
+on:
+  push:
+
+jobs:
+  run-matrix:
+    uses: ./.github/workflows/reusable.yml
+    strategy:
+      # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
+      fail-fast: false
+
+      # Set up a matrix to run the following 3 configurations:
+      # 1. <Windows, Release, latest MSVC compiler toolchain on the default runner image, default generator>
+      # 2. <Linux, Release, latest GCC compiler toolchain on the default runner image, default generator>
+      # 3. <Linux, Release, latest Clang compiler toolchain on the default runner image, default generator>
+      #
+      # To add more build types (Release, Debug, RelWithDebInfo, etc.) customize the build_type list.
+      matrix:
+        include:
+          - distro: windows-latest
+            os: windows
+            compiler: msvc
+            c_compiler: cl.exe
+            cpp_compiler: cl.exe
+            stdlib: msvcstl
+            preset: tests
+            target: bitlib-tests
+            build_type: Release
+          - distro: windows-latest
+            os: windows
+            compiler: msvc
+            c_compiler: cl.exe
+            cpp_compiler: cl.exe
+            stdlib: msvcstl
+            preset: tests
+            target: bitlib-tests
+            build_type: Debug
+          - distro: ubuntu-latest
+            os: linux
+            compiler: gcc
+            c_compiler: gcc
+            cpp_compiler: g++
+            stdlib: libstdcxx
+            preset: benchmark
+            target: bitlib-bench
+            build_type: Release
+          - distro: ubuntu-latest
+            os: linux
+            compiler: clang
+            cpp_compiler: clang++-19
+            c_compiler: clang-19
+            stdlib: libcxx
+            preset: benchmark
+            target: bitlib-bench
+            build_type: Release
+          - distro: ubuntu-latest
+            os: linux
+            compiler: gcc
+            c_compiler: gcc
+            cpp_compiler: g++
+            stdlib: libstdcxx
+            preset: tests
+            target: bitlib-tests
+            build_type: Debug
+          - distro: ubuntu-latest
+            os: linux
+            compiler: gcc
+            c_compiler: gcc
+            cpp_compiler: g++
+            stdlib: libstdcxx
+            preset: warnings
+            target: bitlib-tests
+            build_type: Debug
+          - distro: ubuntu-latest
+            os: linux
+            compiler: clang
+            c_compiler: clang-19
+            cpp_compiler: clang++-19
+            stdlib: libcxx
+            preset: warnings
+            target: bitlib-tests
+            build_type: Debug
+          - distro: ubuntu-latest
+            os: linux
+            compiler: clang
+            cpp_compiler: clang++-19
+            c_compiler: clang-19
+            stdlib: libcxx
+            preset: tests
+            target: bitlib-tests
+            build_type: Debug
+          - distro: ubuntu-latest
+            os: linux
+            compiler: gcc
+            c_compiler: gcc
+            cpp_compiler: g++
+            stdlib: libstdcxx
+            preset: coverage
+            target: bitlib-tests
+            build_type: Debug
+          - distro: ubuntu-latest
+            os: linux
+            compiler: clang
+            cpp_compiler: clang++-19
+            c_compiler: clang-19
+            stdlib: libcxx
+            preset: coverage
+            target: bitlib-tests
+            build_type: Debug
+    with:
+      build_distro: ${{ matrix.distro }}
+      build_os: ${{ matrix.os }}
+      test_distro: ${{ matrix.distro }}
+      test_os: ${{ matrix.os }}
+      compiler: ${{ matrix.compiler }}
+      c_compiler: ${{ matrix.c_compiler }}
+      cpp_compiler: ${{ matrix.cpp_compiler }}
+      stdlib: ${{ matrix.stdlib }}
+      preset: ${{ matrix.preset }}
+      target: ${{ matrix.target }}
+      build_type: ${{ matrix.build_type }}
+    secrets: inherit

@@ -1,0 +1,159 @@
+# .github/workflows/reusable.yaml
+name: Reusable Workflow
+
+on:
+  workflow_call:
+    inputs:
+      build_distro:
+        required: true
+        type: string
+      build_os:
+        required: true
+        type: string
+      test_distro:
+        required: true
+        type: string
+      test_os:
+        required: true
+        type: string
+      compiler:
+        required: true
+        type: string
+      c_compiler:
+        required: true
+        type: string
+      cpp_compiler:
+        required: true
+        type: string
+      stdlib:
+        required: true
+        type: string
+      preset:
+        required: true
+        type: string
+      target:
+        required: true
+        type: string
+      build_type:
+        required: true
+        type: string
+      toolchain:
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ${{ inputs.build_distro }}
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: "Install Clang 19"
+      if: inputs.build_os == 'linux' && inputs.c_compiler == 'clang-19'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget gnupg lsb-release
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x llvm.sh
+        sudo ./llvm.sh 19
+        # Install libc++ and libc++abi for Clang 19
+        sudo apt-get install -y libc++-19-dev libc++abi-19-dev
+        sudo ln -sf /usr/bin/llvm-cov-19 /usr/local/bin/llvm-cov
+        sudo ln -sf /usr/bin/llvm-profdata-19 /usr/local/bin/llvm-profdata
+        sudo ln -sf /usr/bin/clang-19 /usr/local/bin/clang
+        sudo ln -sf /usr/bin/clang++-19 /usr/local/bin/clang++
+        sudo ln -sf /usr/bin/clang-format-19 /usr/local/bin/clang-format
+
+    - name: Set reusable strings
+      # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
+      id: strings
+      shell: bash
+      run: |
+        echo "build-output-dir=$(readlink -f '${{ github.workspace }}/../build')" >> "$GITHUB_OUTPUT"
+
+    - name: Configure CMake
+      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
+      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
+      shell: bash
+      run: |
+        # Configure
+        cmake -B '${{ steps.strings.outputs.build-output-dir }}' -S '${{ github.workspace }}' \
+        --preset=${{ inputs.preset }}_${{ inputs.build_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }} \
+        -DCMAKE_CXX_COMPILER=${{ inputs.cpp_compiler }} \
+        -DCMAKE_C_COMPILER=${{ inputs.c_compiler }} \
+        -DCMAKE_BUILD_TYPE=${{ inputs.build_type }}
+
+        # Delete any coverage files created from CMake probing
+        find '${{ github.workspace }}' \( -name '*.gcno' -o -name '*.gcda' \) -delete
+        find '${{ steps.strings.outputs.build-output-dir }}' \( -name '*.gcno' -o -name '*.gcda' \) -delete
+
+    - name: Register Compiler Problem Matcher
+      shell: bash
+      run: echo "::add-matcher::.github/problem_matchers/${{ inputs.compiler}}_problem_matcher.json"
+
+    - name: Build
+      shell: bash
+      # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
+      run: cmake --build '${{ steps.strings.outputs.build-output-dir }}' --target ${{ inputs.target }} --config ${{ inputs.build_type }} --parallel
+
+    - name: Unregister Compiler Problem Matcher
+      shell: bash
+      run: echo "::remove-matcher owner=${{ inputs.compiler}}::"
+
+    - name: Upload build dir
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-dir
+        path: '${{ steps.strings.outputs.build-output-dir }}'
+
+  test:
+    runs-on: ${{ inputs.test_distro }}
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download build dir
+      uses: actions/download-artifact@v4
+      with:
+        name: build-dir
+        path: '${{ github.workspace }}/../build'
+
+    - name: Set reusable strings
+      # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
+      id: strings
+      shell: bash
+      run: |
+        echo "build-output-dir=$(readlink -f '${{ github.workspace }}/../build')" >> "$GITHUB_OUTPUT"
+
+    - name: Run coverage for Clang
+      if: inputs.preset == 'coverage' && inputs.compiler == 'clang'
+      uses: ./.github/actions/coverage_clang
+      with:
+        build-output-dir: ${{ steps.strings.outputs.build-output-dir }}
+        GITHUB_TOKEN: ${{ secrets.github_token }}
+
+    - name: Run coverage for GCC
+      if: inputs.preset == 'coverage' && inputs.compiler == 'gcc'
+      uses: ./.github/actions/coverage_gcc
+      with:
+        build-output-dir: ${{ steps.strings.outputs.build-output-dir }}
+        GITHUB_TOKEN: ${{ secrets.github_token }}
+
+    - name: Test
+      if: inputs.preset != 'coverage'
+      # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
+      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+      shell: bash
+      run: ctest --test-dir ${{ steps.strings.outputs.build-output-dir }} --build-config ${{ inputs.build_type }} --output-on-failure --parallel
+
+    - uses: ./.github/actions/benchmark_epilogue
+      if: inputs.preset == 'benchmark'
+      with:
+        workspace: ${{ github.workspace }}
+        cpp_compiler: ${{ inputs.cpp_compiler }}
+        c_compiler: ${{ inputs.c_compiler }}
+        build_type: ${{ inputs.build_type }}
+        base_ref: ${{ github.event.pull_request.base.ref }}
+        os: ${{ inputs.test_os }}
+        compiler: ${{ inputs.compiler }}
+        stdlib: ${{ inputs.stdlib }}
+        build-output-dir: ${{ steps.strings.outputs.build-output-dir }}
