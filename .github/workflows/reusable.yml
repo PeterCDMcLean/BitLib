@@ -107,6 +107,7 @@ jobs:
 
   test:
     runs-on: ${{ inputs.test_distro }}
+    needs: build
     steps:
     - uses: actions/checkout@v4
 
