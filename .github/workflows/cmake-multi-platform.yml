@@ -23,7 +23,15 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.distro }}
-
+    outputs:
+      build-output-dir: ${{ steps.strings.outputs.build-output-dir }}
+      compiler: ${{ matrix.compiler }}
+      c_compiler: ${{ matrix.c_compiler }}
+      cpp_compiler: ${{ matrix.cpp_compiler }}
+      stdlib: ${{ matrix.stdlib }}
+      preset: ${{ matrix.preset }}
+      target: ${{ matrix.target }}
+      build_type: ${{ matrix.build_type }}
     strategy:
       # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
       fail-fast: false

@@ -173,6 +173,30 @@
       ]
     },
     {
+      "name": "tests_windows_clangcl_msvcstl",
+      "inherits": [
+        "tests_base",
+        "windows_base",
+        "msvc_base"
+      ],
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "clang-cl",
+        "CMAKE_C_COMPILER": "clang-cl"
+      }
+    },
+    {
+      "name": "benchmark_windows_clangcl_msvcstl",
+      "inherits": [
+        "benchmark_base",
+        "windows_base",
+        "msvc_base"
+      ],
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "clang-cl",
+        "CMAKE_C_COMPILER": "clang-cl"
+      }
+    },
+    {
       "name": "tests_linux_gcc_libstdcxx",
       "inherits": [
         "tests_base",
@@ -291,6 +315,50 @@
         "type": "equals",
         "lhs": "${hostSystemName}",
         "rhs": "Windows"
+      }
+    },
+    {
+      "name": "tests_windows_clangcl_msvcstl",
+      "configurePreset": "tests_windows_clangcl_msvcstl",
+      "targets": "bitlib-tests",
+      "configuration": "Debug",
+      "jobs": 0,
+      "condition": {
+        "type": "anyOf",
+        "conditions": [
+          {
+            "type": "equals",
+            "lhs": "${hostSystemName}",
+            "rhs": "Windows"
+          },
+          {
+            "type": "notEquals",
+            "lhs": "$env{CMAKE_TOOLCHAIN_FILE}",
+            "rhs": ""
+          }
+        ]
+      }
+    },
+    {
+      "name": "benchmark_windows_clangcl_msvcstl",
+      "configurePreset": "benchmark_windows_clangcl_msvcstl",
+      "targets": "bitlib-bench",
+      "configuration": "Release",
+      "jobs": 0,
+      "condition": {
+        "type": "anyOf",
+        "conditions": [
+          {
+            "type": "equals",
+            "lhs": "${hostSystemName}",
+            "rhs": "Windows"
+          },
+          {
+            "type": "notEquals",
+            "lhs": "$env{CMAKE_TOOLCHAIN_FILE}",
+            "rhs": ""
+          }
+        ]
       }
     },
     {
@@ -432,6 +500,52 @@
       }
     },
     {
+      "name": "tests_windows_clangcl_msvcstl",
+      "configurePreset": "tests_windows_clangcl_msvcstl",
+      "configuration": "Debug",
+      "condition": {
+        "type": "anyOf",
+        "conditions": [
+          {
+            "type": "equals",
+            "lhs": "${hostSystemName}",
+            "rhs": "Windows"
+          },
+          {
+            "type": "notEquals",
+            "lhs": "$env{CMAKE_TOOLCHAIN_FILE}",
+            "rhs": ""
+          }
+        ]
+      }
+    },
+    {
+      "name": "benchmark_windows_clangcl_msvcstl",
+      "configurePreset": "benchmark_windows_clangcl_msvcstl",
+      "configuration": "Release",
+      "execution": {
+        "jobs": 1
+      },
+      "output": {
+        "verbosity": "verbose"
+      },
+      "condition": {
+        "type": "anyOf",
+        "conditions": [
+          {
+            "type": "equals",
+            "lhs": "${hostSystemName}",
+            "rhs": "Windows"
+          },
+          {
+            "type": "notEquals",
+            "lhs": "$env{CMAKE_TOOLCHAIN_FILE}",
+            "rhs": ""
+          }
+        ]
+      }
+    },
+    {
       "name": "tests_linux_gcc_libstdcxx",
       "configurePreset": "tests_linux_gcc_libstdcxx",
       "condition": {
@@ -548,6 +662,40 @@
         {
           "type": "test",
           "name": "benchmark_windows_msvc_msvcstl"
+        }
+      ]
+    },
+    {
+      "name": "tests_windows_clangcl_msvcstl",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "tests_windows_clangcl_msvcstl"
+        },
+        {
+          "type": "build",
+          "name": "tests_windows_clangcl_msvcstl"
+        },
+        {
+          "type": "test",
+          "name": "tests_windows_clangcl_msvcstl"
+        }
+      ]
+    },
+    {
+      "name": "benchmark_windows_clangcl_msvcstl",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "benchmark_windows_clangcl_msvcstl"
+        },
+        {
+          "type": "build",
+          "name": "benchmark_windows_clangcl_msvcstl"
+        },
+        {
+          "type": "test",
+          "name": "benchmark_windows_clangcl_msvcstl"
         }
       ]
     },

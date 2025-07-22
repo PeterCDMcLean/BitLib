@@ -65,9 +65,7 @@ jobs:
         run: |
           # Configure
           cmake -B '${{ steps.strings.outputs.build-output-dir }}' -S '${{ github.workspace }}' \
-          --preset=tests_windows_msvc_msvcstl \
-          -DCMAKE_CXX_COMPILER=clang-cl \
-          -DCMAKE_C_COMPILER=clang-cl \
+          --preset=tests_windows_clangcl_msvcstl \
           -DCMAKE_BUILD_TYPE=Debug
 
       - name: Build
@@ -94,7 +92,4 @@ jobs:
       - name: Run tests
         shell: powershell
         run: |
-          dir
-          dir build
-          dir build\test
           '.\build\test\bitlib-tests.exe'
