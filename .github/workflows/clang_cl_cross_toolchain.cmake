@@ -2,9 +2,9 @@ set(CMAKE_SYSTEM_NAME Windows)
 set(CMAKE_SYSTEM_PROCESSOR amd64)
 
 set(CMAKE_C_COMPILER clang-cl)
-set(CMAKE_C_FLAGS "/winsdkdir:$ENV{WINSDKDIR} /vctoolsdir:$ENV{VCTOOLSDIR} --target=x86_64-pc-windows-msvc -fuse-ld=lld-link /imsvc $ENV{VCTOOLSDIR}/include /imsvc $ENV{WINSDKDIR}/include/ucrt /imsvc $ENV{WINSDKDIR}/include/um /imsvc $ENV{WINSDKDIR}/include/shared")
+set(CMAKE_C_FLAGS "/winsdkdir:$ENV{WINSDKDIR} /vctoolsdir:$ENV{VCTOOLSDIR} --target=x86_64-pc-windows-msvc -fuse-ld=lld-link /imsvc $ENV{VCTOOLSDIR}/include /imsvc $ENV{WINSDKDIR}/include/ucrt /imsvc $ENV{WINSDKDIR}/include/um /imsvc $ENV{WINSDKDIR}/include/shared ${CMAKE_C_FLAGS}")
 set(CMAKE_CXX_COMPILER clang-cl)
-set(CMAKE_CXX_FLAGS "/winsdkdir:$ENV{WINSDKDIR} /vctoolsdir:$ENV{VCTOOLSDIR} --target=x86_64-pc-windows-msvc -fuse-ld=lld-link /imsvc $ENV{VCTOOLSDIR}/include /imsvc $ENV{WINSDKDIR}/include/ucrt /imsvc $ENV{WINSDKDIR}/include/um /imsvc $ENV{WINSDKDIR}/include/shared")
+set(CMAKE_CXX_FLAGS "/winsdkdir:$ENV{WINSDKDIR} /vctoolsdir:$ENV{VCTOOLSDIR} --target=x86_64-pc-windows-msvc -fuse-ld=lld-link /imsvc $ENV{VCTOOLSDIR}/include /imsvc $ENV{WINSDKDIR}/include/ucrt /imsvc $ENV{WINSDKDIR}/include/um /imsvc $ENV{WINSDKDIR}/include/shared ${CMAKE_CXX_FLAGS}")
 
 set(CMAKE_AR llvm-lib)
 set(CMAKE_LINKER lld-link)
@@ -29,16 +29,14 @@ set(CMAKE_MODULE_LINKER_FLAGS_INIT "${CMAKE_MODULE_LINKER_FLAGS_INIT} /libpath:$
 set(CMAKE_MODULE_LINKER_FLAGS_INIT "${CMAKE_MODULE_LINKER_FLAGS_INIT} /libpath:$ENV{WINSDKDIR}/lib/ucrt/x86_64")
 set(CMAKE_MODULE_LINKER_FLAGS_INIT "${CMAKE_MODULE_LINKER_FLAGS_INIT} /libpath:$ENV{VCTOOLSDIR}/lib/x86_64")
 
-#set(CMAKE_STATIC_LINKER_FLAGS_INIT "/winsdkdir:$ENV{WINSDKDIR}")
-#set(CMAKE_STATIC_LINKER_FLAGS_INIT "${CMAKE_MODULE_LINKER_FLAGS_INIT} /vctoolsdir:$ENV{VCTOOLSDIR}")
-#set(CMAKE_STATIC_LINKER_FLAGS_INIT "${CMAKE_MODULE_LINKER_FLAGS_INIT} /libpath:$ENV{WINSDKDIR}/lib/um/x86_64")
-#set(CMAKE_STATIC_LINKER_FLAGS_INIT "${CMAKE_MODULE_LINKER_FLAGS_INIT} /libpath:$ENV{WINSDKDIR}/lib/ucrt/x86_64")
-#set(CMAKE_STATIC_LINKER_FLAGS_INIT "${CMAKE_MODULE_LINKER_FLAGS_INIT} /libpath:$ENV{VCTOOLSDIR}/lib/x86_64")
+set(CMAKE_STATIC_LINKER_FLAGS_INIT "${CMAKE_MODULE_LINKER_FLAGS_INIT} /libpath:$ENV{WINSDKDIR}/lib/um/x86_64")
+set(CMAKE_STATIC_LINKER_FLAGS_INIT "${CMAKE_MODULE_LINKER_FLAGS_INIT} /libpath:$ENV{WINSDKDIR}/lib/ucrt/x86_64")
+set(CMAKE_STATIC_LINKER_FLAGS_INIT "${CMAKE_MODULE_LINKER_FLAGS_INIT} /libpath:$ENV{VCTOOLSDIR}/lib/x86_64")
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS_INIT}" CACHE STRING "Flags used by the linker for all executables." FORCE)
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS_INIT}" CACHE STRING "Flags used by the linker for all shared libraries." FORCE)
 set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS_INIT}" CACHE STRING "Flags used by the linker for all modules." FORCE)
-#set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS_INIT}" CACHE STRING "Flags used by the linker for all static libraries." FORCE)
+set(CMAKE_STATIC_LINKER_FLAGS "${CMAKE_STATIC_LINKER_FLAGS_INIT}" CACHE STRING "Flags used by the linker for all static libraries." FORCE)
 
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
