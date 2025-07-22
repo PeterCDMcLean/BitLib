@@ -82,3 +82,28 @@ jobs:
           -DCMAKE_C_COMPILER=clang-cl \
           -DCMAKE_BUILD_TYPE=Debug \
           --toolchain ${{ env.CMAKE_TOOLCHAIN_FILE }}
+
+      - name: Build
+        shell: bash
+        # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
+        run: cmake --build '${{ steps.strings.outputs.build-output-dir }}' --target bitlib-tests --config Debug --parallel
+
+      - name: Upload executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: bitlib-tests
+          path: ${{ steps.strings.outputs.build-output-dir }}/tests_windows_msvc_msvcstl/test/bitlib-tests.exe
+
+  run_cross_test:
+    runs-on: windows-latest
+    needs: build_cross
+    steps:
+      - name: Download executable
+        uses: actions/download-artifact@v4
+        with:
+          name: bitlib-tests
+
+      - name: Run tests
+        shell: powershell
+        run: |
+          ${{ steps.strings.outputs.build-output-dir }}/tests_windows_msvc_msvcstl/test/bitlib-tests.exe
