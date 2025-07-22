@@ -122,6 +122,11 @@ jobs:
       id: strings
       shell: bash
       run: |
+        if [[ "${{ inputs.preset }}" == "coverage" || "${{ inputs.preset }}" == "tests" ]]; then
+          chmod +x '${{ github.workspace }}/../build/test/${{ inputs.target }}*'
+        else
+          chmod +x '${{ github.workspace }}/../build/benchmark/${{ inputs.target }}*'
+        fi
         echo "build-output-dir=$(readlink -f '${{ github.workspace }}/../build')" >> "$GITHUB_OUTPUT"
 
     - name: Run coverage for Clang
