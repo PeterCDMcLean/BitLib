@@ -104,4 +104,6 @@ jobs:
       - name: Run tests
         shell: powershell
         run: |
-          "${{ steps.strings.outputs.build-output-dir }}/test/bitlib-tests.exe"
+          dir
+          dir ../
+          "bitlib-tests.exe"
