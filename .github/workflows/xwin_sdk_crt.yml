@@ -78,8 +78,7 @@ jobs:
           --preset=tests_windows_msvc_msvcstl \
           -DCMAKE_CXX_COMPILER=clang-cl \
           -DCMAKE_C_COMPILER=clang-cl \
-          -DCMAKE_BUILD_TYPE=Debug \
-          --toolchain ${{ env.CMAKE_TOOLCHAIN_FILE }}
+          -DCMAKE_BUILD_TYPE=Debug
 
       - name: Build
         shell: bash
@@ -90,7 +89,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: bitlib-tests
-          path: "${{ steps.strings.outputs.build-output-dir }}/test/bitlib-tests.exe"
+          path: "${{ steps.strings.outputs.build-output-dir }}"
 
   run_cross_test:
     runs-on: windows-latest
@@ -104,5 +103,4 @@ jobs:
       - name: Run tests
         shell: powershell
         run: |
-          dir
-          ./bitlib-tests.exe
+          ./build/tests/bitlib-tests.exe
