@@ -78,4 +78,5 @@ jobs:
           --preset=tests_windows_msvc_msvcstl \
           -DCMAKE_CXX_COMPILER=clang-cl \
           -DCMAKE_C_COMPILER=clang-cl \
-          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_BUILD_TYPE=Debug \
+          --toolchain ${{ env.CMAKE_TOOLCHAIN_FILE }}
