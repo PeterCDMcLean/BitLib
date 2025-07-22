@@ -90,7 +90,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: bitlib-tests
-          path: ${{ steps.strings.outputs.build-output-dir }}/tests_windows_msvc_msvcstl/test/bitlib-tests.exe
+          path: "${{ steps.strings.outputs.build-output-dir }}/test/bitlib-tests.exe"
 
   run_cross_test:
     runs-on: windows-latest
@@ -104,4 +104,4 @@ jobs:
       - name: Run tests
         shell: powershell
         run: |
-          ${{ steps.strings.outputs.build-output-dir }}/tests_windows_msvc_msvcstl/test/bitlib-tests.exe
+          "${{ steps.strings.outputs.build-output-dir }}/test/bitlib-tests.exe"
