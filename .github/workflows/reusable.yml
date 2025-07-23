@@ -71,15 +71,11 @@ jobs:
         echo "build-output-dir=$(readlink -f '${{ github.workspace }}/../build')" >> "$GITHUB_OUTPUT"
 
     - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
       shell: bash
       run: |
         # Configure
         cmake -B '${{ steps.strings.outputs.build-output-dir }}' -S '${{ github.workspace }}' \
         --preset=${{ inputs.preset }}_${{ inputs.build_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }} \
-        -DCMAKE_CXX_COMPILER=${{ inputs.cpp_compiler }} \
-        -DCMAKE_C_COMPILER=${{ inputs.c_compiler }} \
         -DCMAKE_BUILD_TYPE=${{ inputs.build_type }}
 
         # Delete any coverage files created from CMake probing
@@ -92,7 +88,6 @@ jobs:
 
     - name: Build
       shell: bash
-      # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       run: cmake --build '${{ steps.strings.outputs.build-output-dir }}' --target ${{ inputs.target }} --config ${{ inputs.build_type }} --parallel
 
     - name: Unregister Compiler Problem Matcher
@@ -108,7 +103,6 @@ jobs:
   test:
     runs-on: ${{ inputs.test_distro }}
     needs: build
-    if: inputs.preset != 'coverage'
     steps:
     - uses: actions/checkout@v4
 
@@ -123,13 +117,10 @@ jobs:
       id: strings
       shell: bash
       run: |
-        ls -al ${{ github.workspace }}/../build/
-        if [[ "${{ inputs.preset }}" == "coverage" || "${{ inputs.preset }}" == "tests" ]]; then
-          ls -al ${{ github.workspace }}/../build/test
-          chmod +x '${{ github.workspace }}/../build/test/${{ inputs.target }}'*
-        else
-          ls -al ${{ github.workspace }}/../build/benchmark
+        if [[ "${{ inputs.preset }}" == "benchmark" ]]; then
           chmod +x '${{ github.workspace }}/../build/benchmark/${{ inputs.target }}'*
+        else
+          chmod +x '${{ github.workspace }}/../build/test/${{ inputs.target }}'*
         fi
         echo "build-output-dir=$(readlink -f '${{ github.workspace }}/../build')" >> "$GITHUB_OUTPUT"
 
@@ -149,8 +140,6 @@ jobs:
 
     - name: Test
       if: inputs.preset != 'coverage'
-      # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       shell: bash
       run: ctest --test-dir ${{ steps.strings.outputs.build-output-dir }} --build-config ${{ inputs.build_type }} --output-on-failure --parallel
 
