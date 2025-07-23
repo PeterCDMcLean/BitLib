@@ -106,7 +106,7 @@ jobs:
       run: |
         # Configure
         cmake -B '${{ steps.strings.outputs.build-output-dir }}' -S '${{ github.workspace }}' \
-        --preset=${{ inputs.preset }}_${{ inputs.build_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }} \
+        --preset=${{ inputs.preset }}_${{ inputs.test_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }} \
         -DCMAKE_BUILD_TYPE=${{ inputs.build_type }}
 
         # Delete any coverage files created from CMake probing
