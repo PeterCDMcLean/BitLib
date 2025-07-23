@@ -176,6 +176,8 @@ jobs:
         if [[ "${{ inputs.preset }}" == "benchmark" ]]; then
           chmod +x '${{ github.workspace }}/../build/benchmark/${{ inputs.target }}'*
         else
+          ls '${{ github.workspace }}/../build'
+          ls '${{ github.workspace }}/../build/test'
           chmod +x '${{ github.workspace }}/../build/test/${{ inputs.target }}'*
         fi
         echo "build-output-dir=$(readlink -f '${{ github.workspace }}/../build')" >> "$GITHUB_OUTPUT"
