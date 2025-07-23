@@ -3,6 +3,9 @@ name: CI
 
 on:
   push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
 
 jobs:
   run-matrix:
@@ -121,4 +124,6 @@ jobs:
       preset: ${{ matrix.preset }}
       target: ${{ matrix.target }}
       build_type: ${{ matrix.build_type }}
+      head_ref: ${{ github.event.pull_request.head.ref }}
+      base_ref: ${{ github.event.pull_request.base.ref }}
     secrets: inherit

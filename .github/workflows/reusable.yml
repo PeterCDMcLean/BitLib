@@ -39,6 +39,12 @@ on:
         type: string
       toolchain:
         type: string
+      head_ref:
+        required: true
+        type: string
+      base_ref:
+        required: true
+        type: string
 
 jobs:
   build:
