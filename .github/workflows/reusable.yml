@@ -199,7 +199,6 @@ jobs:
       shell: bash
       run: |
         ctest --test-dir ${{ steps.strings.outputs.build-output-dir }} \
-              --build-exe-dir '${{ steps.strings.outputs.build-output-dir }}/${{ steps.strings.outputs.binary-sub-dir }}'
               --build-config ${{ inputs.build_type }} \
               --output-on-failure \
               --parallel
