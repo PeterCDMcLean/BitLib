@@ -22,8 +22,10 @@ jobs:
       # To add more build types (Release, Debug, RelWithDebInfo, etc.) customize the build_type list.
       matrix:
         include:
-          - distro: windows-latest
-            os: windows
+          - build_distro: windows-latest
+            build_os: windows
+            test_distro: windows-latest
+            test_os: windows
             compiler: msvc
             c_compiler: cl.exe
             cpp_compiler: cl.exe
@@ -31,8 +33,11 @@ jobs:
             preset: tests
             target: bitlib-tests
             build_type: Release
-          - distro: windows-latest
-            os: windows
+            toolchain:
+          - build_distro: windows-latest
+            build_os: windows
+            test_distro: windows-latest
+            test_os: windows
             compiler: msvc
             c_compiler: cl.exe
             cpp_compiler: cl.exe
@@ -40,8 +45,11 @@ jobs:
             preset: tests
             target: bitlib-tests
             build_type: Debug
-          - distro: ubuntu-latest
-            os: linux
+            toolchain:
+          - build_distro: ubuntu-latest
+            build_os: linux
+            test_distro: ubuntu-latest
+            test_os: linux
             compiler: gcc
             c_compiler: gcc
             cpp_compiler: g++
@@ -49,8 +57,11 @@ jobs:
             preset: benchmark
             target: bitlib-bench
             build_type: Release
-          - distro: ubuntu-latest
-            os: linux
+            toolchain:
+          - build_distro: ubuntu-latest
+            build_os: linux
+            test_distro: ubuntu-latest
+            test_os: linux
             compiler: clang
             cpp_compiler: clang++-19
             c_compiler: clang-19
@@ -58,8 +69,11 @@ jobs:
             preset: benchmark
             target: bitlib-bench
             build_type: Release
-          - distro: ubuntu-latest
-            os: linux
+            toolchain:
+          - build_distro: ubuntu-latest
+            build_os: linux
+            test_distro: ubuntu-latest
+            test_os: linux
             compiler: gcc
             c_compiler: gcc
             cpp_compiler: g++
@@ -67,8 +81,11 @@ jobs:
             preset: tests
             target: bitlib-tests
             build_type: Debug
-          - distro: ubuntu-latest
-            os: linux
+            toolchain:
+          - build_distro: ubuntu-latest
+            build_os: linux
+            test_distro: ubuntu-latest
+            test_os: linux
             compiler: gcc
             c_compiler: gcc
             cpp_compiler: g++
@@ -76,8 +93,11 @@ jobs:
             preset: warnings
             target: bitlib-tests
             build_type: Debug
-          - distro: ubuntu-latest
-            os: linux
+            toolchain:
+          - build_distro: ubuntu-latest
+            build_os: linux
+            test_distro: ubuntu-latest
+            test_os: linux
             compiler: clang
             c_compiler: clang-19
             cpp_compiler: clang++-19
@@ -85,8 +105,11 @@ jobs:
             preset: warnings
             target: bitlib-tests
             build_type: Debug
-          - distro: ubuntu-latest
-            os: linux
+            toolchain:
+          - build_distro: ubuntu-latest
+            build_os: linux
+            test_distro: ubuntu-latest
+            test_os: linux
             compiler: clang
             cpp_compiler: clang++-19
             c_compiler: clang-19
@@ -94,8 +117,11 @@ jobs:
             preset: tests
             target: bitlib-tests
             build_type: Debug
-          - distro: ubuntu-latest
-            os: linux
+            toolchain:
+          - build_distro: ubuntu-latest
+            build_os: linux
+            test_distro: ubuntu-latest
+            test_os: linux
             compiler: gcc
             c_compiler: gcc
             cpp_compiler: g++
@@ -103,8 +129,11 @@ jobs:
             preset: coverage
             target: bitlib-tests
             build_type: Debug
-          - distro: ubuntu-latest
-            os: linux
+            toolchain:
+          - build_distro: ubuntu-latest
+            build_os: linux
+            test_distro: ubuntu-latest
+            test_os: linux
             compiler: clang
             cpp_compiler: clang++-19
             c_compiler: clang-19
@@ -112,11 +141,36 @@ jobs:
             preset: coverage
             target: bitlib-tests
             build_type: Debug
+            toolchain:
+          - build_distro: ubuntu-latest
+            build_os: linux
+            test_distro: windows-latest
+            test_os: windows
+            compiler: clangcl
+            cpp_compiler: clang-cl
+            c_compiler: clang-cl
+            stdlib: msvcstl
+            preset: tests
+            target: bitlib-tests
+            build_type: Debug
+            toolchain: ${{ github.workspace }}/.github/workflows/clang_cl_cross_toolchain.cmake
+          - build_distro: ubuntu-latest
+            build_os: linux
+            test_distro: windows-latest
+            test_os: windows
+            compiler: clangcl
+            cpp_compiler: clang-cl
+            c_compiler: clang-cl
+            stdlib: msvcstl
+            preset: tests
+            target: bitlib-tests
+            build_type: Release
+            toolchain: ${{ github.workspace }}/.github/workflows/clang_cl_cross_toolchain.cmake
     with:
-      build_distro: ${{ matrix.distro }}
-      build_os: ${{ matrix.os }}
-      test_distro: ${{ matrix.distro }}
-      test_os: ${{ matrix.os }}
+      build_distro: ${{ matrix.build_distro }}
+      build_os: ${{ matrix.build_os }}
+      test_distro: ${{ matrix.test_distro }}
+      test_os: ${{ matrix.test_os }}
       compiler: ${{ matrix.compiler }}
       c_compiler: ${{ matrix.c_compiler }}
       cpp_compiler: ${{ matrix.cpp_compiler }}
@@ -124,6 +178,7 @@ jobs:
       preset: ${{ matrix.preset }}
       target: ${{ matrix.target }}
       build_type: ${{ matrix.build_type }}
+      toolchain: ${{ matrix.toolchain }}
       head_ref: ${{ github.event.pull_request.head.ref }}
       base_ref: ${{ github.event.pull_request.base.ref }}
     secrets: inherit

@@ -52,6 +52,26 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Download & Cache xwin + SDK/CRT
+      if: inputs.build_os == 'linux' && inputs.test_os == 'windows' && inputs.compiler == 'clangcl'
+      uses: ./.github/actions/xwin_sdk_crt
+      with:
+        sdk-version: '10.0.26100'
+        crt-version: '14.44.17.14'
+
+    - name: "SDK/CRT Env Vars"
+      if: inputs.build_os == 'linux' && inputs.test_os == 'windows' && inputs.compiler == 'clangcl'
+      shell: bash
+      run: |
+        echo "WINSDKDIR=${{ github.workspace }}/.xwin_sdk_crt/sdk" >> "$GITHUB_ENV"
+        echo "VCTOOLSDIR=${{ github.workspace }}/.xwin_sdk_crt/crt" >> "$GITHUB_ENV"
+
+    - name: "Toolchain Env Var"
+      if: inputs.toolchain != ''
+      shell: bash
+      run: |
+        echo "CMAKE_TOOLCHAIN_FILE=${{ inputs.toolchain }}" >> "$GITHUB_ENV"
+
     - name: "Install Clang 19"
       if: inputs.build_os == 'linux' && inputs.c_compiler == 'clang-19'
       shell: bash
@@ -60,7 +80,7 @@ jobs:
         sudo apt-get install -y wget gnupg lsb-release
         wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
-        sudo ./llvm.sh 19
+        sudo ./llvm.sh 19 all
         # Install libc++ and libc++abi for Clang 19
         sudo apt-get install -y libc++-19-dev libc++abi-19-dev
         sudo ln -sf /usr/bin/llvm-cov-19 /usr/local/bin/llvm-cov
@@ -68,6 +88,11 @@ jobs:
         sudo ln -sf /usr/bin/clang-19 /usr/local/bin/clang
         sudo ln -sf /usr/bin/clang++-19 /usr/local/bin/clang++
         sudo ln -sf /usr/bin/clang-format-19 /usr/local/bin/clang-format
+        sudo ln -sf /usr/bin/clang-cl-19 /usr/local/bin/clang-cl
+        sudo ln -sf /usr/bin/llvm-lib-19 /usr/local/bin/llvm-lib
+        sudo ln -sf /usr/bin/lld-link-19 /usr/local/bin/lld-link
+        sudo ln -sf /usr/bin/llvm-mt-19 /usr/local/bin/llvm-mt
+        sudo ln -sf /usr/bin/llvm-rc-19 /usr/local/bin/llvm-rc
 
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
