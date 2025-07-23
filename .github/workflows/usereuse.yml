@@ -153,7 +153,7 @@ jobs:
             preset: tests
             target: bitlib-tests
             build_type: Debug
-            toolchain: ${{ github.workspace }}/.github/workflows/clang_cl_cross_toolchain.cmake
+            toolchain: .github/workflows/clang_cl_cross_toolchain.cmake
           - build_distro: ubuntu-latest
             build_os: linux
             test_distro: windows-latest
@@ -165,7 +165,7 @@ jobs:
             preset: tests
             target: bitlib-tests
             build_type: Release
-            toolchain: ${{ github.workspace }}/.github/workflows/clang_cl_cross_toolchain.cmake
+            toolchain: .github/workflows/clang_cl_cross_toolchain.cmake
     with:
       build_distro: ${{ matrix.build_distro }}
       build_os: ${{ matrix.build_os }}
