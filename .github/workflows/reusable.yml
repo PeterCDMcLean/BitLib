@@ -111,7 +111,12 @@ jobs:
 
     - name: Register Compiler Problem Matcher
       shell: bash
-      run: echo "::add-matcher::.github/problem_matchers/${{ inputs.compiler}}_problem_matcher.json"
+      run: |
+        if [[ "${{ inputs.compiler }}" == "clangcl" ]]; then
+          echo "::add-matcher::.github/problem_matchers/msvc_problem_matcher.json"
+        else
+          echo "::add-matcher::.github/problem_matchers/${{ inputs.compiler}}_problem_matcher.json"
+        fi
 
     - name: Build
       shell: bash
@@ -119,7 +124,12 @@ jobs:
 
     - name: Unregister Compiler Problem Matcher
       shell: bash
-      run: echo "::remove-matcher owner=${{ inputs.compiler}}::"
+      run: |
+        if [[ "${{ inputs.compiler }}" == "clangcl" ]]; then
+          echo "::remove-matcher owner=msvc::"
+        else
+          echo "::remove-matcher owner=${{ inputs.compiler}}::"
+        fi
 
     - name: Upload build dir
       uses: actions/upload-artifact@v4
