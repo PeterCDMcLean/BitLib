@@ -112,6 +112,16 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: "Install LLVM 19 toolchain"
+      if: inputs.test_os == 'linux' && inputs.compiler == 'clang'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget gnupg lsb-release
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x llvm.sh
+        sudo ./llvm.sh 19
+
     - name: "Install Clang 19 Libcxx"
       if: inputs.test_os == 'linux' && inputs.stdlib == 'libcxx'
       shell: bash
