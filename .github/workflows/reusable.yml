@@ -146,6 +146,8 @@ jobs:
         wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
         sudo ./llvm.sh 19
+        sudo ln -sf /usr/bin/llvm-cov-19 /usr/local/bin/llvm-cov
+        sudo ln -sf /usr/bin/llvm-profdata-19 /usr/local/bin/llvm-profdata
 
     - name: "Install Clang 19 Libcxx"
       if: inputs.test_os == 'linux' && inputs.stdlib == 'libcxx'
