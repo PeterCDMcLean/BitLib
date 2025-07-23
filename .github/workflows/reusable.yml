@@ -106,6 +106,13 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: "Install Clang 19 Libcxx"
+      if: ${{ inputs.test_os }} == 'linux' && ${{ matrix.stdlib }} == 'libcxx'
+      shell: bash
+      run: |
+        # Install libc++ and libc++abi for Clang 19
+        sudo apt-get install -y libc++-19-dev libc++abi-19-dev
+
     - name: Download build dir
       uses: actions/download-artifact@v4
       with:
