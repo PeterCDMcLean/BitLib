@@ -67,7 +67,7 @@ jobs:
         echo "VCTOOLSDIR=${{ github.workspace }}/.xwin_sdk_crt/crt" >> "$GITHUB_ENV"
 
     - name: "Install Clang 19"
-      if: inputs.build_os == 'linux' && inputs.c_compiler == 'clang-19'
+      if: inputs.build_os == 'linux' && (inputs.compiler == 'clang' || inputs.compiler == 'clangcl')
       shell: bash
       run: |
         sudo apt-get update
