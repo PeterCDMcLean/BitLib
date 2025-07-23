@@ -158,9 +158,10 @@ jobs:
         key: benchmark_${{ inputs.test_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}_${{ inputs.build_type }}_${{ github.event.pull_request.head.ref }}
 
     - name: Rename current benchmark json
+      if: inputs.preset == 'benchmark'
       shell: bash
       run: |
-        mv '${{ inputs.build-output-dir }}/benchmark/benchmark_result.json' '${{ inputs.build-output-dir }}/benchmark/benchmark_result_new.json'
+        mv '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result.json' '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result_new.json'
 
     - name: Fetch base_ref benchmark json
       if: inputs.preset == 'benchmark'
@@ -174,10 +175,10 @@ jobs:
       if: inputs.preset == 'benchmark' && steps.base_ref_json.outputs.cache-hit == 'true'
       shell: bash
       run: |
-        python3 '${{ inputs.build-output-dir}}/_deps/benchmark-src/tools/compare.py' benchmarks \
-          '${{ inputs.build-output-dir }}/benchmark/benchmark_result.json' \
-          '${{ inputs.build-output-dir }}/benchmark/benchmark_result_new.json' \
-          | tee '${{ inputs.build-output-dir }}/benchmark/comparison.txt'
+        python3 '${{ steps.strings.outputs.build-output-dir }}/_deps/benchmark-src/tools/compare.py' benchmarks \
+          '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result.json' \
+          '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result_new.json' \
+          | tee '${{ steps.strings.outputs.build-output-dir }}/benchmark/comparison.txt'
 
     - name: Archive benchmark results
       if: inputs.preset == 'benchmark' && steps.base_ref_json.outputs.cache-hit == 'true'
@@ -185,6 +186,6 @@ jobs:
       with:
         name: benchmark_${{ inputs.os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}_json
         path: |
-          '${{ inputs.build-output-dir }}/benchmark/benchmark_result.json'
-          '${{ inputs.build-output-dir }}/benchmark/benchmark_result_new.json'
-          '${{ inputs.build-output-dir }}/benchmark/comparison.txt'
+          '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result.json'
+          '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result_new.json'
+          '${{ steps.strings.outputs.build-output-dir }}/benchmark/comparison.txt'
