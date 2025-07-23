@@ -107,7 +107,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - name: "Install Clang 19 Libcxx"
-      if: ${{ inputs.test_os }} == 'linux' && ${{ matrix.stdlib }} == 'libcxx'
+      if: inputs.test_os == 'linux' && inputs.stdlib == 'libcxx'
       shell: bash
       run: |
         # Install libc++ and libc++abi for Clang 19
