@@ -89,7 +89,6 @@ jobs:
         sudo ln -sf /usr/bin/llvm-rc-19 /usr/local/bin/llvm-rc
 
     - name: Set reusable strings
-      # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
       id: strings
       shell: bash
       run: |
@@ -169,16 +168,15 @@ jobs:
         path: '${{ github.workspace }}/../build'
 
     - name: Set reusable strings
-      # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
       id: strings
       shell: bash
       run: |
         if [[ "${{ inputs.preset }}" == "benchmark" ]]; then
           chmod +x '${{ github.workspace }}/../build/benchmark/${{ inputs.target }}'*
+          echo 'binary-sub-dir=benchmark' >> "$GITHUB_OUTPUT"
         else
-          ls '${{ github.workspace }}/../build'
-          ls '${{ github.workspace }}/../build/test'
           chmod +x '${{ github.workspace }}/../build/test/${{ inputs.target }}'*
+          echo 'binary-sub-dir=test' >> "$GITHUB_OUTPUT"
         fi
         echo "build-output-dir=$(readlink -f '${{ github.workspace }}/../build')" >> "$GITHUB_OUTPUT"
 
@@ -199,7 +197,12 @@ jobs:
     - name: Test
       if: inputs.preset != 'coverage'
       shell: bash
-      run: ctest --test-dir ${{ steps.strings.outputs.build-output-dir }} --build-config ${{ inputs.build_type }} --output-on-failure --parallel
+      run: |
+        ctest --test-dir ${{ steps.strings.outputs.build-output-dir }} \
+              --build-exe-dir '${{ steps.strings.outputs.build-output-dir }}/${{ steps.strings.outputs.binary-sub-dir }}'
+              --build-config ${{ inputs.build_type }} \
+              --output-on-failure \
+              --parallel
 
     - name: Cache benchmark json
       if: inputs.preset == 'benchmark'
