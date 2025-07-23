@@ -66,12 +66,6 @@ jobs:
         echo "WINSDKDIR=${{ github.workspace }}/.xwin_sdk_crt/sdk" >> "$GITHUB_ENV"
         echo "VCTOOLSDIR=${{ github.workspace }}/.xwin_sdk_crt/crt" >> "$GITHUB_ENV"
 
-    - name: "Toolchain Env Var"
-      if: inputs.toolchain != ''
-      shell: bash
-      run: |
-        echo "CMAKE_TOOLCHAIN_FILE=${{ inputs.toolchain }}" >> "$GITHUB_ENV"
-
     - name: "Install Clang 19"
       if: inputs.build_os == 'linux' && inputs.c_compiler == 'clang-19'
       shell: bash
@@ -103,6 +97,8 @@ jobs:
 
     - name: Configure CMake
       shell: bash
+      env:
+        CMAKE_TOOLCHAIN_FILE: ${{ inputs.toolchain }}
       run: |
         # Configure
         cmake -B '${{ steps.strings.outputs.build-output-dir }}' -S '${{ github.workspace }}' \
