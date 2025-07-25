@@ -1,0 +1,106 @@
+# .github/actions/xwin_sdk_crt/action.yml
+name: "xwin_sdk_crt"
+description: "Build xwin, then download & cache Windows SDK & CRT via xwin on Linux runners"
+
+inputs:
+  # xwin inputs
+  xwin-repo:
+    description: "GitHub repo for xwin (owner/repo)"
+    required: false
+    default: "https://github.com/Jake-Shadle/xwin"
+  xwin-hash:
+    description: "Git sha to checkout for xwin"
+    required: false
+    default: "11d9c9f69a374985faf833fbb77f006d4eb49cd6"
+  cargo-home:
+    description: "CARGO_HOME path (where xwin will be installed)"
+    required: false
+    default: "${{ github.workspace }}/.cargo"
+
+  # Windows SDK/CRT inputs
+  sdk-version:
+    description: "Windows SDK version (e.g. 10.0.22621.0)"
+    required: true
+  crt-version:
+    description: "Windows CRT version (e.g. 14.30.30705.0)"
+    required: true
+  cache-path:
+    description: "Where to install & cache the SDK/CRT"
+    required: false
+    default: ".xwin_sdk_crt"
+
+runs:
+  using: "composite"
+  steps:
+    # 1) Restore xwin cache (binary + cargo registry/git)
+    - name: Restore xwin cache
+      id: xwin-cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ${{ inputs.cargo-home }}/bin/xwin
+          ${{ inputs.cargo-home }}/registry
+          ${{ inputs.cargo-home }}/git
+        key: xwin-${{ inputs.xwin-hash }}
+
+    # 2) Build & install xwin if cache miss
+    - name: Build & install xwin
+      if: steps.xwin-cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        CARGO_HOME: ${{ inputs.cargo-home }}
+      run: |
+        cargo install xwin --git ${{ inputs.xwin-repo }} --rev ${{ inputs.xwin-hash }} --locked --root $CARGO_HOME
+
+    # 3) Save xwin cache on miss
+    - name: Save xwin cache
+      if: steps.xwin-cache.outputs.cache-hit != 'true'
+      uses: actions/cache@v4
+      with:
+        path: |
+          ${{ inputs.cargo-home }}/bin/xwin
+          ${{ inputs.cargo-home }}/registry
+          ${{ inputs.cargo-home }}/git
+        key: xwin-${{ inputs.xwin-hash }}
+
+    # 4) Restore Windows SDK/CRT cache
+    - name: Restore SDK/CRT cache
+      id: sdkcache
+      uses: actions/cache@v4
+      with:
+        path: ${{ inputs.cache-path }}
+        key: xwin_sdk-${{ inputs.sdk-version }}_crt-${{ inputs.crt-version }}
+        restore-keys: |
+          xwin_sdk-${{ inputs.sdk-version }}_crt-${{ inputs.crt-version }}
+
+    # 5) Download SDK & CRT via xwin if cache miss
+    - name: Download SDK & CRT via xwin
+      id: xwin
+      if: steps.sdkcache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        mkdir -p ${{ inputs.cache-path }}
+
+        "${{ inputs.cargo-home }}/bin/xwin" --accept-license \
+          --cache-dir ./.xwin-cache \
+          --log-level info \
+          --sdk-version ${{ inputs.sdk-version }} \
+          --crt-version ${{ inputs.crt-version }} \
+          splat \
+          --include-debug-libs \
+          --output ${{ inputs.cache-path }}
+
+        rm -rf ./.xwin-cache
+
+        echo "result=success" >> "$GITHUB_OUTPUT"
+
+
+    # 6) Save SDK/CRT cache on miss
+    - name: Save SDK/CRT cache
+      if: steps.sdkcache.outputs.cache-hit != 'true' && steps.xwin.outputs.result == 'success'
+      uses: actions/cache@v4
+      with:
+        path: ${{ inputs.cache-path }}
+        key: xwin_sdk-${{ inputs.sdk-version }}_crt-${{ inputs.crt-version }}

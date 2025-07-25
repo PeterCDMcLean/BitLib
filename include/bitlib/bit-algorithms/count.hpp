@@ -95,7 +95,10 @@ count(
         //);
 
         // libpopcnt
-        result += popcnt(&*it, (digits / 8) * std::distance(it, last.base()));
+        auto words = (digits / 8) * std::distance(it, last.base());
+        if (0 != words) {
+          result += popcnt(&*it, words);
+        }
       }
         if (last.position() != 0) {
             word_type last_value = *last.base() << (digits - last.position());

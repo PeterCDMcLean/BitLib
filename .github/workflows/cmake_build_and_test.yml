@@ -1,0 +1,266 @@
+# .github/workflows/reusable.yaml
+name: Reusable Workflow
+
+on:
+  workflow_call:
+    inputs:
+      build_distro:
+        required: true
+        type: string
+      build_os:
+        required: true
+        type: string
+      test_distro:
+        required: true
+        type: string
+      test_os:
+        required: true
+        type: string
+      compiler:
+        required: true
+        type: string
+      stdlib:
+        required: true
+        type: string
+      preset:
+        required: true
+        type: string
+      build_type:
+        required: true
+        type: string
+      head_ref:
+        required: true
+        type: string
+      base_ref:
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ${{ inputs.build_distro }}
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Download & Cache xwin + SDK/CRT
+      if: inputs.build_os == 'linux' && inputs.test_os == 'windows' && inputs.compiler == 'clangcl'
+      uses: ./.github/actions/xwin_sdk_crt
+      with:
+        sdk-version: '10.0.26100'
+        crt-version: '14.44.17.14'
+
+    - name: "SDK/CRT Env Vars"
+      if: inputs.build_os == 'linux' && inputs.test_os == 'windows' && inputs.compiler == 'clangcl'
+      shell: bash
+      run: |
+        echo "WINSDKDIR=${{ github.workspace }}/.xwin_sdk_crt/sdk" >> "$GITHUB_ENV"
+        echo "VCTOOLSDIR=${{ github.workspace }}/.xwin_sdk_crt/crt" >> "$GITHUB_ENV"
+
+    - name: "Install Clang 19"
+      if: inputs.build_os == 'linux' && (inputs.compiler == 'clang' || inputs.compiler == 'clangcl')
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget gnupg lsb-release
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x llvm.sh
+        sudo ./llvm.sh 19 all
+        # Install libc++ and libc++abi for Clang 19
+        sudo apt-get install -y libc++-19-dev libc++abi-19-dev
+        sudo ln -sf /usr/bin/llvm-cov-19 /usr/local/bin/llvm-cov
+        sudo ln -sf /usr/bin/llvm-profdata-19 /usr/local/bin/llvm-profdata
+        sudo ln -sf /usr/bin/clang-19 /usr/local/bin/clang
+        sudo ln -sf /usr/bin/clang++-19 /usr/local/bin/clang++
+        sudo ln -sf /usr/bin/clang-format-19 /usr/local/bin/clang-format
+        sudo ln -sf /usr/bin/clang-cl-19 /usr/local/bin/clang-cl
+        sudo ln -sf /usr/bin/llvm-lib-19 /usr/local/bin/llvm-lib
+        sudo ln -sf /usr/bin/lld-link-19 /usr/local/bin/lld-link
+        sudo ln -sf /usr/bin/llvm-mt-19 /usr/local/bin/llvm-mt
+        sudo ln -sf /usr/bin/llvm-rc-19 /usr/local/bin/llvm-rc
+
+    - name: Set reusable strings
+      id: strings
+      shell: bash
+      run: |
+        if [[ "${{ inputs.compiler }}" == "gcc" ]]; then
+          echo "c_compiler=gcc" >> "$GITHUB_OUTPUT"
+          echo "cpp_compiler=g++" >> "$GITHUB_OUTPUT"
+        elif [[ "${{ inputs.compiler }}" == "clang" ]]; then
+          echo "c_compiler=clang" >> "$GITHUB_OUTPUT"
+          echo "cpp_compiler=clang++" >> "$GITHUB_OUTPUT"
+        elif [[ "${{ inputs.compiler }}" == "clangcl" ]]; then
+          echo "c_compiler=clang-cl" >> "$GITHUB_OUTPUT"
+          echo "cpp_compiler=clang-cl" >> "$GITHUB_OUTPUT"
+        elif [[ "${{ inputs.compiler }}" == "msvc" ]]; then
+          echo "c_compiler=cl.exe" >> "$GITHUB_OUTPUT"
+          echo "cpp_compiler=cl.exe" >> "$GITHUB_OUTPUT"
+        fi
+        if [[ "${{ inputs.preset}}" == "benchmark" ]]; then
+          echo "cmake_target=bitlib-bench" >> "$GITHUB_OUTPUT"
+        else
+          # tests, warnings, coverage
+          echo "cmake_target=bitlib-tests" >> "$GITHUB_OUTPUT"
+        fi
+        if [[ "${{ inputs.build_os }}" != "${{ inputs.test_os }}" ]]; then
+          echo "toolchain_file=.github/toolchains/${{ inputs.compiler }}_${{ inputs.build_os }}_to_${{ inputs.test_os }}.cmake" >> "$GITHUB_OUTPUT"
+        else
+          echo "toolchain_file=" >> "$GITHUB_OUTPUT"
+        fi
+        echo "build-output-dir=$(readlink -f '${{ github.workspace }}/../build')" >> "$GITHUB_OUTPUT"
+
+    - name: Configure CMake
+      shell: bash
+      env:
+        CMAKE_TOOLCHAIN_FILE: ${{ steps.strings.outputs.toolchain_file }}
+      run: |
+        # Configure
+        cmake \
+          -B '${{ steps.strings.outputs.build-output-dir }}' \
+          -S '${{ github.workspace }}' \
+          --preset=${{ inputs.preset }}_${{ inputs.test_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }} \
+          ${{ inputs.build_type && format('-DCMAKE_BUILD_TYPE={0}', inputs.build_type) }}
+
+        # Delete any coverage files created from CMake probing
+        find '${{ github.workspace }}' \( -name '*.gcno' -o -name '*.gcda' \) -delete
+        find '${{ steps.strings.outputs.build-output-dir }}' \( -name '*.gcno' -o -name '*.gcda' \) -delete
+
+    - name: Register Compiler Problem Matcher
+      shell: bash
+      run: |
+        if [[ "${{ inputs.compiler }}" == "clangcl" ]]; then
+          echo "::add-matcher::.github/problem_matchers/msvc_problem_matcher.json"
+        else
+          echo "::add-matcher::.github/problem_matchers/${{ inputs.compiler}}_problem_matcher.json"
+        fi
+
+    - name: Build
+      shell: bash
+      run: |
+        cmake --build '${{ steps.strings.outputs.build-output-dir }}' \
+          --target ${{ steps.strings.outputs.cmake_target }} \
+          --config ${{ inputs.build_type }} \
+          --parallel
+
+    - name: Unregister Compiler Problem Matcher
+      shell: bash
+      run: |
+        if [[ "${{ inputs.compiler }}" == "clangcl" ]]; then
+          echo "::remove-matcher owner=msvc::"
+        else
+          echo "::remove-matcher owner=${{ inputs.compiler}}::"
+        fi
+
+    - name: Upload build dir
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ inputs.preset }}_${{ inputs.test_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}_${{ inputs.build_type }}
+        path: '${{ steps.strings.outputs.build-output-dir }}'
+
+  test:
+    runs-on: ${{ inputs.test_distro }}
+    needs: build
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: "Install LLVM 19 toolchain"
+      if: inputs.test_os == 'linux' && inputs.compiler == 'clang'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget gnupg lsb-release
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x llvm.sh
+        sudo ./llvm.sh 19
+        sudo ln -sf /usr/bin/llvm-cov-19 /usr/local/bin/llvm-cov
+        sudo ln -sf /usr/bin/llvm-profdata-19 /usr/local/bin/llvm-profdata
+
+    - name: "Install Clang 19 Libcxx"
+      if: inputs.test_os == 'linux' && inputs.stdlib == 'libcxx'
+      shell: bash
+      run: |
+        # Install libc++ and libc++abi for Clang 19
+        sudo apt-get install -y libc++-19-dev libc++abi-19-dev
+
+    - name: Download build dir
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ inputs.preset }}_${{ inputs.test_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}_${{ inputs.build_type }}
+        path: '${{ github.workspace }}/../build'
+
+    - name: Set reusable strings
+      id: strings
+      shell: bash
+      run: |
+        if [[ "${{ inputs.preset }}" == "benchmark" ]]; then
+          chmod +x '${{ github.workspace }}/../build/benchmark/bitlib-bench'*
+          echo 'binary-sub-dir=benchmark' >> "$GITHUB_OUTPUT"
+          echo "cmake_target=bitlib-bench" >> "$GITHUB_OUTPUT"
+        else
+          # tests, warnings, coverage
+          chmod +x '${{ github.workspace }}/../build/test/bitlib-tests'*
+          echo 'binary-sub-dir=test' >> "$GITHUB_OUTPUT"
+          echo "cmake_target=bitlib-tests" >> "$GITHUB_OUTPUT"
+        fi
+        echo "build-output-dir=$(readlink -f '${{ github.workspace }}/../build')" >> "$GITHUB_OUTPUT"
+
+    - name: Run coverage for Clang
+      if: inputs.preset == 'coverage' && inputs.compiler == 'clang'
+      uses: ./.github/actions/coverage_clang
+      with:
+        build-output-dir: ${{ steps.strings.outputs.build-output-dir }}
+        GITHUB_TOKEN: ${{ secrets.github_token }}
+
+    - name: Run coverage for GCC
+      if: inputs.preset == 'coverage' && inputs.compiler == 'gcc'
+      uses: ./.github/actions/coverage_gcc
+      with:
+        build-output-dir: ${{ steps.strings.outputs.build-output-dir }}
+        GITHUB_TOKEN: ${{ secrets.github_token }}
+
+    - name: Test
+      if: inputs.preset != 'coverage'
+      shell: bash
+      run: |
+        ctest --test-dir ${{ steps.strings.outputs.build-output-dir }} \
+              --build-config ${{ inputs.build_type }} \
+              --output-on-failure \
+              --parallel
+
+    - name: Cache benchmark json
+      if: inputs.preset == 'benchmark'
+      uses: actions/cache@v4
+      with:
+        path: '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result.json'
+        key: benchmark_${{ inputs.test_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}_${{ inputs.build_type }}_${{ github.event.pull_request.head.ref }}
+
+    - name: Rename current benchmark json
+      if: inputs.preset == 'benchmark'
+      shell: bash
+      run: |
+        mv '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result.json' '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result_new.json'
+
+    - name: Fetch base_ref benchmark json
+      if: inputs.preset == 'benchmark'
+      id: base_ref_json
+      uses: actions/cache@v4
+      with:
+        path: '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result.json'
+        key: benchmark_${{ inputs.test_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}_${{ inputs.build_type }}_${{ github.event.pull_request.base.ref }}
+
+    - name: Compare Benchmarks
+      if: inputs.preset == 'benchmark' && steps.base_ref_json.outputs.cache-hit == 'true'
+      shell: bash
+      run: |
+        python3 '${{ steps.strings.outputs.build-output-dir }}/_deps/benchmark-src/tools/compare.py' benchmarks \
+          '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result.json' \
+          '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result_new.json' \
+          | tee '${{ steps.strings.outputs.build-output-dir }}/benchmark/comparison.txt'
+
+    - name: Archive benchmark results
+      if: inputs.preset == 'benchmark' && steps.base_ref_json.outputs.cache-hit == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: benchmark_${{ inputs.os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}_json
+        path: |
+          '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result.json'
+          '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result_new.json'
+          '${{ steps.strings.outputs.build-output-dir }}/benchmark/comparison.txt'

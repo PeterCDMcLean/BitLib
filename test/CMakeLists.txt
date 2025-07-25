@@ -22,32 +22,35 @@ endif()
 
 add_executable(bitlib-tests)
 
-target_sources(bitlib-tests PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/fixtures.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-array.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-bitwise.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-copy_backward.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-copy.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-count.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-count_leading.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-equal.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-fill.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-find.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-iterator_adapter.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-literal.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-move.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-reverse.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-rotate.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-shift.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-span.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-swap_ranges.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-to_string.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-transform.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-usecase.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/test-array_ref.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/vector_test.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/inc/test_utils.hpp
+set(TEST_SOURCES
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/fixtures.hpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/test-array.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/test-bitwise.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/test-copy_backward.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/test-copy.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/test-count.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/test-count_leading.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/test-equal.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/test-fill.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/test-find.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/test-iterator_adapter.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/test-literal.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/test-move.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/test-reverse.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/test-rotate.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/test-shift.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/test-span.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/test-swap_ranges.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/test-to_string.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/test-transform.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/test-usecase.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/test-array_ref.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/vector_test.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/inc/test_utils.hpp"
 )
+
+target_sources(bitlib-tests PRIVATE ${TEST_SOURCES})
+
 if (BITLIB_MDSPAN)
   target_sources(bitlib-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/test-mdspan.cpp)
 endif()
@@ -69,6 +72,10 @@ if (NOT BITLIB_GTEST_REPEAT)
   set(BITLIB_GTEST_REPEAT 1)
 endif()
 
-gtest_discover_tests(
+if (CMAKE_CROSSCOMPILING)
+  gtest_add_tests("./$<TARGET_FILE_NAME:bitlib-tests>" ${TEST_SOURCES})
+else()
+  gtest_discover_tests(
     bitlib-tests
     EXTRA_ARGS --gtest_repeat=${BITLIB_GTEST_REPEAT})
+endif()

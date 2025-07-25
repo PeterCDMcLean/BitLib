@@ -1,9 +1,7 @@
-# This starter workflow is for a CMake project running on multiple platforms. There is a different starter workflow if you just want a single platform.
-# See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-single-platform.yml
+# .github/workflows/main.yaml
 name: CMake on multiple platforms
 
 on:
-  workflow_dispatch:
   push:
     branches: [ "master" ]
     paths-ignore:
@@ -13,11 +11,9 @@ on:
     paths-ignore:
       - '**/*.md'
 
-
 jobs:
-  build:
-    runs-on: ${{ matrix.distro }}
-
+  run-matrix:
+    uses: ./.github/workflows/cmake_build_and_test.yml
     strategy:
       # Set fail-fast to false to ensure that feedback is delivered for all matrix combinations. Consider changing this to true when your workflow is stable.
       fail-fast: false
@@ -30,159 +26,82 @@ jobs:
       # To add more build types (Release, Debug, RelWithDebInfo, etc.) customize the build_type list.
       matrix:
         include:
-          - distro: ubuntu-latest
-            os: linux
-            compiler: gcc
-            c_compiler: gcc
-            cpp_compiler: g++
-            stdlib: libstdcxx
-            preset: benchmark
-            target: bitlib-bench
-            build_type: Release
-          - distro: ubuntu-latest
-            os: linux
-            compiler: clang
-            cpp_compiler: clang++-19
-            c_compiler: clang-19
-            stdlib: libcxx
-            preset: benchmark
-            target: bitlib-bench
-            build_type: Release
-          - distro: ubuntu-latest
-            os: linux
-            compiler: gcc
-            c_compiler: gcc
-            cpp_compiler: g++
-            stdlib: libstdcxx
+          - build_distro: windows-latest
+            build_os: windows
+            compiler: msvc
             preset: tests
-            target: bitlib-tests
-            build_type: Debug
-          - distro: ubuntu-latest
-            os: linux
-            compiler: gcc
-            c_compiler: gcc
-            cpp_compiler: g++
-            stdlib: libstdcxx
-            preset: warnings
-            target: bitlib-tests
-            build_type: Debug
-          - distro: ubuntu-latest
-            os: linux
-            compiler: clang
-            c_compiler: clang-19
-            cpp_compiler: clang++-19
-            stdlib: libcxx
-            preset: warnings
-            target: bitlib-tests
-            build_type: Debug
-          - distro: ubuntu-latest
-            os: linux
-            compiler: clang
-            cpp_compiler: clang++-19
-            c_compiler: clang-19
-            stdlib: libcxx
+            build_type: Release
+
+          - build_distro: windows-latest
+            build_os: windows
+            compiler: msvc
             preset: tests
-            target: bitlib-tests
-            build_type: Debug
-          - distro: ubuntu-latest
-            os: linux
+
+          - build_distro: ubuntu-latest
+            build_os: linux
             compiler: gcc
-            c_compiler: gcc
-            cpp_compiler: g++
-            stdlib: libstdcxx
-            preset: coverage
-            target: bitlib-tests
-            build_type: Debug
-          - distro: ubuntu-latest
-            os: linux
+            preset: benchmark
+
+          - build_distro: ubuntu-latest
+            build_os: linux
             compiler: clang
-            cpp_compiler: clang++-19
-            c_compiler: clang-19
             stdlib: libcxx
+            preset: benchmark
+
+          - build_distro: ubuntu-latest
+            build_os: linux
+            compiler: gcc
+            preset: tests
+
+          - build_distro: ubuntu-latest
+            build_os: linux
+            compiler: gcc
+            preset: warnings
+
+          - build_distro: ubuntu-latest
+            build_os: linux
+            compiler: clang
+            preset: warnings
+
+          - build_distro: ubuntu-latest
+            build_os: linux
+            compiler: clang
+            preset: tests
+
+          - build_distro: ubuntu-latest
+            build_os: linux
+            compiler: gcc
             preset: coverage
-            target: bitlib-tests
-            build_type: Debug
 
-    steps:
-    - uses: actions/checkout@v4
+          - build_distro: ubuntu-latest
+            build_os: linux
+            compiler: clang
+            preset: coverage
 
-    - name: "Install Clang 19"
-      if: matrix.os == 'linux' && matrix.c_compiler == 'clang-19'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y wget gnupg lsb-release
-        wget https://apt.llvm.org/llvm.sh
-        chmod +x llvm.sh
-        sudo ./llvm.sh 19
-        # Install libc++ and libc++abi for Clang 19
-        sudo apt-get install -y libc++-19-dev libc++abi-19-dev
-        sudo ln -sf /usr/bin/llvm-cov-19 /usr/local/bin/llvm-cov
-        sudo ln -sf /usr/bin/llvm-profdata-19 /usr/local/bin/llvm-profdata
-        sudo ln -sf /usr/bin/clang-19 /usr/local/bin/clang
-        sudo ln -sf /usr/bin/clang++-19 /usr/local/bin/clang++
-        sudo ln -sf /usr/bin/clang-format-19 /usr/local/bin/clang-format
+          - build_distro: ubuntu-latest
+            build_os: linux
+            test_distro: windows-latest
+            test_os: windows
+            compiler: clangcl
+            preset: tests
 
-    - name: Set reusable strings
-      # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
-      id: strings
-      shell: bash
-      run: |
-        echo "build-output-dir=$(readlink -f "${{ github.workspace }}/../build")" >> "$GITHUB_OUTPUT"
+          - build_distro: ubuntu-latest
+            build_os: linux
+            test_distro: windows-latest
+            test_os: windows
+            compiler: clangcl
+            preset: tests
+            build_type: Release
 
-    - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: |
-        # Configure
-        cmake -B ${{ steps.strings.outputs.build-output-dir }} -S ${{ github.workspace }} \
-        --preset=${{ matrix.preset }}_${{ matrix.os }}_${{ matrix.compiler }}_${{ matrix.stdlib }} \
-        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }} \
-        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }} \
-        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-
-        # Delete any coverage files created from CMake probing
-        find ${{ github.workspace }} \( -name '*.gcno' -o -name '*.gcda' \) -delete
-        find ${{ steps.strings.outputs.build-output-dir }} \( -name '*.gcno' -o -name '*.gcda' \) -delete
-
-    - name: Register Compiler Problem Matcher
-      run: echo "::add-matcher::.github/problem_matchers/${{ matrix.compiler}}_problem_matcher.json"
-
-    - name: Build
-      # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
-      run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --target ${{ matrix.target }} --config ${{ matrix.build_type }} --parallel
-
-    - name: Unregister Compiler Problem Matcher
-      run: echo "::remove-matcher owner=${{ matrix.compiler}}::"
-
-    - name: Run coverage for Clang
-      if: matrix.preset == 'coverage' && matrix.compiler == 'clang'
-      uses: ./.github/actions/coverage_clang
-      with:
-        build-output-dir: ${{ steps.strings.outputs.build-output-dir }}
-        GITHUB_TOKEN: ${{ secrets.github_token }}
-
-    - name: Run coverage for GCC
-      if: matrix.preset == 'coverage' && matrix.compiler == 'gcc'
-      uses: ./.github/actions/coverage_gcc
-      with:
-        build-output-dir: ${{ steps.strings.outputs.build-output-dir }}
-        GITHUB_TOKEN: ${{ secrets.github_token }}
-
-    - name: Test
-      if: matrix.preset != 'coverage'
-      # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: ctest --test-dir ${{ steps.strings.outputs.build-output-dir }} --build-config ${{ matrix.build_type }} --output-on-failure --parallel
-
-    - uses: ./.github/actions/benchmark_epilogue
-      if: matrix.preset == 'benchmark'
-      with:
-        workspace: ${{ github.workspace }}
-        cpp_compiler: ${{ matrix.cpp_compiler }}
-        c_compiler: ${{ matrix.c_compiler }}
-        build_type: ${{ matrix.build_type }}
-        base_ref: ${{ github.event.pull_request.base.ref }}
-        os: ${{ matrix.os }}
-        compiler: ${{ matrix.compiler }}
-        stdlib: ${{ matrix.stdlib }}
-        build-output-dir: ${{ steps.strings.outputs.build-output-dir }}
+    with:
+      build_distro: ${{ matrix.build_distro }}
+      build_os: ${{ matrix.build_os }}
+      test_distro: ${{ matrix.test_distro || matrix.build_distro }}
+      test_os: ${{ matrix.test_os || matrix.build_os }}
+      compiler: ${{ matrix.compiler }}
+      stdlib: ${{ matrix.stdlib || matrix.compiler == 'msvc' && 'msvcstl' || matrix.compiler == 'clangcl' && 'msvcstl' || matrix.compiler == 'clang' && 'libcxx' || 'libstdcxx' }}
+      preset: ${{ matrix.preset }}
+      build_type: ${{ matrix.build_type || matrix.preset == 'benchmark' && 'Release' || 'Debug' }}
+      head_ref: ${{ github.event.pull_request.head.ref }}
+      base_ref: ${{ github.event.pull_request.base.ref }}
+    secrets: inherit

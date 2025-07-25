@@ -582,12 +582,13 @@ bit_vector<WordType, Allocator>::insert(
 template<class WordType, class Allocator>
 constexpr typename bit_vector<WordType, Allocator>::iterator
 bit_vector<WordType, Allocator>::erase(iterator pos) {
-    shift_left(pos, begin() + length_, 1);
-    length_ -= 1;
-    if (length_ % digits == 0) {
-        word_vector.pop_back();
-    }
-    return pos;
+  difference_type d = distance(begin(), pos);
+  shift_left(pos, begin() + length_, 1);
+  length_ -= 1;
+  if (length_ % digits == 0) {
+    word_vector.pop_back();
+  }
+  return begin() + d;
 }
 
 template<class WordType, class Allocator>
