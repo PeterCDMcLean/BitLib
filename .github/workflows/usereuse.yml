@@ -33,7 +33,7 @@ jobs:
             preset: tests
             target: bitlib-tests
             build_type: Release
-            toolchain:
+
           - build_distro: windows-latest
             build_os: windows
             test_distro: windows-latest
@@ -45,7 +45,7 @@ jobs:
             preset: tests
             target: bitlib-tests
             build_type: Debug
-            toolchain:
+
           - build_distro: ubuntu-latest
             build_os: linux
             test_distro: ubuntu-latest
@@ -57,7 +57,7 @@ jobs:
             preset: benchmark
             target: bitlib-bench
             build_type: Release
-            toolchain:
+
           - build_distro: ubuntu-latest
             build_os: linux
             test_distro: ubuntu-latest
@@ -69,7 +69,7 @@ jobs:
             preset: benchmark
             target: bitlib-bench
             build_type: Release
-            toolchain:
+
           - build_distro: ubuntu-latest
             build_os: linux
             test_distro: ubuntu-latest
@@ -81,7 +81,7 @@ jobs:
             preset: tests
             target: bitlib-tests
             build_type: Debug
-            toolchain:
+
           - build_distro: ubuntu-latest
             build_os: linux
             test_distro: ubuntu-latest
@@ -93,7 +93,7 @@ jobs:
             preset: warnings
             target: bitlib-tests
             build_type: Debug
-            toolchain:
+
           - build_distro: ubuntu-latest
             build_os: linux
             test_distro: ubuntu-latest
@@ -105,7 +105,7 @@ jobs:
             preset: warnings
             target: bitlib-tests
             build_type: Debug
-            toolchain:
+
           - build_distro: ubuntu-latest
             build_os: linux
             test_distro: ubuntu-latest
@@ -117,7 +117,7 @@ jobs:
             preset: tests
             target: bitlib-tests
             build_type: Debug
-            toolchain:
+
           - build_distro: ubuntu-latest
             build_os: linux
             test_distro: ubuntu-latest
@@ -129,7 +129,7 @@ jobs:
             preset: coverage
             target: bitlib-tests
             build_type: Debug
-            toolchain:
+
           - build_distro: ubuntu-latest
             build_os: linux
             test_distro: ubuntu-latest
@@ -141,7 +141,7 @@ jobs:
             preset: coverage
             target: bitlib-tests
             build_type: Debug
-            toolchain:
+
           - build_distro: ubuntu-latest
             build_os: linux
             test_distro: windows-latest
@@ -153,7 +153,7 @@ jobs:
             preset: tests
             target: bitlib-tests
             build_type: Debug
-            toolchain: .github/workflows/clang_cl_cross_toolchain.cmake
+
           - build_distro: ubuntu-latest
             build_os: linux
             test_distro: windows-latest
@@ -165,7 +165,6 @@ jobs:
             preset: tests
             target: bitlib-tests
             build_type: Release
-            toolchain: .github/workflows/clang_cl_cross_toolchain.cmake
     with:
       build_distro: ${{ matrix.build_distro }}
       build_os: ${{ matrix.build_os }}
@@ -178,7 +177,6 @@ jobs:
       preset: ${{ matrix.preset }}
       target: ${{ matrix.target }}
       build_type: ${{ matrix.build_type }}
-      toolchain: ${{ matrix.toolchain }}
       head_ref: ${{ github.event.pull_request.head.ref }}
       base_ref: ${{ github.event.pull_request.base.ref }}
     secrets: inherit

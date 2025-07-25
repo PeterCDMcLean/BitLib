@@ -37,8 +37,6 @@ on:
       build_type:
         required: true
         type: string
-      toolchain:
-        type: string
       head_ref:
         required: true
         type: string
@@ -92,17 +90,24 @@ jobs:
       id: strings
       shell: bash
       run: |
+        if [[ "${{ inputs.build_os }}" != "${{ inputs.test_os }}" ]]; then
+          echo "toolchain_file=.github/toolchains/${{ inputs.compiler }}_${{ inputs.build_os }}_to_${{ inputs.test_os }}.cmake" >> "$GITHUB_OUTPUT"
+        else
+          echo "toolchain_file=" >> "$GITHUB_OUTPUT"
+        fi
         echo "build-output-dir=$(readlink -f '${{ github.workspace }}/../build')" >> "$GITHUB_OUTPUT"
 
     - name: Configure CMake
       shell: bash
       env:
-        CMAKE_TOOLCHAIN_FILE: ${{ inputs.toolchain }}
+        CMAKE_TOOLCHAIN_FILE: ${{ steps.strings.outputs.toolchain_file }}
       run: |
         # Configure
-        cmake -B '${{ steps.strings.outputs.build-output-dir }}' -S '${{ github.workspace }}' \
-        --preset=${{ inputs.preset }}_${{ inputs.test_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }} \
-        -DCMAKE_BUILD_TYPE=${{ inputs.build_type }}
+        cmake \
+          -B '${{ steps.strings.outputs.build-output-dir }}'\
+          -S '${{ github.workspace }}' \
+          --preset=${{ inputs.preset }}_${{ inputs.test_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }} \
+          -DCMAKE_BUILD_TYPE=${{ inputs.build_type }}
 
         # Delete any coverage files created from CMake probing
         find '${{ github.workspace }}' \( -name '*.gcno' -o -name '*.gcda' \) -delete
