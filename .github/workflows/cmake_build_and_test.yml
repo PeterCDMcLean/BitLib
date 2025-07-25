@@ -19,19 +19,10 @@ on:
       compiler:
         required: true
         type: string
-      c_compiler:
-        required: true
-        type: string
-      cpp_compiler:
-        required: true
-        type: string
       stdlib:
         required: true
         type: string
       preset:
-        required: true
-        type: string
-      target:
         required: true
         type: string
       build_type:
@@ -90,6 +81,25 @@ jobs:
       id: strings
       shell: bash
       run: |
+        if [[ "${{ inputs.compiler }}" == "gcc" ]]; then
+          echo "c_compiler=gcc" >> "$GITHUB_OUTPUT"
+          echo "cpp_compiler=g++" >> "$GITHUB_OUTPUT"
+        elif [[ "${{ inputs.compiler }}" == "clang" ]]; then
+          echo "c_compiler=clang" >> "$GITHUB_OUTPUT"
+          echo "cpp_compiler=clang++" >> "$GITHUB_OUTPUT"
+        elif [[ "${{ inputs.compiler }}" == "clangcl" ]]; then
+          echo "c_compiler=clang-cl" >> "$GITHUB_OUTPUT"
+          echo "cpp_compiler=clang-cl" >> "$GITHUB_OUTPUT"
+        elif [[ "${{ inputs.compiler }}" == "msvc" ]]; then
+          echo "c_compiler=cl.exe" >> "$GITHUB_OUTPUT"
+          echo "cpp_compiler=cl.exe" >> "$GITHUB_OUTPUT"
+        fi
+        if [[ "${{ inputs.preset}}" == "benchmark" ]]; then
+          echo "cmake_target=bitlib-bench" >> "$GITHUB_OUTPUT"
+        else
+          # tests, warnings, coverage
+          echo "cmake_target=bitlib-tests" >> "$GITHUB_OUTPUT"
+        fi
         if [[ "${{ inputs.build_os }}" != "${{ inputs.test_os }}" ]]; then
           echo "toolchain_file=.github/toolchains/${{ inputs.compiler }}_${{ inputs.build_os }}_to_${{ inputs.test_os }}.cmake" >> "$GITHUB_OUTPUT"
         else
@@ -104,10 +114,10 @@ jobs:
       run: |
         # Configure
         cmake \
-          -B '${{ steps.strings.outputs.build-output-dir }}'\
+          -B '${{ steps.strings.outputs.build-output-dir }}' \
           -S '${{ github.workspace }}' \
           --preset=${{ inputs.preset }}_${{ inputs.test_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }} \
-          -DCMAKE_BUILD_TYPE=${{ inputs.build_type }}
+          ${{ inputs.build_type && format('-DCMAKE_BUILD_TYPE={0}', inputs.build_type) }}
 
         # Delete any coverage files created from CMake probing
         find '${{ github.workspace }}' \( -name '*.gcno' -o -name '*.gcda' \) -delete
@@ -124,7 +134,11 @@ jobs:
 
     - name: Build
       shell: bash
-      run: cmake --build '${{ steps.strings.outputs.build-output-dir }}' --target ${{ inputs.target }} --config ${{ inputs.build_type }} --parallel
+      run: |
+        cmake --build '${{ steps.strings.outputs.build-output-dir }}' \
+          --target ${{ steps.strings.outputs.cmake_target }} \
+          --config ${{ inputs.build_type }} \
+          --parallel
 
     - name: Unregister Compiler Problem Matcher
       shell: bash
@@ -177,11 +191,14 @@ jobs:
       shell: bash
       run: |
         if [[ "${{ inputs.preset }}" == "benchmark" ]]; then
-          chmod +x '${{ github.workspace }}/../build/benchmark/${{ inputs.target }}'*
+          chmod +x '${{ github.workspace }}/../build/benchmark/bitlib-bench'*
           echo 'binary-sub-dir=benchmark' >> "$GITHUB_OUTPUT"
+          echo "cmake_target=bitlib-bench" >> "$GITHUB_OUTPUT"
         else
-          chmod +x '${{ github.workspace }}/../build/test/${{ inputs.target }}'*
+          # tests, warnings, coverage
+          chmod +x '${{ github.workspace }}/../build/test/bitlib-tests'*
           echo 'binary-sub-dir=test' >> "$GITHUB_OUTPUT"
+          echo "cmake_target=bitlib-tests" >> "$GITHUB_OUTPUT"
         fi
         echo "build-output-dir=$(readlink -f '${{ github.workspace }}/../build')" >> "$GITHUB_OUTPUT"
 

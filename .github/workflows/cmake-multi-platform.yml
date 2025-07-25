@@ -28,159 +28,91 @@ jobs:
         include:
           - build_distro: windows-latest
             build_os: windows
-            test_distro: windows-latest
-            test_os: windows
             compiler: msvc
-            c_compiler: cl.exe
-            cpp_compiler: cl.exe
             stdlib: msvcstl
             preset: tests
-            target: bitlib-tests
             build_type: Release
 
           - build_distro: windows-latest
             build_os: windows
-            test_distro: windows-latest
-            test_os: windows
             compiler: msvc
-            c_compiler: cl.exe
-            cpp_compiler: cl.exe
             stdlib: msvcstl
             preset: tests
-            target: bitlib-tests
-            build_type: Debug
 
           - build_distro: ubuntu-latest
             build_os: linux
-            test_distro: ubuntu-latest
-            test_os: linux
             compiler: gcc
-            c_compiler: gcc
-            cpp_compiler: g++
             stdlib: libstdcxx
             preset: benchmark
-            target: bitlib-bench
-            build_type: Release
 
           - build_distro: ubuntu-latest
             build_os: linux
-            test_distro: ubuntu-latest
-            test_os: linux
             compiler: clang
-            cpp_compiler: clang++-19
-            c_compiler: clang-19
             stdlib: libcxx
             preset: benchmark
-            target: bitlib-bench
-            build_type: Release
 
           - build_distro: ubuntu-latest
             build_os: linux
-            test_distro: ubuntu-latest
-            test_os: linux
             compiler: gcc
-            c_compiler: gcc
-            cpp_compiler: g++
             stdlib: libstdcxx
             preset: tests
-            target: bitlib-tests
-            build_type: Debug
 
           - build_distro: ubuntu-latest
             build_os: linux
-            test_distro: ubuntu-latest
-            test_os: linux
             compiler: gcc
-            c_compiler: gcc
-            cpp_compiler: g++
             stdlib: libstdcxx
             preset: warnings
-            target: bitlib-tests
-            build_type: Debug
 
           - build_distro: ubuntu-latest
             build_os: linux
-            test_distro: ubuntu-latest
-            test_os: linux
             compiler: clang
-            c_compiler: clang-19
-            cpp_compiler: clang++-19
             stdlib: libcxx
             preset: warnings
-            target: bitlib-tests
-            build_type: Debug
 
           - build_distro: ubuntu-latest
             build_os: linux
-            test_distro: ubuntu-latest
-            test_os: linux
             compiler: clang
-            cpp_compiler: clang++-19
-            c_compiler: clang-19
             stdlib: libcxx
             preset: tests
-            target: bitlib-tests
-            build_type: Debug
 
           - build_distro: ubuntu-latest
             build_os: linux
-            test_distro: ubuntu-latest
-            test_os: linux
             compiler: gcc
-            c_compiler: gcc
-            cpp_compiler: g++
             stdlib: libstdcxx
             preset: coverage
-            target: bitlib-tests
-            build_type: Debug
 
           - build_distro: ubuntu-latest
             build_os: linux
-            test_distro: ubuntu-latest
-            test_os: linux
             compiler: clang
-            cpp_compiler: clang++-19
-            c_compiler: clang-19
             stdlib: libcxx
             preset: coverage
-            target: bitlib-tests
-            build_type: Debug
 
           - build_distro: ubuntu-latest
             build_os: linux
             test_distro: windows-latest
             test_os: windows
             compiler: clangcl
-            cpp_compiler: clang-cl
-            c_compiler: clang-cl
             stdlib: msvcstl
             preset: tests
-            target: bitlib-tests
-            build_type: Debug
 
           - build_distro: ubuntu-latest
             build_os: linux
             test_distro: windows-latest
             test_os: windows
             compiler: clangcl
-            cpp_compiler: clang-cl
-            c_compiler: clang-cl
             stdlib: msvcstl
             preset: tests
-            target: bitlib-tests
             build_type: Release
+
     with:
       build_distro: ${{ matrix.build_distro }}
       build_os: ${{ matrix.build_os }}
-      test_distro: ${{ matrix.test_distro }}
-      test_os: ${{ matrix.test_os }}
+      test_distro: ${{ matrix.test_distro || matrix.build_distro }}
+      test_os: ${{ matrix.test_os || matrix.build_os }}
       compiler: ${{ matrix.compiler }}
-      c_compiler: ${{ matrix.c_compiler }}
-      cpp_compiler: ${{ matrix.cpp_compiler }}
       stdlib: ${{ matrix.stdlib }}
       preset: ${{ matrix.preset }}
-      target: ${{ matrix.target }}
-      build_type: ${{ matrix.build_type }}
+      build_type: ${{ matrix.build_type || matrix.preset == 'benchmark' && 'Release' || 'Debug' }}
       head_ref: ${{ github.event.pull_request.head.ref }}
       base_ref: ${{ github.event.pull_request.base.ref }}
     secrets: inherit
