@@ -29,20 +29,17 @@ jobs:
           - build_distro: windows-latest
             build_os: windows
             compiler: msvc
-            stdlib: msvcstl
             preset: tests
             build_type: Release
 
           - build_distro: windows-latest
             build_os: windows
             compiler: msvc
-            stdlib: msvcstl
             preset: tests
 
           - build_distro: ubuntu-latest
             build_os: linux
             compiler: gcc
-            stdlib: libstdcxx
             preset: benchmark
 
           - build_distro: ubuntu-latest
@@ -54,37 +51,31 @@ jobs:
           - build_distro: ubuntu-latest
             build_os: linux
             compiler: gcc
-            stdlib: libstdcxx
             preset: tests
 
           - build_distro: ubuntu-latest
             build_os: linux
             compiler: gcc
-            stdlib: libstdcxx
             preset: warnings
 
           - build_distro: ubuntu-latest
             build_os: linux
             compiler: clang
-            stdlib: libcxx
             preset: warnings
 
           - build_distro: ubuntu-latest
             build_os: linux
             compiler: clang
-            stdlib: libcxx
             preset: tests
 
           - build_distro: ubuntu-latest
             build_os: linux
             compiler: gcc
-            stdlib: libstdcxx
             preset: coverage
 
           - build_distro: ubuntu-latest
             build_os: linux
             compiler: clang
-            stdlib: libcxx
             preset: coverage
 
           - build_distro: ubuntu-latest
@@ -92,7 +83,6 @@ jobs:
             test_distro: windows-latest
             test_os: windows
             compiler: clangcl
-            stdlib: msvcstl
             preset: tests
 
           - build_distro: ubuntu-latest
@@ -100,7 +90,6 @@ jobs:
             test_distro: windows-latest
             test_os: windows
             compiler: clangcl
-            stdlib: msvcstl
             preset: tests
             build_type: Release
 
@@ -110,7 +99,7 @@ jobs:
       test_distro: ${{ matrix.test_distro || matrix.build_distro }}
       test_os: ${{ matrix.test_os || matrix.build_os }}
       compiler: ${{ matrix.compiler }}
-      stdlib: ${{ matrix.stdlib }}
+      stdlib: ${{ matrix.stdlib || matrix.compiler == 'msvc' && 'msvcstl' || matrix.compiler == 'clangcl' && 'msvcstl' || matrix.compiler == 'clang' && 'libcxx' || 'libstdcxx' }}
       preset: ${{ matrix.preset }}
       build_type: ${{ matrix.build_type || matrix.preset == 'benchmark' && 'Release' || 'Debug' }}
       head_ref: ${{ github.event.pull_request.head.ref }}
