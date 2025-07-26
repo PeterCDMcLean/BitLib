@@ -84,7 +84,7 @@
       "name": "gnu_base",
       "hidden": true,
       "environment": {
-        "GNU_FLAGS_DEBUG": "-DPOPCNT_NO_UNALIGNED -g3 -fno-omit-frame-pointer -fstack-protector-all -fsanitize=address -fsanitize=undefined -finstrument-functions -fno-inline",
+        "GNU_FLAGS_DEBUG": "-DPOPCNT_NO_UNALIGNED -DBITLIB_DETECT_UNDEFINED_SHIFT -g3 -fno-omit-frame-pointer -fstack-protector-all -fsanitize=address -fsanitize=undefined -finstrument-functions -fno-inline",
         "GNU_FLAGS_RELEASE": "-O3 -DNDEBUG -march=native"
       },
       "cacheVariables": {

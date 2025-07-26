@@ -32,6 +32,9 @@ namespace bit {
     //return d_first;
 //}
 template <class RandomAccessItIn, class RandomAccessItOut, class UnaryOperation>
+  requires(
+      (std::is_same_v<std::remove_cvref_t<std::iter_value_t<RandomAccessItIn>>,
+                      std::remove_cvref_t<std::iter_value_t<RandomAccessItOut>>>))
 constexpr bit_iterator<RandomAccessItOut> transform(
     bit_iterator<RandomAccessItIn> first,
     bit_iterator<RandomAccessItIn> last,
@@ -58,12 +61,22 @@ constexpr bit_iterator<RandomAccessItOut> transform(
     size_type partial_bits_to_op = ::std::min(
         remaining_bits_to_op,
         digits - d_first.position());
+    word_type result;
+    if constexpr (std::is_invocable_v<UnaryOperation, word_type, size_type>) {
+      result = unary_op(
+          static_cast<word_type>(
+              get_masked_word<word_type>(first, partial_bits_to_op)
+              << static_cast<word_type>(d_first.position())),
+          partial_bits_to_op);
+    } else {
+      result = unary_op(
+          static_cast<word_type>(
+              get_masked_word<word_type>(first, partial_bits_to_op)
+              << static_cast<word_type>(d_first.position())));
+    }
     *it = _bitblend(
         *it,
-        unary_op(
-            static_cast<word_type>(
-                get_word<word_type>(first, partial_bits_to_op)
-                << static_cast<word_type>(d_first.position()))),
+        result,
         static_cast<word_type>(d_first.position()),
         static_cast<word_type>(partial_bits_to_op));
     remaining_bits_to_op -= partial_bits_to_op;
@@ -101,22 +114,40 @@ constexpr bit_iterator<RandomAccessItOut> transform(
             }
 #endif
             size_t std_dist = ::std::distance(firstIt, last.base());
-            it = std::transform(firstIt, last.base(), it, unary_op);
+            for (auto in_it = firstIt; in_it != last.base(); std::advance(in_it, 1), std::advance(it, 1)) {
+              if constexpr (std::is_invocable_v<UnaryOperation, word_type, size_type>) {
+                *it = unary_op(*in_it, digits);
+              } else {
+                *it = unary_op(*in_it);
+              }
+            }
+            //it = std::transform(firstIt, last.base(), it, unary_op);
             firstIt += std_dist;
             first = bit_iterator<RandomAccessItIn>(firstIt);
             remaining_bits_to_op -= digits * N;
     } else {
       while (remaining_bits_to_op >= digits) {
-        *it = unary_op(get_word<word_type>(first, digits));
+        if constexpr (std::is_invocable_v<UnaryOperation, word_type, size_type>) {
+          *it = unary_op(get_word<word_type>(first, digits), digits);
+        } else {
+          *it = unary_op(get_word<word_type>(first, digits));
+        }
+
         remaining_bits_to_op -= digits;
         it++;
         advance(first, digits);
       }
     }
         if (remaining_bits_to_op > 0) {
+          word_type result;
+          if constexpr (std::is_invocable_v<UnaryOperation, word_type, size_type>) {
+            result = unary_op(get_masked_word<word_type>(first, remaining_bits_to_op), remaining_bits_to_op);
+          } else {
+            result = unary_op(get_masked_word<word_type>(first, remaining_bits_to_op));
+          }
           *it = _bitblend(
               *it,
-              unary_op(get_word<word_type>(first, remaining_bits_to_op)),
+              result,
               _mask<word_type>(remaining_bits_to_op));
         }
   }
@@ -155,10 +186,10 @@ constexpr bit_iterator<RandomAccessItOut> transform(
         *it,
         binary_op(
             static_cast<word_type>(
-                get_word<word_type>(first1, partial_bits_to_op)
+                get_masked_word<word_type>(first1, partial_bits_to_op)
                 << static_cast<word_type>(d_first.position())),
             static_cast<word_type>(
-                get_word<word_type>(first2, partial_bits_to_op)
+                get_masked_word<word_type>(first2, partial_bits_to_op)
                 << static_cast<word_type>(d_first.position()))),
         static_cast<word_type>(d_first.position()),
         static_cast<word_type>(partial_bits_to_op));
@@ -193,8 +224,8 @@ constexpr bit_iterator<RandomAccessItOut> transform(
       *it = _bitblend(
           *it,
           binary_op(
-              get_word<word_type>(first1, remaining_bits_to_op),
-              get_word<word_type>(first2, remaining_bits_to_op)),
+              get_masked_word<word_type>(first1, remaining_bits_to_op),
+              get_masked_word<word_type>(first2, remaining_bits_to_op)),
           _mask<word_type>(remaining_bits_to_op));
     }
   }
