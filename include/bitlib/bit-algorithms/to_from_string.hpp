@@ -106,7 +106,26 @@ constexpr std::string to_string(const bit_iterator<RandomAccessIt>& first, const
           return acc;
         });
   } else {
-    return "not_implented_yet";
+    if (meta.base > 10) {
+      throw std::runtime_error("Base not implemented");
+    }
+    using word_type = typename bit_iterator<RandomAccessIt>::word_type;
+    size_t store_bits = distance(first, last);
+    std::vector<word_type> vec((store_bits + bitsof<word_type>() - 1) / bitsof<word_type>());
+    vec.back() = 0;  // Ensure last word is zeroed
+    bit_iterator<word_type*> bit_it(vec.data());
+
+    constexpr unsigned char base = static_cast<unsigned char>(meta.base);
+    auto remainder = ::bit::division(first, last, bit_it, base);
+    std::string str;
+    str.push_back(static_cast<char>(remainder + '0'));
+
+    while (::bit::count(bit_it, bit_it + store_bits, bit1) > 0) {
+      remainder = ::bit::division(bit_it, bit_it + store_bits, bit_it, base);
+      str.push_back(static_cast<char>(remainder + '0'));
+    }
+    std::reverse(str.begin(), str.end());
+    return prefix + str;
   }
 }
 
@@ -114,55 +133,6 @@ template <string::metadata_t meta = string::typical()>
 constexpr std::string to_string(const bit_sized_range auto& bits, std::string prefix = "") {
   return to_string<meta>(bits.begin(), bits.end(), prefix);
 }
-#if 0
-template <string::metadata_t meta = string::typical(), typename Policy = policy::typical<uintptr_t>, typename RandomAccessIt>
-constexpr size_t pessimistic_bits_for_string(
-    const char* str_first, const char* str_last) {
-  const char* it = str_first;
-  for (; (it != str_last) && (*it == '0'); ++it) {
-  }
-  const size_t non_zero_str_len = str_last - it;
-  if (non_zero_str_len == 0) {
-    return meta.is_signed ? 1 : 0;  // All zeros
-  }
-  if constexpr (std::has_single_bit(meta.base)) {
-    constexpr const auto base_bits = std::bit_width(meta.base - 1);
-    static constexpr auto base_from_digits = string::make_from_digit_map<meta.base>();
-    return non_zero_str_len * base_bits + meta.is_signed;
-  } else {
-    constexpr double base_in_base2 = std::log2(meta.base);
-
-    return static_cast<size_t>(std::floor(base_in_base2 * non_zero_str_len)) + 1 + meta.is_signed;
-  }
-}
-
-template <string::metadata_t meta = string::typical(), typename Policy = policy::typical<uintptr_t>, typename RandomAccessIt>
-constexpr void from_string(
-    Policy,
-    const char* str_first, const char* str_last,
-    bit_iterator<RandomAccessIt> bit_first, bit_iterator<RandomAccessIt> bit_last) {
-  const auto str_len = str_last - str_first;
-  const auto store_bits = distance(bit_first, bit_last);
-  if constexpr (std::has_single_bit(meta.base)) {
-    constexpr const auto base_bits = std::bit_width(meta.base - 1);
-    static constexpr auto base_from_digits = string::make_from_digit_map<meta.base>();
-    constexpr const auto str_bits = str_len * base_bits;
-    if (store_bits < str_bits) {
-      Policy::truncation::template from_string<std::dynamic_extent>(
-          str_first, str_last, str_cur, bit_first, bit_last);
-    } else if (store_bits > str_bits) {
-      Policy::extension::template from_string<std::dynamic_extent>(
-          str_first, str_last, str_cur, bit_first, bit_last);
-    } else {
-      char str_cur = str_last - 1;
-      bit_iterator<RandomAccessIt> bit_cur = bit_first;
-      while (str_cur >= str_first) {
-        str_cur--;
-      }
-    }
-  }
-}
-#endif
 
 template <string::metadata_t meta = string::typical(), typename RandomAccessIt, typename Policy = policy::typical<typename RandomAccessIt::value_type>>
 constexpr void from_string(

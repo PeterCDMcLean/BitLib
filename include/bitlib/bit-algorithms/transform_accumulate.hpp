@@ -15,22 +15,32 @@
 
 namespace bit {
 
-template <bool forward, bool initial_sub_word, typename RandomAccessIt, typename T, typename BinaryOperation, typename BinaryOperationSubword>
+template <
+    bool forward,
+    bool initial_sub_word,
+    typename RandomAccessItIn,
+    typename RandomAccessItOut,
+    typename T,
+    typename BinaryOperation,
+    typename BinaryOperationSubword>
+  requires(
+      (std::is_same_v<std::remove_cvref_t<std::iter_value_t<RandomAccessItIn>>,
+                      std::remove_cvref_t<std::iter_value_t<RandomAccessItOut>>>))
 constexpr auto transform_accumulate(
-    bit_iterator<RandomAccessIt> first,
-    bit_iterator<RandomAccessIt> last,
-    bit_iterator<RandomAccessIt> d_first,
-    bit_iterator<RandomAccessIt> d_last,
+    bit_iterator<RandomAccessItIn> first,
+    bit_iterator<RandomAccessItIn> last,
+    bit_iterator<RandomAccessItOut> d_first,
+    bit_iterator<RandomAccessItOut> d_last,
     T acc,
     BinaryOperation binary_op,
     BinaryOperationSubword binary_op_subword) {
-  using word_type = typename bit_iterator<RandomAccessIt>::word_type;
-  using size_type = typename bit_iterator<RandomAccessIt>::size_type;
+  using word_type = typename bit_iterator<RandomAccessItOut>::word_type;
+  using size_type = typename bit_iterator<RandomAccessItOut>::size_type;
   constexpr size_type digits = bitsof<word_type>();
 
   size_type total_bits_to_op = distance(first, last);
 
-  RandomAccessIt d_it;
+  RandomAccessItOut d_it;
   if constexpr (forward) {
     d_it = d_first.base();
   } else {
@@ -119,12 +129,20 @@ constexpr auto transform_accumulate(
   return acc;
 }
 
-template <typename RandomAccessIt, typename T, typename BinaryOperation, typename BinaryOperationSubword>
+template <
+    typename RandomAccessItIn,
+    typename RandomAccessItOut,
+    typename T,
+    typename BinaryOperation,
+    typename BinaryOperationSubword>
+  requires(
+      (std::is_same_v<std::remove_cvref_t<std::iter_value_t<RandomAccessItIn>>,
+                      std::remove_cvref_t<std::iter_value_t<RandomAccessItOut>>>))
 constexpr auto transform_accumulate_backward(
-    const bit_iterator<RandomAccessIt>& first,
-    const bit_iterator<RandomAccessIt>& last,
-    const bit_iterator<RandomAccessIt>& d_first,
-    const bit_iterator<RandomAccessIt>& d_last,
+    const bit_iterator<RandomAccessItIn>& first,
+    const bit_iterator<RandomAccessItIn>& last,
+    const bit_iterator<RandomAccessItOut>& d_first,
+    const bit_iterator<RandomAccessItOut>& d_last,
     const T& acc,
     BinaryOperation binary_op,
     BinaryOperationSubword binary_op_subword) {

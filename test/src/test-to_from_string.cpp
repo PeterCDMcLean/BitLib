@@ -27,6 +27,12 @@ TEST(ToString, Blah) {
   EXPECT_EQ(str, "10EADBEEF");
 }
 
+TEST(ToString, base10) {
+  auto num = 10'123_b;
+  auto str = bit::to_string<bit::string::typical(10)>(num);
+  EXPECT_EQ(str, "123");
+}
+
 TEST(FromString, Blah) {
   bit::bit_array<16> arr_16;
   bit::from_string<bit::string::typical(16)>("DEADBEEF", arr_16);

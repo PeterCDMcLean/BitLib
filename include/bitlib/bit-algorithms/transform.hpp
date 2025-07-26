@@ -32,6 +32,9 @@ namespace bit {
     //return d_first;
 //}
 template <class RandomAccessItIn, class RandomAccessItOut, class UnaryOperation>
+  requires(
+      (std::is_same_v<std::remove_cvref_t<std::iter_value_t<RandomAccessItIn>>,
+                      std::remove_cvref_t<std::iter_value_t<RandomAccessItOut>>>))
 constexpr bit_iterator<RandomAccessItOut> transform(
     bit_iterator<RandomAccessItIn> first,
     bit_iterator<RandomAccessItIn> last,

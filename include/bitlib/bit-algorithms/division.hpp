@@ -21,16 +21,18 @@
 namespace bit {
 
 // 'Schoolbook' division by scalar
-template <typename It, typename U>
+template <typename RandomAccessItIn, typename RandomAccessItOut, typename U>
   requires(
-      (is_static_castable_v<U, typename bit_iterator<It>::word_type>) &&
-      (bitsof<U>() <= bitsof<typename bit_iterator<It>::word_type>()))
-constexpr typename bit_iterator<It>::word_type division(
-    const bit_iterator<It>& first,
-    const bit_iterator<It>& last,
-    const bit_iterator<It>& d_first,
+      (std::is_same_v<std::remove_cvref_t<std::iter_value_t<RandomAccessItIn>>,
+                      std::remove_cvref_t<std::iter_value_t<RandomAccessItOut>>>) &&
+      (is_static_castable_v<U, typename bit_iterator<RandomAccessItOut>::word_type>) &&
+      (bitsof<U>() <= bitsof<typename bit_iterator<RandomAccessItIn>::word_type>()))
+constexpr typename bit_iterator<RandomAccessItOut>::word_type division(
+    const bit_iterator<RandomAccessItIn>& first,
+    const bit_iterator<RandomAccessItIn>& last,
+    const bit_iterator<RandomAccessItOut>& d_first,
     const U& integral_operand) {
-  using word_type = typename bit_iterator<It>::word_type;
+  using word_type = typename bit_iterator<RandomAccessItOut>::word_type;
   word_type remainder = 0;
   auto long_div = [integral_operand](
       const word_type& remainder,
