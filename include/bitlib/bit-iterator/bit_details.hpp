@@ -610,14 +610,14 @@ static inline unsigned char add_carry_sub_borrow(unsigned char c_in, U a, U b, U
     *out = static_cast<U>(tmp_out >> shift);
     return carry;
   } else if constexpr (32 == bitsof<U>()) {
-    return ADDCARRYSUBBORROW32<Add>(c_in, static_cast<uint32_t>(a), static_cast<uint32_t>(b), reinterpret_cast<uint32_t>(out));
+    return ADDCARRYSUBBORROW32<Add>(c_in, static_cast<uint32_t>(a), static_cast<uint32_t>(b), reinterpret_cast<uint32_t*>(out));
   } else if constexpr (64 == bitsof<U>()) {
-    return ADDCARRYSUBBORROW64<Add>(c_in, static_cast<uint64_t>(a), static_cast<uint64_t>(b), reinterpret_cast<uint64_t>(out));
+    return ADDCARRYSUBBORROW64<Add>(c_in, static_cast<uint64_t>(a), static_cast<uint64_t>(b), reinterpret_cast<uint64_t*>(out));
   } else if constexpr (0 == (bitsof<U>() % 64)) {
     using t64 = std::conditional<std::is_signed_v<U>, int64_t, uint64_t>;
     unsigned char carry;
     for (int i = 0; i < (bitsof<U>() / 64); i++) {
-      carry = ADDCARRYSUBBORROW64<Add>(c_in, static_cast<t64>(a >> (i * 64)), static_cast<t64>(b >> (i * 64)), reinterpret_cast<t64>(out) + i);
+      carry = ADDCARRYSUBBORROW64<Add>(c_in, static_cast<t64>(a >> (i * 64)), static_cast<t64>(b >> (i * 64)), reinterpret_cast<t64*>(out) + i);
     }
     return carry;
   } else {

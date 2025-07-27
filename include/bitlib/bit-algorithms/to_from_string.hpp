@@ -37,6 +37,37 @@ constexpr auto make_digit_map() {
   return map;
 }
 
+constexpr std::span<const char> make_digit_map(std::size_t Base) {
+  switch (Base) {
+    case 2: {
+      static constexpr auto map = make_digit_map<2>();
+      return std::span<const char>(static_cast<const char*>(map.data()), map.size());
+    }
+    case 4: {
+      static constexpr auto map = make_digit_map<4>();
+      return std::span<const char>(static_cast<const char*>(map.data()), map.size());
+    }
+    case 8: {
+      static constexpr auto map = make_digit_map<8>();
+      return std::span<const char>(static_cast<const char*>(map.data()), map.size());
+    }
+    case 16: {
+      static constexpr auto map = make_digit_map<16>();
+      return std::span<const char>(static_cast<const char*>(map.data()), map.size());
+    }
+    case 32: {
+      static constexpr auto map = make_digit_map<32>();
+      return std::span<const char>(static_cast<const char*>(map.data()), map.size());
+    }
+    case 64: {
+      static constexpr auto map = make_digit_map<64>();
+      return std::span<const char>(static_cast<const char*>(map.data()), map.size());
+    }
+    default:
+      return {};  // or throw, or abort
+  }
+}
+
 template <std::size_t Base>
 constexpr auto make_from_digit_map() {
   static_assert((Base >= 2) && ((Base & (Base - 1)) == 0), "Base must be power of 2 >= 2");
@@ -58,6 +89,31 @@ constexpr auto make_from_digit_map() {
   return map;
 }
 
+constexpr auto make_from_digit_map(std::size_t Base) {
+  switch (Base) {
+    case 2:
+      static constexpr auto map2 = make_from_digit_map<2>();
+      return map2;
+    case 4:
+      static constexpr auto map4 = make_from_digit_map<4>();
+      return map4;
+    case 8:
+      static constexpr auto map8 = make_from_digit_map<8>();
+      return map8;
+    case 16:
+      static constexpr auto map16 = make_from_digit_map<16>();
+      return map16;
+    case 32:
+      static constexpr auto map32 = make_from_digit_map<32>();
+      return map32;
+    case 64:
+      static constexpr auto map64 = make_from_digit_map<64>();
+      return map64;
+    default:
+      throw std::runtime_error("Base not implemented");
+  }
+}
+
 struct metadata_t {
   size_t base;
   bool is_signed;
@@ -75,11 +131,14 @@ constexpr metadata_t typical(size_t base = 10, bool str_sign_extend_zeros = fals
 
 }  // namespace string
 
-template <string::metadata_t meta = string::typical(), typename RandomAccessIt>
-constexpr std::string to_string(const bit_iterator<RandomAccessIt>& first, const bit_iterator<RandomAccessIt>& last, std::string prefix = "") {
-  static_assert(meta.endian == std::endian::big, "Only bit big endian support (MSB on the left)");
-  if constexpr (std::has_single_bit(meta.base)) {
-    constexpr const auto base_bits = std::bit_width(meta.base - 1);
+template <typename RandomAccessIt>
+constexpr std::string to_string(
+    const bit_iterator<RandomAccessIt>& first,
+    const bit_iterator<RandomAccessIt>& last,
+    string::metadata_t meta = string::typical(),
+    std::string prefix = "") {
+  if (std::has_single_bit(meta.base)) {
+    const auto base_bits = std::bit_width(meta.base - 1);
 
     int skip_leading_bits = meta.str_sign_extend_zeros ? 0 : count_msb(first, last, bit0);
 
@@ -91,12 +150,12 @@ constexpr std::string to_string(const bit_iterator<RandomAccessIt>& first, const
     std::string& str = prefix;
     str.resize(str.length() + str_len);
 
-    static constexpr auto base_digits = string::make_digit_map<meta.base>();
+    const auto base_digits = string::make_digit_map(meta.base);
 
     return accumulate(
         policy::AccumulateNoInitialSubword{},
         first, last - skip_leading_bits, (str.data() + str_len),
-        [](char* acc, auto word, const size_t bits = bitsof<decltype(word)>()) {
+        [meta, base_bits, base_digits](char* acc, auto word, const size_t bits = bitsof<decltype(word)>()) {
           const int characters = ((bits + base_bits - 1) / base_bits);
           acc -= characters;
           for (int i = characters - 1; i >= 0; i--) {
@@ -115,7 +174,7 @@ constexpr std::string to_string(const bit_iterator<RandomAccessIt>& first, const
     vec.back() = 0;  // Ensure last word is zeroed
     bit_iterator<word_type*> bit_it(vec.data());
 
-    constexpr unsigned char base = static_cast<unsigned char>(meta.base);
+    const unsigned char base = static_cast<unsigned char>(meta.base);
     auto remainder = ::bit::division(first, last, bit_it, base);
     std::string str;
     str.push_back(static_cast<char>(remainder + '0'));
@@ -129,19 +188,28 @@ constexpr std::string to_string(const bit_iterator<RandomAccessIt>& first, const
   }
 }
 
+template <string::metadata_t meta = string::typical(), typename RandomAccessIt>
+constexpr std::string to_string(
+    const bit_iterator<RandomAccessIt>& first,
+    const bit_iterator<RandomAccessIt>& last,
+    std::string prefix = "") {
+  static_assert(meta.endian == std::endian::big, "Only bit big endian support (MSB on the left)");
+  return to_string(first, last, meta, std::move(prefix));
+}
+
 template <string::metadata_t meta = string::typical()>
 constexpr std::string to_string(const bit_sized_range auto& bits, std::string prefix = "") {
   return to_string<meta>(bits.begin(), bits.end(), prefix);
 }
 
-template <string::metadata_t meta = string::typical(), typename RandomAccessIt, typename Policy = policy::typical<typename RandomAccessIt::value_type>>
+template <typename RandomAccessIt, typename Policy = policy::typical<typename RandomAccessIt::value_type>>
 constexpr void from_string(
     const char* str_first, const char* str_last,
-    const bit_iterator<RandomAccessIt>& bit_first, const bit_iterator<RandomAccessIt>& bit_last) {
-  static_assert(meta.endian == std::endian::big, "Only bit big endian support (MSB on the left)");
-  if constexpr (std::has_single_bit(meta.base)) {
-    constexpr const auto base_bits = std::bit_width(meta.base - 1);
-    static constexpr auto base_from_digits = string::make_from_digit_map<meta.base>();
+    const bit_iterator<RandomAccessIt>& bit_first, const bit_iterator<RandomAccessIt>& bit_last,
+    string::metadata_t meta = string::typical()) {
+  if (std::has_single_bit(meta.base)) {
+    const auto base_bits = std::bit_width(meta.base - 1);
+    const auto base_from_digits = string::make_from_digit_map(meta.base);
     using word_type = uint64_t;
     std::vector<word_type> vec;
     size_t store_bits = distance(bit_first, bit_last);
@@ -206,13 +274,21 @@ constexpr void from_string(
   }
 }
 
-template <string::metadata_t meta = string::typical()>
-constexpr std::vector<uintptr_t> from_string(
-    const char* first, const char* last) {
+template <string::metadata_t meta = string::typical(),
+          typename RandomAccessIt,
+          typename Policy = policy::typical<typename RandomAccessIt::value_type>>
+constexpr void from_string(
+    const char* str_first, const char* str_last,
+    const bit_iterator<RandomAccessIt>& bit_first, const bit_iterator<RandomAccessIt>& bit_last) {
   static_assert(meta.endian == std::endian::big, "Only bit big endian support (MSB on the left)");
-  if constexpr (std::has_single_bit(meta.base)) {
-    constexpr const auto base_bits = std::bit_width(meta.base - 1);
-    static constexpr auto base_from_digits = string::make_from_digit_map<meta.base>();
+  from_string<RandomAccessIt, Policy>(str_first, str_last, bit_first, bit_last, meta);
+}
+
+constexpr std::vector<uintptr_t> from_string(
+    const char* first, const char* last, string::metadata_t meta = string::typical()) {
+  if (std::has_single_bit(meta.base)) {
+    const auto base_bits = std::bit_width(meta.base - 1);
+    const auto base_from_digits = string::make_from_digit_map(meta.base);
 
     std::vector<uintptr_t> vec;
 
@@ -245,10 +321,18 @@ constexpr std::vector<uintptr_t> from_string(
   }
 }
 
+template <string::metadata_t meta = string::typical()>
+constexpr std::vector<uintptr_t> from_string(
+    const char* first, const char* last) {
+  static_assert(meta.endian == std::endian::big, "Only bit big endian support (MSB on the left)");
+  return from_string(first, last, meta);
+}
+
 template <string::metadata_t meta = string::typical(), typename RandomAccessIt, typename Policy = policy::typical<typename RandomAccessIt::value_type>>
 constexpr void from_string(
     const std::string& str,
     const bit_iterator<RandomAccessIt>& bit_first, const bit_iterator<RandomAccessIt>& bit_last) {
+  static_assert(meta.endian == std::endian::big, "Only bit big endian support (MSB on the left)");
   from_string<meta, RandomAccessIt, Policy>(str.c_str(), str.c_str() + str.length(), bit_first, bit_last);
 }
 
@@ -259,6 +343,30 @@ constexpr void from_string(
   using range_iterator_t = std::ranges::iterator_t<RangeT>;
   using RandomAccessIt = typename range_iterator_t::iterator_type;
   from_string<meta, RandomAccessIt, Policy>(str.c_str(), str.c_str() + str.length(), bits.begin(), bits.end());
+}
+
+template <typename RandomAccessIt, typename Policy = policy::typical<typename RandomAccessIt::value_type>>
+constexpr void from_string(
+    const std::string& str,
+    const bit_iterator<RandomAccessIt>& bit_first, const bit_iterator<RandomAccessIt>& bit_last,
+    string::metadata_t meta = string::typical()) {
+  from_string<RandomAccessIt, Policy>(
+      str.c_str(), str.c_str() + str.length(),
+      bit_first, bit_last,
+      meta);
+}
+
+template <bit_range RangeT, typename Policy = policy::typical<typename std::ranges::iterator_t<RangeT>::value_type>>
+constexpr void from_string(
+    const std::string& str,
+    RangeT& bits,
+    string::metadata_t meta = string::typical()) {
+  using range_iterator_t = std::ranges::iterator_t<RangeT>;
+  using RandomAccessIt = typename range_iterator_t::iterator_type;
+  from_string<RandomAccessIt, Policy>(
+      str.c_str(), str.c_str() + str.length(),
+      bits.begin(), bits.end(),
+      meta);
 }
 
 }  // namespace bit
