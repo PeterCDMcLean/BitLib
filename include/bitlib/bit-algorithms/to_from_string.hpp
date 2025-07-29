@@ -137,12 +137,12 @@ constexpr metadata_t typical(size_t base = 10, bool str_sign_extend_zeros = fals
 
 }  // namespace string
 
-template <typename CharIt, typename RandomAccessIt>
+template <typename RandomAccessIt, typename CharIt>
 constexpr CharIt to_string(
-    const CharIt str_first,
-    const CharIt str_last,
     const bit_iterator<RandomAccessIt>& bit_first,
     const bit_iterator<RandomAccessIt>& bit_last,
+    const CharIt str_first,
+    const CharIt str_last,
     string::metadata_t meta = string::typical()) {
   if (std::has_single_bit(meta.base)) {
     const auto base_bits = std::bit_width(meta.base - 1);
@@ -221,9 +221,9 @@ constexpr std::string to_string(
     string::metadata_t meta = string::typical()) {
   std::string buffer(estimate_length(first, last, meta.base, meta.str_sign_extend_zeros), meta.fill);
   if (meta.fill) {
-    std::fill(to_string(buffer.begin(), buffer.end(), first, last, meta), buffer.end(), meta.fill);
+    std::fill(to_string(first, last, buffer.begin(), buffer.end(), meta), buffer.end(), meta.fill);
   } else {
-    buffer.resize(to_string(buffer.begin(), buffer.end(), first, last, meta) - buffer.begin());
+    buffer.resize(to_string(first, last, buffer.begin(), buffer.end(), meta) - buffer.begin());
   }
   return buffer;
 }
@@ -245,31 +245,31 @@ constexpr std::string to_string(const bit_sized_range auto& bits) {
   return to_string(bits, meta);
 }
 
-template <string::metadata_t meta = string::typical(), typename CharIt, typename RandomAccessIt>
+template <string::metadata_t meta = string::typical(), typename RandomAccessIt, typename CharIt>
 constexpr CharIt to_string(
-    const CharIt str_first,
-    const CharIt str_last,
     const bit_iterator<RandomAccessIt>& first,
-    const bit_iterator<RandomAccessIt>& last) {
+    const bit_iterator<RandomAccessIt>& last,
+    const CharIt str_first,
+    const CharIt str_last) {
   static_assert(meta.endian == std::endian::big, "Only bit big endian support (MSB on the left)");
-  return to_string(str_first, str_last, first, last, meta);
+  return to_string(first, last, str_first, str_last, meta);
 }
 
 template <typename CharIt>
 constexpr CharIt to_string(
+    const bit_sized_range auto& bits,
     const CharIt str_first,
     const CharIt str_last,
-    const bit_sized_range auto& bits,
     string::metadata_t meta = string::typical()) {
   return to_string(str_first, str_last, bits.begin(), bits.end(), meta);
 }
 
 template <string::metadata_t meta = string::typical(), typename CharIt>
 constexpr CharIt to_string(
+    const bit_sized_range auto& bits,
     const CharIt str_first,
-    const CharIt str_last,
-    const bit_sized_range auto& bits) {
-  return to_string(str_first, str_last, bits, meta);
+    const CharIt str_last) {
+  return to_string(bits, str_first, str_last, meta);
 }
 
 template <typename CharIt, typename RandomAccessIt, typename Policy = policy::typical<typename RandomAccessIt::value_type>>
