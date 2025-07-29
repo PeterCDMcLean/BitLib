@@ -12,6 +12,8 @@
 
 #include <array>
 #include <bit>
+#include <iomanip>
+#include <sstream>
 #include <string>
 
 #include "bitlib/bit-algorithms/accumulate.hpp"
@@ -119,6 +121,8 @@ struct metadata_t {
   bool is_signed;
   std::endian endian;
   bool str_sign_extend_zeros;
+  char prefix[16];
+  char fill;
 };
 
 constexpr metadata_t typical(size_t base = 10, bool str_sign_extend_zeros = false) {
@@ -126,85 +130,151 @@ constexpr metadata_t typical(size_t base = 10, bool str_sign_extend_zeros = fals
       .base = base,
       .is_signed = false,
       .endian = std::endian::big,
-      .str_sign_extend_zeros = str_sign_extend_zeros};
+      .str_sign_extend_zeros = str_sign_extend_zeros,
+      .prefix = "",
+      .fill = '\0'};
 }
 
 }  // namespace string
 
-template <typename RandomAccessIt>
-constexpr std::string to_string(
-    const bit_iterator<RandomAccessIt>& first,
-    const bit_iterator<RandomAccessIt>& last,
-    string::metadata_t meta = string::typical(),
-    std::string prefix = "") {
+template <typename CharIt, typename RandomAccessIt>
+constexpr CharIt to_string(
+    const CharIt str_first,
+    const CharIt str_last,
+    const bit_iterator<RandomAccessIt>& bit_first,
+    const bit_iterator<RandomAccessIt>& bit_last,
+    string::metadata_t meta = string::typical()) {
   if (std::has_single_bit(meta.base)) {
     const auto base_bits = std::bit_width(meta.base - 1);
-
-    int skip_leading_bits = meta.str_sign_extend_zeros ? 0 : count_msb(first, last, bit0);
-
-    int str_len = (distance(first, last) - skip_leading_bits);
-    str_len = (str_len + base_bits - 1) / base_bits;  // Round up to nearest base digit
-    if (0 == str_len) {
-      return prefix + "0";
-    }
-    std::string& str = prefix;
-    str.resize(str.length() + str_len);
-
     const auto base_digits = string::make_digit_map(meta.base);
 
-    return accumulate(
+    CharIt cursor = accumulate_while(
         policy::AccumulateNoInitialSubword{},
-        first, last - skip_leading_bits, (str.data() + str_len),
-        [meta, base_bits, base_digits](char* acc, auto word, const size_t bits = bitsof<decltype(word)>()) {
+        bit_first, bit_last, str_last,
+        [meta, base_bits, base_digits, str_first](CharIt cursor, auto word, const size_t bits = bitsof<decltype(word)>()) {
           const int characters = ((bits + base_bits - 1) / base_bits);
-          acc -= characters;
           for (int i = characters - 1; i >= 0; i--) {
-            acc[i] = base_digits[word & (meta.base - 1)];
+            if (cursor == str_first) {
+              return std::make_pair(false, cursor);
+            }
+            *(--cursor) = base_digits[word & (meta.base - 1)];
             word >>= base_bits;
           }
-          return acc;
+          return std::make_pair(cursor != str_first, cursor);
         });
-  } else {
-    if (meta.base > 10) {
-      throw std::runtime_error("Base not implemented");
+    if (cursor != str_first) {
+      return std::copy(cursor, str_last, str_first);
+    } else {
+      return str_last;
     }
+  } else {
     using word_type = typename bit_iterator<RandomAccessIt>::word_type;
-    size_t store_bits = distance(first, last);
+    size_t store_bits = distance(bit_first, bit_last);
     std::vector<word_type> vec((store_bits + bitsof<word_type>() - 1) / bitsof<word_type>());
     vec.back() = 0;  // Ensure last word is zeroed
     bit_iterator<word_type*> bit_it(vec.data());
 
     const unsigned char base = static_cast<unsigned char>(meta.base);
-    auto remainder = ::bit::division(first, last, bit_it, base);
-    std::string str;
-    str.push_back(static_cast<char>(remainder + '0'));
+    auto remainder = ::bit::division(bit_first, bit_last, bit_it, base);
+    CharIt cursor = str_last;
+    *(--cursor) = static_cast<char>(remainder + '0');
 
-    while (::bit::count(bit_it, bit_it + store_bits, bit1) > 0) {
+    while ((cursor != str_first) && (::bit::count(bit_it, bit_it + store_bits, bit1) > 0)) {
       remainder = ::bit::division(bit_it, bit_it + store_bits, bit_it, base);
-      str.push_back(static_cast<char>(remainder + '0'));
+      *(--cursor) = static_cast<char>(remainder + '0');
     }
-    std::reverse(str.begin(), str.end());
-    return prefix + str;
+    if (cursor != str_first) {
+      return std::copy(cursor, str_last, str_first);
+    }
+    return str_last;
   }
+}
+
+template <typename RandomAccessIt>
+constexpr size_t estimate_length(
+    const bit_iterator<RandomAccessIt>& first,
+    const bit_iterator<RandomAccessIt>& last,
+    const size_t base,
+    const bool str_sign_extend_zeros) {
+  if (std::has_single_bit(base)) {
+    const auto base_bits = std::bit_width(base - 1);
+
+    int skip_leading_bits = str_sign_extend_zeros ? 0 : count_msb(first, last, bit0);
+
+    int str_len = (distance(first, last) - skip_leading_bits);
+    str_len = (str_len + base_bits - 1) / base_bits;  // Round up to nearest base digit
+    return static_cast<size_t>(std::max(1, str_len));
+  } else {
+    const uint32_t LOG2BASE = std::ceil(1 / std::logbf(base) * (1 << 16));
+    int skip_leading_bits = str_sign_extend_zeros ? 0 : count_msb(first, last, bit0);
+    const auto bits = distance(first, last) - skip_leading_bits;
+    const auto fixed_point = (bits * LOG2BASE);
+    const auto max_len = (fixed_point >> 16) + ((fixed_point & ((1 << 16) - 1)) != 0);
+    return static_cast<size_t>(std::max(max_len, static_cast<decltype(max_len)>(1)));
+  }
+}
+
+template <typename RandomAccessIt>
+constexpr std::string to_string(
+    const bit_iterator<RandomAccessIt>& first,
+    const bit_iterator<RandomAccessIt>& last,
+    string::metadata_t meta = string::typical()) {
+  std::string buffer(estimate_length(first, last, meta.base, meta.str_sign_extend_zeros), meta.fill);
+  if (meta.fill) {
+    std::fill(to_string(buffer.begin(), buffer.end(), first, last, meta), buffer.end(), meta.fill);
+  } else {
+    buffer.resize(to_string(buffer.begin(), buffer.end(), first, last, meta) - buffer.begin());
+  }
+  return buffer;
 }
 
 template <string::metadata_t meta = string::typical(), typename RandomAccessIt>
 constexpr std::string to_string(
     const bit_iterator<RandomAccessIt>& first,
-    const bit_iterator<RandomAccessIt>& last,
-    std::string prefix = "") {
+    const bit_iterator<RandomAccessIt>& last) {
   static_assert(meta.endian == std::endian::big, "Only bit big endian support (MSB on the left)");
-  return to_string(first, last, meta, std::move(prefix));
+  return to_string(first, last, meta);
+}
+
+constexpr std::string to_string(const bit_sized_range auto& bits, string::metadata_t meta = string::typical()) {
+  return to_string(bits.begin(), bits.end(), meta);
 }
 
 template <string::metadata_t meta = string::typical()>
-constexpr std::string to_string(const bit_sized_range auto& bits, std::string prefix = "") {
-  return to_string<meta>(bits.begin(), bits.end(), prefix);
+constexpr std::string to_string(const bit_sized_range auto& bits) {
+  return to_string(bits, meta);
 }
 
-template <typename RandomAccessIt, typename Policy = policy::typical<typename RandomAccessIt::value_type>>
+template <string::metadata_t meta = string::typical(), typename CharIt, typename RandomAccessIt>
+constexpr CharIt to_string(
+    const CharIt str_first,
+    const CharIt str_last,
+    const bit_iterator<RandomAccessIt>& first,
+    const bit_iterator<RandomAccessIt>& last) {
+  static_assert(meta.endian == std::endian::big, "Only bit big endian support (MSB on the left)");
+  return to_string(str_first, str_last, first, last, meta);
+}
+
+template <typename CharIt>
+constexpr CharIt to_string(
+    const CharIt str_first,
+    const CharIt str_last,
+    const bit_sized_range auto& bits,
+    string::metadata_t meta = string::typical()) {
+  return to_string(str_first, str_last, bits.begin(), bits.end(), meta);
+}
+
+template <string::metadata_t meta = string::typical(), typename CharIt>
+constexpr CharIt to_string(
+    const CharIt str_first,
+    const CharIt str_last,
+    const bit_sized_range auto& bits) {
+  return to_string(str_first, str_last, bits, meta);
+}
+
+template <typename CharIt, typename RandomAccessIt, typename Policy = policy::typical<typename RandomAccessIt::value_type>>
 constexpr void from_string(
-    const char* str_first, const char* str_last,
+    const CharIt str_first, const CharIt str_last,
     const bit_iterator<RandomAccessIt>& bit_first, const bit_iterator<RandomAccessIt>& bit_last,
     string::metadata_t meta = string::typical()) {
   if (std::has_single_bit(meta.base)) {
@@ -215,12 +285,13 @@ constexpr void from_string(
     size_t store_bits = distance(bit_first, bit_last);
 
     bit_iterator<RandomAccessIt> bit_it = bit_first;
-    str_last--;
-    while (str_last >= str_first && store_bits) {
+    CharIt cursor = str_last;
+    cursor--;
+    while (cursor >= str_first && store_bits) {
       word_type work = 0;
       size_t bits = 0;
-      for (; (bits < bitsof<word_type>()) && (str_last >= str_first); str_last--) {
-        char c = *str_last;
+      for (; (bits < bitsof<word_type>()) && (cursor >= str_first); cursor--) {
+        char c = *cursor;
         // TODO: This should be a policy
         if (c >= base_from_digits.size()) {
           continue;
@@ -237,7 +308,7 @@ constexpr void from_string(
         Policy::truncation::template from_integral<word_type, std::dynamic_extent, RandomAccessIt>(
             bit_it, bit_last, work);
         return;
-      } else if ((store_bits > bits) && (str_last < str_first)) {
+      } else if ((store_bits > bits) && (cursor < str_first)) {
         const bit_iterator<word_type*> p_integral(&work);
         bit_it = ::bit::copy(p_integral, p_integral + bits, bit_it);
         Policy::extension::template from_integral<word_type, std::dynamic_extent, RandomAccessIt>(
@@ -258,8 +329,9 @@ constexpr void from_string(
     // TODO: template with uninitialized_t
     ::bit::fill(bit_first, bit_last, bit0);  // Clear the bits first
 
-    while (str_first != str_last) {
-      unsigned char c = (*str_first - '0');
+    CharIt cursor = str_first;
+    while (cursor != str_last) {
+      unsigned char c = (*cursor - '0');
       if (c <= 9) {
         auto overflow_mult = ::bit::multiplication(bit_first, bit_last, word_type{10});
         auto overflow_add = ::bit::addition(bit_first, bit_last, c);
@@ -268,24 +340,26 @@ constexpr void from_string(
           return;
         }
       }
-      str_first++;
+      cursor++;
     }
     //Policy::extension::template extend(bit_first, bit_last);
   }
 }
 
 template <string::metadata_t meta = string::typical(),
+          typename CharIt,
           typename RandomAccessIt,
           typename Policy = policy::typical<typename RandomAccessIt::value_type>>
 constexpr void from_string(
-    const char* str_first, const char* str_last,
+    const CharIt str_first, const CharIt str_last,
     const bit_iterator<RandomAccessIt>& bit_first, const bit_iterator<RandomAccessIt>& bit_last) {
   static_assert(meta.endian == std::endian::big, "Only bit big endian support (MSB on the left)");
-  from_string<RandomAccessIt, Policy>(str_first, str_last, bit_first, bit_last, meta);
+  from_string<CharIt, RandomAccessIt, Policy>(str_first, str_last, bit_first, bit_last, meta);
 }
 
+template <typename CharIt>
 constexpr std::vector<uintptr_t> from_string(
-    const char* first, const char* last, string::metadata_t meta = string::typical()) {
+    const CharIt first, const CharIt last, string::metadata_t meta = string::typical()) {
   if (std::has_single_bit(meta.base)) {
     const auto base_bits = std::bit_width(meta.base - 1);
     const auto base_from_digits = string::make_from_digit_map(meta.base);
@@ -321,9 +395,10 @@ constexpr std::vector<uintptr_t> from_string(
   }
 }
 
-template <string::metadata_t meta = string::typical()>
+template <string::metadata_t meta = string::typical(),
+          typename CharIt>
 constexpr std::vector<uintptr_t> from_string(
-    const char* first, const char* last) {
+    const CharIt first, const CharIt last) {
   static_assert(meta.endian == std::endian::big, "Only bit big endian support (MSB on the left)");
   return from_string(first, last, meta);
 }
@@ -342,7 +417,7 @@ constexpr void from_string(
     RangeT& bits) {
   using range_iterator_t = std::ranges::iterator_t<RangeT>;
   using RandomAccessIt = typename range_iterator_t::iterator_type;
-  from_string<meta, RandomAccessIt, Policy>(str.c_str(), str.c_str() + str.length(), bits.begin(), bits.end());
+  from_string<meta, std::string::const_iterator, RandomAccessIt, Policy>(str.begin(), str.end(), bits.begin(), bits.end());
 }
 
 template <typename RandomAccessIt, typename Policy = policy::typical<typename RandomAccessIt::value_type>>
@@ -350,8 +425,8 @@ constexpr void from_string(
     const std::string& str,
     const bit_iterator<RandomAccessIt>& bit_first, const bit_iterator<RandomAccessIt>& bit_last,
     string::metadata_t meta = string::typical()) {
-  from_string<RandomAccessIt, Policy>(
-      str.c_str(), str.c_str() + str.length(),
+  from_string<std::string::const_iterator, RandomAccessIt, Policy>(
+      str.begin(), str.end(),
       bit_first, bit_last,
       meta);
 }
@@ -363,8 +438,8 @@ constexpr void from_string(
     string::metadata_t meta = string::typical()) {
   using range_iterator_t = std::ranges::iterator_t<RangeT>;
   using RandomAccessIt = typename range_iterator_t::iterator_type;
-  from_string<RandomAccessIt, Policy>(
-      str.c_str(), str.c_str() + str.length(),
+  from_string<std::string::const_iterator, RandomAccessIt, Policy>(
+      str.begin(), str.end(),
       bits.begin(), bits.end(),
       meta);
 }
