@@ -263,6 +263,52 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
     return derived();
   }
 
+  friend std::ostream& operator<<(std::ostream& os, const array_base& cv) {
+    // Save stream formatting settings
+    std::ios_base::fmtflags flags = os.flags();
+    char fill = os.fill();
+    std::streamsize width = os.width();
+
+    std::string content;
+    switch (flags & std::ios_base::basefield) {
+      case std::ios_base::hex:
+        content = ::bit::to_string(cv.derived(), ::bit::string::typical(16));
+        break;
+      case std::ios_base::oct:
+        content = ::bit::to_string(cv.derived(), ::bit::string::typical(8));
+        break;
+      case std::ios_base::dec:
+        content = ::bit::to_string(cv.derived(), ::bit::string::typical(10));
+        break;
+      default:
+        content = ::bit::to_string(cv.derived(), ::bit::string::typical(2));
+        break;
+    }
+
+    // Clear width to avoid affecting next output
+    os.width(0);
+
+    // Apply padding manually if needed
+    if (width > static_cast<std::streamsize>(content.size())) {
+      std::streamsize pad = width - content.size();
+      bool left = (flags & std::ios_base::adjustfield) == std::ios_base::left;
+
+      if (!left) {
+        os << std::string(pad, fill);
+      }
+
+      os << content;
+
+      if (left) {
+        os << std::string(pad, fill);
+      }
+    } else {
+      os << content;
+    }
+
+    return os;
+  }
+
  protected:
   template <typename U>
   constexpr void from_integral(const U& integral) {

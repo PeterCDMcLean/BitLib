@@ -1,3 +1,4 @@
+#include <sstream>
 #include <stdexcept>
 #include <string_view>
 #include <utility>
@@ -31,6 +32,13 @@ TEST(ToString, base10) {
   auto num = 10'123_b;
   auto str = bit::to_string<bit::string::typical(10)>(num);
   EXPECT_EQ(str, "123");
+}
+
+TEST(ToString, Streaming) {
+  std::stringstream sstr;
+  auto num = 10'123_b;
+  sstr << num;
+  EXPECT_EQ(sstr.str(), "123");
 }
 
 TEST(FromString, Blah) {
