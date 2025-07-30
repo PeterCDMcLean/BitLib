@@ -93,24 +93,30 @@ constexpr auto make_from_digit_map() {
 
 constexpr auto make_from_digit_map(std::size_t Base) {
   switch (Base) {
-    case 2:
+    case 2: {
       static constexpr auto map2 = make_from_digit_map<2>();
       return map2;
-    case 4:
+    }
+    case 4: {
       static constexpr auto map4 = make_from_digit_map<4>();
       return map4;
-    case 8:
+    }
+    case 8: {
       static constexpr auto map8 = make_from_digit_map<8>();
       return map8;
-    case 16:
+    }
+    case 16: {
       static constexpr auto map16 = make_from_digit_map<16>();
       return map16;
-    case 32:
+    }
+    case 32: {
       static constexpr auto map32 = make_from_digit_map<32>();
       return map32;
-    case 64:
+    }
+    case 64: {
       static constexpr auto map64 = make_from_digit_map<64>();
       return map64;
+    }
     default:
       throw std::runtime_error("Base not implemented");
   }
