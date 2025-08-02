@@ -1,0 +1,58 @@
+name: Clang Format Check
+
+on:
+  push:
+    branches: [ "master" ]
+    paths-ignore:
+      - '**/*.md'
+      - '*.md'
+  pull_request:
+    branches: [ "master" ]
+    paths-ignore:
+      - '**/*.md'
+      - '*.md'
+
+jobs:
+  clang-format:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install clang-format
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang-format-19
+
+    - name: Get list of source files
+      id: files
+      shell: bash
+      run: |
+        FILES=$(git ls-files '*.cpp' '*.c' '*.h' '*.hpp' '*.cxx' '*.hxx' '*.cc' '*.hh' | tr '\n' ' ')
+        echo "FILES=${FILES}" >> $GITHUB_OUTPUT
+
+    - name: Check formatting
+      shell: bash
+      run: |
+        FILES="${{ steps.files.outputs.FILES }}"
+
+        if [[ -z "${FILES}" ]]; then
+          echo "No source files to check."
+          exit 0
+        fi
+
+        clang-format-19 --dry-run --Werror ${FILES} 2>&1 | tee clang-format-report.txt || true
+
+        if [[ -s clang-format-report.txt ]]; then
+          echo "❌ Code formatting issues found. See clang-format-report.txt."
+          exit 1
+        fi
+
+    - name: Upload clang-format report
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: clang-format-report
+        path: clang-format-report.txt
