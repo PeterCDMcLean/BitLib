@@ -107,13 +107,16 @@ jobs:
         # === Prepare output dir ===
         rm -rf "${OUTPUT_DIR}"
         mkdir -p "${OUTPUT_DIR}"
+        TAR_DIR=$(pwd)
+        pushd "${OUTPUT_DIR}"
 
         # === Extract only clang_rt.*.lib files ===
         echo "[*] Extracting clang_rt.*.lib files to '${OUTPUT_DIR}'..."
-        tar -xf "${TAR_NAME}" \
+        tar -xf "${TAR_DIR}/${TAR_NAME}" \
           --strip-components=6 \
-          --wildcards '*/lib/clang/*/lib/windows/clang_rt.*.lib' \
-          --directory="${OUTPUT_DIR}"
+          --wildcards '*/lib/clang/*/lib/windows/clang_rt.*.lib'
+
+        popd
 
         ls -al "${OUTPUT_DIR}"
         ls -al .
