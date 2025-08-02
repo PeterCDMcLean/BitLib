@@ -127,14 +127,6 @@ jobs:
 
         echo "[✓] Done. Runtime libraries copied to: ${OUTPUT_DIR}"
 
-    - name: Save clang-cl rt libs
-      if: inputs.build_os != 'windows' && inputs.compiler == 'clangcl' && steps.cache_clang_cl_rt_libs.outputs.cache-hit != 'true'
-      uses: actions/cache@v4
-      with:
-        path: |
-          '${{ github.workspace }}/.windows-rt-libs'
-        key: clangcl_windows_rt_libs_${{ steps.install_clang.outputs.LLVM_VERSION }}
-
     - name: Set reusable strings
       id: strings
       shell: bash
