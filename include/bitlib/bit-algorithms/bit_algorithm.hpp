@@ -20,21 +20,25 @@
 #include "debug_utils.hpp" //TODO does this belong somewhere else?
 #include "bit_algorithm_details.hpp"
 // <algorithm> overloads
+#include "addition.hpp"
 #include "bit_algorithm_details.hpp"
 #include "copy.hpp"
 #include "copy_backward.hpp"
 #include "count.hpp"
 #include "debug_utils.hpp"
+#include "division.hpp"
 #include "equal.hpp"
 #include "fill.hpp"
 #include "find.hpp"
 #include "move.hpp"
+#include "multiplication.hpp"
 #include "reverse.hpp"
 #include "rotate.hpp"
 #include "shift.hpp"
 #include "swap_ranges.hpp"
 #include "to_from_string.hpp"
 #include "transform.hpp"
+#include "transform_accumulate.hpp"
 #include "type_traits.hpp"
 // ========================================================================== //
 

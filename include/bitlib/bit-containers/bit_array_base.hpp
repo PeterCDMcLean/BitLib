@@ -62,6 +62,7 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
   }
 
  public:
+  using detail::container_size_storage<std::size_t, resizable, N>::size;
   using word_type = W;
   using value_type = T;
   using size_type = std::size_t;
@@ -74,9 +75,9 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
   using const_iterator = Iterators::const_iterator;
 
   constexpr array_base() noexcept : detail::container_size_storage<std::size_t, resizable, N>() {}
-  constexpr array_base(const size_type& size) noexcept
+  constexpr array_base(const size_type& extent) noexcept
     requires(N == std::dynamic_extent)
-      : detail::container_size_storage<std::size_t, resizable, N>(size) {}
+      : detail::container_size_storage<std::size_t, resizable, N>(extent) {}
 
   // Element access
   constexpr reference operator[](size_type pos) {
@@ -88,7 +89,7 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
   }
 
   constexpr reference at(size_type pos) {
-    if (pos < derived().size()) {
+    if (pos < size()) {
       return derived().begin()[pos];
     } else {
       throw std::out_of_range("Position is out of range");
@@ -96,7 +97,7 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
   }
 
   constexpr const_reference at(size_type pos) const {
-    if (pos < derived().size()) {
+    if (pos < size()) {
       return derived().begin()[pos];
     } else {
       throw std::out_of_range("Position is out of range");
@@ -112,19 +113,19 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
   }
 
   constexpr reference back() {
-    return derived().begin()[derived().size() - 1];
+    return derived().begin()[size() - 1];
   }
 
   constexpr const_reference back() const {
-    return derived().begin()[derived().size() - 1];
+    return derived().begin()[size() - 1];
   }
 
   constexpr iterator end() noexcept {
-    return derived().begin() + derived().size();
+    return derived().begin() + size();
   }
 
   constexpr const_iterator end() const noexcept {
-    return const_iterator(derived().begin()) + derived().size();
+    return const_iterator(derived().begin()) + size();
   }
 
   constexpr const_iterator cbegin() const noexcept {
@@ -137,11 +138,11 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
 
   // Capacity
   constexpr bool empty() const noexcept {
-    return 0 == derived().size();
+    return 0 == size();
   }
 
   constexpr size_type max_size() const noexcept {
-    return derived().size();
+    return size();
   }
 
   // String representation
@@ -188,26 +189,26 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
    */
   template <std::integral U>
   explicit constexpr operator U() const noexcept {
-    assert(derived().size() <= bitsof<U>());
+    assert(size() <= bitsof<U>());
     U integral;
 
     if constexpr (N == std::dynamic_extent) {
-      if (derived().size() > bitsof<U>()) {
+      if (size() > bitsof<U>()) {
         Policy::truncation::template to_integral<U, N>(derived(), integral);
       } else {
-        ::bit::copy(derived().begin(), end(), bit_pointer<U>(&integral));
+        ::bit::copy(derived().begin(), end(), &integral);
       }
-      if (derived().size() < bitsof<U>()) {
-        Policy::extension::template to_integral<U, N>(derived(), integral, detail::uninitialized);
+      if (size() < bitsof<U>()) {
+        Policy::extension::template to_integral<U, N>(detail::uninitialized, derived(), integral);
       }
     } else {
       if constexpr (N > bitsof<U>()) {
         Policy::truncation::template to_integral<U, N>(derived(), integral);
       } else {
-        ::bit::copy(derived().begin(), end(), bit_pointer<U>(&integral));
+        ::bit::copy(derived().begin(), end(), &integral);
       }
       if constexpr (N < bitsof<U>()) {
-        Policy::extension::template to_integral<U, N>(derived(), integral, detail::uninitialized);
+        Policy::extension::template to_integral<U, N>(detail::uninitialized, derived(), integral);
       }
     }
 
@@ -217,73 +218,117 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
   using compatible_bitarray = array<value_type, N, word_type, Policy>;
 
   constexpr compatible_bitarray operator~() {
-    compatible_bitarray result(derived().size());
+    compatible_bitarray result(detail::uninitialized, size());
     transform(derived().begin(), derived().end(), result.begin(), [](const word_type& bits) -> word_type { return ~bits; });
     return result;
   }
 
   constexpr compatible_bitarray operator|(const bit_sized_range auto& other) const {
-    assert(other.size() == derived().size());
-    compatible_bitarray result(derived().size());
+    assert(other.size() == size());
+    compatible_bitarray result(detail::uninitialized, size());
     transform(derived().begin(), derived().end(), other.begin(), result.begin(),
               [](const word_type& a, const word_type& b) -> word_type { return a | b; });
     return result;
   }
   constexpr Derived& operator|=(bit_sized_range auto& other) {
-    assert(other.size() == derived().size());
+    assert(other.size() == size());
     transform(derived().begin(), derived().end(), other.begin(), derived().begin(),
               [](const word_type& a, const word_type& b) -> word_type { return a | b; });
     return derived();
   }
   constexpr compatible_bitarray operator&(const bit_sized_range auto& other) const {
-    assert(other.size() == derived().size());
-    compatible_bitarray result(derived().size());
+    assert(other.size() == size());
+    compatible_bitarray result(detail::uninitialized, size());
     transform(derived().begin(), derived().end(), other.begin(), result.begin(),
               [](const word_type& a, const word_type& b) -> word_type { return a & b; });
     return result;
   }
   constexpr Derived& operator&=(bit_sized_range auto& other) {
-    assert(other.size() == derived().size());
+    assert(other.size() == size());
     transform(derived().begin(), derived().end(), other.begin(), derived().begin(),
               [](const word_type& a, const word_type& b) -> word_type { return a & b; });
     return derived();
   }
   constexpr compatible_bitarray operator^(const bit_sized_range auto& other) const {
-    assert(other.size() == derived().size());
-    compatible_bitarray result(derived().size());
+    assert(other.size() == size());
+    compatible_bitarray result(detail::uninitialized, size());
     transform(derived().begin(), derived().end(), other.begin(), result.begin(),
               [](const word_type& a, const word_type& b) -> word_type { return a ^ b; });
     return result;
   }
   constexpr Derived& operator^=(bit_sized_range auto& other) {
-    assert(other.size() == derived().size());
+    assert(other.size() == size());
     transform(derived().begin(), derived().end(), other.begin(), derived().begin(),
               [](const word_type& a, const word_type& b) -> word_type { return a ^ b; });
     return derived();
+  }
+
+  friend std::ostream& operator<<(std::ostream& os, const array_base& cv) {
+    // Save stream formatting settings
+    std::ios_base::fmtflags flags = os.flags();
+    char fill = os.fill();
+    std::streamsize width = os.width();
+
+    std::string content;
+    switch (flags & std::ios_base::basefield) {
+      case std::ios_base::hex:
+        content = ::bit::to_string(cv.derived(), ::bit::string::typical(16));
+        break;
+      case std::ios_base::oct:
+        content = ::bit::to_string(cv.derived(), ::bit::string::typical(8));
+        break;
+      case std::ios_base::dec:
+        content = ::bit::to_string(cv.derived(), ::bit::string::typical(10));
+        break;
+      default:
+        content = ::bit::to_string(cv.derived(), ::bit::string::typical(2));
+        break;
+    }
+
+    // Clear width to avoid affecting next output
+    os.width(0);
+
+    // Apply padding manually if needed
+    if (width > static_cast<std::streamsize>(content.size())) {
+      std::streamsize pad = width - content.size();
+      bool left = (flags & std::ios_base::adjustfield) == std::ios_base::left;
+
+      if (!left) {
+        os << std::string(pad, fill);
+      }
+
+      os << content;
+
+      if (left) {
+        os << std::string(pad, fill);
+      }
+    } else {
+      os << content;
+    }
+
+    return os;
   }
 
  protected:
   template <typename U>
   constexpr void from_integral(const U& integral) {
     if constexpr (N == std::dynamic_extent) {
-      if ((derived().size() * bitsof<value_type>()) < bitsof<U>()) {
+      if ((size() * bitsof<value_type>()) < bitsof<U>()) {
         Policy::truncation::template from_integral<U, N>(derived(), integral);
       } else {
-        bit_pointer<const U> integral_ptr(&integral);
-        ::bit::copy(integral_ptr, integral_ptr + bitsof<U>(), derived().begin());
+        ::bit::copy(&integral, &integral + 1, derived().begin());
       }
-      if (bitsof<U>() < (derived().size() * bitsof<value_type>())) {
-        Policy::extension::template from_integral<U, N>(derived(), integral, detail::uninitialized);
+      if (bitsof<U>() < (size() * bitsof<value_type>())) {
+        Policy::extension::template from_integral<U, N>(detail::uninitialized, derived(), integral);
       }
     } else {
       if constexpr ((N * bitsof<value_type>()) < bitsof<U>()) {
         Policy::truncation::template from_integral<U, N>(derived(), integral);
       } else {
-        bit_pointer<const U> integral_ptr(&integral);
-        ::bit::copy(integral_ptr, integral_ptr + bitsof<U>(), derived().begin());
+        ::bit::copy(&integral, &integral + 1, derived().begin());
       }
       if constexpr (bitsof<U>() < (N * bitsof<value_type>())) {
-        Policy::extension::template from_integral<U, N>(derived(), integral, detail::uninitialized);
+        Policy::extension::template from_integral<U, N>(detail::uninitialized, derived(), integral);
       }
     }
   }

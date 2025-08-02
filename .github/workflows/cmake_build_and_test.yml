@@ -56,6 +56,7 @@ jobs:
         echo "VCTOOLSDIR=${{ github.workspace }}/.xwin_sdk_crt/crt" >> "$GITHUB_ENV"
 
     - name: "Install Clang 19"
+      id: install_clang
       if: inputs.build_os == 'linux' && (inputs.compiler == 'clang' || inputs.compiler == 'clangcl')
       shell: bash
       run: |
@@ -76,6 +77,55 @@ jobs:
         sudo ln -sf /usr/bin/lld-link-19 /usr/local/bin/lld-link
         sudo ln -sf /usr/bin/llvm-mt-19 /usr/local/bin/llvm-mt
         sudo ln -sf /usr/bin/llvm-rc-19 /usr/local/bin/llvm-rc
+        LLVM_VERSION=$(clang-cl --version | head -n1 | grep -oP '\d+\.\d+\.\d+')
+        echo "LLVM_VERSION=${LLVM_VERSION}" >> "$GITHUB_OUTPUT"
+
+    - name: Restore clang-cl rt libs from cache
+      id: cache_clang_cl_rt_libs
+      if: inputs.build_os != 'windows' && inputs.compiler == 'clangcl'
+      uses: actions/cache@v4
+      with:
+        path: '${{ github.workspace }}/.windows-rt-libs'
+        key: clangcl_windows_rt_libs_${{ steps.install_clang.outputs.LLVM_VERSION }}
+
+    - name: "Get clang-cl rt libs"
+      if: inputs.build_os != 'windows' && inputs.compiler == 'clangcl' && steps.cache_clang_cl_rt_libs.outputs.cache-hit != 'true'
+      env:
+        LLVM_VERSION: ${{ steps.install_clang.outputs.LLVM_VERSION }}
+        OUTPUT_DIR: '${{ github.workspace }}/.windows-rt-libs'
+      shell: bash
+      run: |
+        # Download and extract the clang-cl runtime libraries
+        LLVM_TAG="llvmorg-${LLVM_VERSION}"
+        TAR_NAME="clang+llvm-${LLVM_VERSION}-x86_64-pc-windows-msvc.tar.xz"
+        LLVM_URL="https://github.com/llvm/llvm-project/releases/download/${LLVM_TAG}/${TAR_NAME}"
+
+        # === Download ===
+        echo "[*] Downloading LLVM Windows tarball: $LLVM_URL"
+        curl -L -o "${TAR_NAME}" "${LLVM_URL}"
+
+        # === Prepare output dir ===
+        rm -rf "${OUTPUT_DIR}"
+        mkdir -p "${OUTPUT_DIR}"
+        TAR_DIR=$(pwd)
+        pushd "${OUTPUT_DIR}"
+
+        # === Extract only clang_rt.*.lib files ===
+        echo "[*] Extracting clang_rt.*.lib files to '${OUTPUT_DIR}'..."
+        tar -xf "${TAR_DIR}/${TAR_NAME}" \
+          --strip-components=6 \
+          --wildcards '*/lib/clang/*/lib/windows/clang_rt.*.lib'
+
+        popd
+
+        ls -al "${OUTPUT_DIR}"
+        ls -al .
+
+        # === Cleanup ===
+        echo "[*] Cleaning up..."
+        rm -f "${TAR_NAME}"
+
+        echo "[✓] Done. Runtime libraries copied to: ${OUTPUT_DIR}"
 
     - name: Set reusable strings
       id: strings
@@ -111,6 +161,7 @@ jobs:
       shell: bash
       env:
         CMAKE_TOOLCHAIN_FILE: ${{ steps.strings.outputs.toolchain_file }}
+        CLANGRTLIB: '${{ github.workspace }}/.windows-rt-libs'
       run: |
         # Configure
         cmake \
