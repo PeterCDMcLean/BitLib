@@ -127,7 +127,6 @@ struct metadata_t {
   bool is_signed;
   std::endian endian;
   bool str_sign_extend_zeros;
-  char prefix[16];
   char fill;
 };
 
@@ -137,7 +136,6 @@ constexpr metadata_t typical(size_t base = 10, bool str_sign_extend_zeros = fals
       .is_signed = false,
       .endian = std::endian::big,
       .str_sign_extend_zeros = str_sign_extend_zeros,
-      .prefix = "",
       .fill = '\0'};
 }
 
@@ -185,7 +183,7 @@ constexpr CharIt to_string(
     CharIt cursor = str_last;
     *(--cursor) = static_cast<char>(remainder + '0');
 
-    while ((cursor != str_first) && (::bit::count(bit_it, bit_it + store_bits, bit1) > 0)) {
+    while ((cursor != str_first) && (store_bits -= ::bit::count_msb(bit_it, bit_it + store_bits, bit0))) {
       remainder = ::bit::division(bit_it, bit_it + store_bits, bit_it, base);
       *(--cursor) = static_cast<char>(remainder + '0');
     }
