@@ -283,6 +283,10 @@ constexpr void from_string(
     const CharIt str_first, const CharIt str_last,
     const bit_iterator<RandomAccessIt>& bit_first, const bit_iterator<RandomAccessIt>& bit_last,
     string::metadata_t meta = string::typical()) {
+  // TODO: This should be a policy
+  if (str_first == str_last) {
+    return;  // Nothing to do
+  }
   if (std::has_single_bit(meta.base)) {
     const auto base_bits = std::bit_width(meta.base - 1);
     const auto base_from_digits = string::make_from_digit_map(meta.base);
@@ -291,13 +295,12 @@ constexpr void from_string(
     size_t store_bits = distance(bit_first, bit_last);
 
     bit_iterator<RandomAccessIt> bit_it = bit_first;
-    CharIt cursor = str_last;
-    cursor--;
-    while (cursor >= str_first && store_bits) {
+    auto cursor = std::distance(str_first, str_last) - 1;
+    while ((cursor >= 0) && store_bits) {
       word_type work = 0;
       size_t bits = 0;
-      for (; (bits < bitsof<word_type>()) && (cursor >= str_first); cursor--) {
-        char c = *cursor;
+      for (; (bits < bitsof<word_type>()) && (cursor >= 0); cursor--) {
+        char c = str_first[cursor];
         // TODO: This should be a policy
         if (c >= base_from_digits.size()) {
           continue;
@@ -314,7 +317,7 @@ constexpr void from_string(
         Policy::truncation::template from_integral<word_type, std::dynamic_extent, RandomAccessIt>(
             bit_it, bit_last, work);
         return;
-      } else if ((store_bits > bits) && (cursor < str_first)) {
+      } else if ((store_bits > bits) && (cursor < 0)) {
         const bit_iterator<word_type*> p_integral(&work);
         bit_it = ::bit::copy(p_integral, p_integral + bits, bit_it);
         Policy::extension::template from_integral<word_type, std::dynamic_extent, RandomAccessIt>(
