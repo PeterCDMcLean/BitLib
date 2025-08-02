@@ -653,6 +653,8 @@ constexpr T _divx(const T& numerator_hi, const T& numerator_lo, const T& denomin
   }
 }
 
+// This code is from a 'public domain' post of ridiculousfish:
+// https://ridiculousfish.com/blog/posts/labor-of-division-episode-v.html
 template <typename T, typename... X>
 constexpr T _divx(const T& numerator_hi, const T& numerator_lo, const T& denominator, T* remainder, X...) noexcept {
   constexpr auto digits = bitsof<T>();
@@ -665,9 +667,9 @@ constexpr T _divx(const T& numerator_hi, const T& numerator_lo, const T& denomin
     }
     return quotient;
   } else if constexpr (digits > bitsof<uint32_t>()) {
-    const T& numhi = numerator_hi;
-    const T& numlo = numerator_lo;
-    const T& den = denominator;
+    T numhi = numerator_hi;
+    T numlo = numerator_lo;
+    T den = denominator;
     // We work in base 2**32.
     // A uint32 holds a single digit. A uint64 holds two digits.
     // Our numerator is conceptually [num3, num2, num1, num0].
@@ -714,7 +716,7 @@ constexpr T _divx(const T& numerator_hi, const T& numerator_lo, const T& denomin
     // The expression (-shift & 63) is the same as (64 - shift), except it avoids the UB of shifting
     // by 64. The funny bitwise 'and' ensures that numlo does not get shifted into numhi if shift is 0.
     // clang 11 has an x86 codegen bug here: see LLVM bug 50118. The sequence below avoids it.
-    shift = __builtin_clzll(den);
+    shift = std::countl_zero(den);
     den <<= shift;
     numhi <<= shift;
     numhi |= (numlo >> (-shift & 63)) & (-(int64_t)shift >> 63);
