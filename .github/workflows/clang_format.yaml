@@ -19,6 +19,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Install clang-format
       shell: bash
@@ -26,33 +28,36 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y clang-format-19
 
-    - name: Get list of source files
-      id: files
-      shell: bash
+    - name: Fetch base branch
+      if: github.event_name == 'pull_request'
       run: |
-        FILES=$(git ls-files '*.cpp' '*.c' '*.h' '*.hpp' '*.cxx' '*.hxx' '*.cc' '*.hh' | tr '\n' ' ')
-        echo "FILES=${FILES}" >> $GITHUB_OUTPUT
+        echo "Fetching base branch ${{ github.base_ref }}"
+        git fetch origin ${{ github.base_ref }}:${{ github.base_ref }}
+
+    - name: Get Git Diff
+      id: diff
+      run: |
+        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+          echo "Getting diff for pull request"
+          git diff origin/${{ github.base_ref }}...HEAD > diff.patch
+        else
+          echo "Getting diff for commit"
+          git diff ${{ github.event.before }} ${{ github.event.after }} > diff.patch
+        fi
 
     - name: Check formatting
       shell: bash
       run: |
-        FILES="${{ steps.files.outputs.FILES }}"
+        cat diff.patch | clang-format-diff-19 -p 1 > diff_format.patch
 
-        if [[ -z "${FILES}" ]]; then
-          echo "No source files to check."
-          exit 0
-        fi
-
-        clang-format-19 --dry-run --Werror ${FILES} 2>&1 | tee clang-format-report.txt || true
-
-        if [[ -s clang-format-report.txt ]]; then
-          echo "❌ Code formatting issues found. See clang-format-report.txt."
+        if [ -s diff_format.patch ]; then
+          echo "❌ Code formatting issues found. See diff_format.patch."
           exit 1
         fi
 
-    - name: Upload clang-format report
+    - name: Upload clang-formatted diff
       if: failure()
       uses: actions/upload-artifact@v4
       with:
-        name: clang-format-report
-        path: clang-format-report.txt
+        name: clang-format-diff
+        path: diff_format.patch
