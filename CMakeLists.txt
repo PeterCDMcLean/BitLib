@@ -32,7 +32,6 @@ target_sources(bitlib INTERFACE
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/copy_backward.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/copy.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/count.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/debug_utils.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/equal.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/fill.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/include/bitlib/bit-algorithms/find.hpp

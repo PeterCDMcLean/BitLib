@@ -14,10 +14,7 @@
 #define _Bit_Algorithm_VERSION_MINOR @Bit_Algorithm_VERSION_MINOR@
 // ========================================================================== //
 
-
-
 // ================================ PREAMBLE ================================ //
-#include "debug_utils.hpp" //TODO does this belong somewhere else?
 #include "bit_algorithm_details.hpp"
 // <algorithm> overloads
 #include "addition.hpp"
@@ -25,7 +22,6 @@
 #include "copy.hpp"
 #include "copy_backward.hpp"
 #include "count.hpp"
-#include "debug_utils.hpp"
 #include "division.hpp"
 #include "equal.hpp"
 #include "fill.hpp"
@@ -41,8 +37,6 @@
 #include "transform_accumulate.hpp"
 #include "type_traits.hpp"
 // ========================================================================== //
-
-
 
 // ========================================================================== //
 #endif // _BIT_ALGORITHM_HPP_INCLUDED
