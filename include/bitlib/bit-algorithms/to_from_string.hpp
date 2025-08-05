@@ -421,7 +421,7 @@ constexpr void from_string(
 template <string::metadata_t meta = string::typical(), bit_range RangeT, typename Policy = policy::typical<typename std::ranges::iterator_t<RangeT>::value_type>>
 constexpr void from_string(
     const std::string& str,
-    RangeT& bits) {
+    RangeT&& bits) {
   using range_iterator_t = std::ranges::iterator_t<RangeT>;
   using RandomAccessIt = typename range_iterator_t::iterator_type;
   from_string<meta, std::string::const_iterator, RandomAccessIt, Policy>(str.begin(), str.end(), bits.begin(), bits.end());
@@ -441,7 +441,7 @@ constexpr void from_string(
 template <bit_range RangeT, typename Policy = policy::typical<typename std::ranges::iterator_t<RangeT>::value_type>>
 constexpr void from_string(
     const std::string& str,
-    RangeT& bits,
+    RangeT&& bits,
     string::metadata_t meta = string::typical()) {
   using range_iterator_t = std::ranges::iterator_t<RangeT>;
   using RandomAccessIt = typename range_iterator_t::iterator_type;

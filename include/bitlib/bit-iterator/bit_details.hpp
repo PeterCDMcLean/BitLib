@@ -768,7 +768,6 @@ constexpr T _divx(const T& numerator_hi, const T& numerator_lo, const T& denomin
 // Multiplies src0 and src1 and gets the full result with compiler intrinsics
 template <typename T, typename T128>
 constexpr T _mulx(T src0, T src1, T* hi) noexcept {
-  using wider_t = ceil_integral<bitsof<T>() + bitsof<T>()>;
   constexpr auto digits = bitsof<T>();
   if constexpr (digits > bitsof<uint32_t>()) {
     T128 tmp128 = static_cast<T128>(src0) * static_cast<T128>(src1);
