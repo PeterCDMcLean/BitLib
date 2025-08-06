@@ -222,11 +222,8 @@ template <class Iterator>
 constexpr typename bit_iterator<Iterator>::reference bit_iterator<Iterator>::operator[](difference_type n) const {
   constexpr difference_type digits = binary_digits<word_type>::value;
   const difference_type sum = _position + n;
-  difference_type diff = sum / digits;
-  if (sum < 0 && diff * digits != sum) {
-    --diff;
-  }
-  return reference(*std::next(_current, diff), sum - diff * digits);
+  const difference_type diff = (sum - (n < 0) * (digits - 1)) / digits;
+  return reference(*std::next(_current, diff), static_cast<size_type>(sum) % digits);
 }
 // -------------------------------------------------------------------------- //
 
