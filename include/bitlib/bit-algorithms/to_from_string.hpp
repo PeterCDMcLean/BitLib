@@ -33,8 +33,8 @@ constexpr auto make_digit_map() {
   static_assert(Base <= 64, "Base too large for simple char mapping");
 
   ::std::array<char, Base> map{};
-  for (char i = 0; i < Base; ++i) {
-    map[i] = (i < 10) ? ('0' + i) : ('A' + (i - 10));
+  for (unsigned char i = 0; i < static_cast<char>(Base); ++i) {
+    map[i] = static_cast<char>((i < 10) ? ('0' + i) : ('A' + (i - 10)));
   }
   return map;
 }
@@ -77,15 +77,15 @@ constexpr auto make_from_digit_map() {
 
   ::std::array<char, 128> map{};
   map.fill(~0);
-  for (char i = '0'; i <= 'z'; ++i) {
+  for (unsigned char i = '0'; i <= 'z'; ++i) {
     if (i >= '0' && i <= '9') {
-      map[i] = i - '0';
+      map[i] = static_cast<char>(i - '0');
     }
     if (i >= 'a' && i <= 'z') {
-      map[i] = (i - 'a') + 10;
+      map[i] = static_cast<char>((i - 'a') + 10);
     }
     if (i >= 'A' && i <= 'Z') {
-      map[i] = (i - 'A') + 10;
+      map[i] = static_cast<char>((i - 'A') + 10);
     }
   }
   return map;
@@ -209,7 +209,7 @@ constexpr size_t estimate_length(
     str_len = (str_len + base_bits - 1) / base_bits;  // Round up to nearest base digit
     return static_cast<size_t>(std::max(1, str_len));
   } else {
-    const uint32_t LOG2BASE = static_cast<uint32_t>(std::ceil(1 / std::logbf(base) * (1 << 16)));
+    const uint32_t LOG2BASE = static_cast<uint32_t>(std::ceil(static_cast<float>(1 << 16) / std::logbf(static_cast<float>(base))));
     int skip_leading_bits = str_sign_extend_zeros ? 0 : count_msb(first, last, bit0);
     const auto bits = distance(first, last) - skip_leading_bits;
     const auto fixed_point = (bits * LOG2BASE);
@@ -308,7 +308,7 @@ constexpr void from_string(
         if (~0 == digit) {
           continue;
         }
-        work |= (digit << bits);
+        work |= (static_cast<word_type>(digit) << bits);
         bits += base_bits;
       }
       if (store_bits < bits) {
