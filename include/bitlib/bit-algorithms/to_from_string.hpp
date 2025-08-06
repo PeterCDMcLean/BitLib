@@ -33,7 +33,7 @@ constexpr auto make_digit_map() {
   static_assert(Base <= 64, "Base too large for simple char mapping");
 
   ::std::array<char, Base> map{};
-  for (std::size_t i = 0; i < Base; ++i) {
+  for (char i = 0; i < Base; ++i) {
     map[i] = (i < 10) ? ('0' + i) : ('A' + (i - 10));
   }
   return map;
@@ -76,8 +76,8 @@ constexpr auto make_from_digit_map() {
   static_assert(Base <= 64, "Base too large for simple char mapping");
 
   ::std::array<char, 128> map{};
-  for (std::size_t i = 0; i < 128; ++i) {
-    map[i] = ~0;
+  map.fill(~0);
+  for (char i = '0'; i <= 'z'; ++i) {
     if (i >= '0' && i <= '9') {
       map[i] = i - '0';
     }
@@ -152,7 +152,7 @@ constexpr CharIt to_string(
     const auto base_bits = std::bit_width(meta.base - 1);
     const auto base_digits = string::make_digit_map(meta.base);
 
-    CharIt cursor = accumulate_while(
+    CharIt start = accumulate_while(
         policy::AccumulateNoInitialSubword{},
         bit_first, bit_last, str_last,
         [meta, base_bits, base_digits, str_first](CharIt cursor, auto word, const size_t bits = bitsof<decltype(word)>()) {
@@ -166,8 +166,8 @@ constexpr CharIt to_string(
           }
           return std::make_pair(cursor != str_first, cursor);
         });
-    if (cursor != str_first) {
-      return std::copy(cursor, str_last, str_first);
+    if (start != str_first) {
+      return std::copy(start, str_last, str_first);
     } else {
       return str_last;
     }
@@ -209,7 +209,7 @@ constexpr size_t estimate_length(
     str_len = (str_len + base_bits - 1) / base_bits;  // Round up to nearest base digit
     return static_cast<size_t>(std::max(1, str_len));
   } else {
-    const uint32_t LOG2BASE = std::ceil(1 / std::logbf(base) * (1 << 16));
+    const uint32_t LOG2BASE = static_cast<uint32_t>(std::ceil(1 / std::logbf(base) * (1 << 16)));
     int skip_leading_bits = str_sign_extend_zeros ? 0 : count_msb(first, last, bit0);
     const auto bits = distance(first, last) - skip_leading_bits;
     const auto fixed_point = (bits * LOG2BASE);
