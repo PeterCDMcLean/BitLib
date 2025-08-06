@@ -236,12 +236,10 @@ constexpr typename bit_iterator<Iterator>::reference bit_iterator<Iterator>::ope
 // Increments the bit iterator and returns it
 template <class Iterator>
 constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator++() {
-  constexpr size_type digits = binary_digits<word_type>::value;
-  if (_position + 1 < digits) {
-    ++_position;
-  } else {
+  constexpr auto digits = binary_digits<word_type>::value;
+  _position = (_position + 1) % digits;
+  if (0 == _position) {
     ++_current;
-    _position = 0;
   }
   return *this;
 }
@@ -250,12 +248,10 @@ constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator++() {
 template <class Iterator>
 constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator--() {
   constexpr size_type digits = binary_digits<word_type>::value;
-  if (_position) {
-    --_position;
-  } else {
+  if (0 == _position) {
     --_current;
-    _position = digits - 1;
   }
+  _position = (_position - 1) % digits;
   return *this;
 }
 
@@ -280,11 +276,9 @@ template <class Iterator>
 constexpr bit_iterator<Iterator> bit_iterator<Iterator>::operator+(difference_type n) const {
   constexpr difference_type digits = binary_digits<word_type>::value;
   const difference_type sum = _position + n;
-  difference_type diff = sum / digits;
-  if (sum < 0 && diff * digits != sum) {
-    --diff;
-  }
-  return bit_iterator(std::next(_current, diff), sum - diff * digits);
+  const difference_type diff = (sum - (n < 0) * (digits - 1)) / digits;
+  const size_type new_pos = static_cast<size_t>(sum) % static_cast<size_t>(digits);
+  return bit_iterator(std::next(_current, diff), new_pos);
 }
 
 // Looks backward several bits and gets an iterator at this position
@@ -292,11 +286,9 @@ template <class Iterator>
 constexpr bit_iterator<Iterator> bit_iterator<Iterator>::operator-(difference_type n) const {
   constexpr difference_type digits = binary_digits<word_type>::value;
   const difference_type sum = _position - n;
-  difference_type diff = sum / digits;
-  if (sum < 0 && diff * digits != sum) {
-    --diff;
-  }
-  return bit_iterator(std::next(_current, diff), sum - diff * digits);
+  const difference_type diff = (sum - (n > 0) * (digits - 1)) / digits;
+  const size_type new_pos = static_cast<size_t>(sum) % static_cast<size_t>(digits);
+  return bit_iterator(std::next(_current, diff), new_pos);
 }
 
 // Increments the iterator by several bits and returns it
@@ -304,12 +296,10 @@ template <class Iterator>
 constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator+=(difference_type n) {
   constexpr difference_type digits = binary_digits<word_type>::value;
   const difference_type sum = _position + n;
-  difference_type diff = sum / digits;
-  if (sum < 0 && diff * digits != sum) {
-    --diff;
-  }
+  const difference_type diff = (sum - (n < 0) * (digits - 1)) / digits;
+  const size_type new_pos = static_cast<size_t>(sum) % static_cast<size_t>(digits);
   _current = std::next(_current, diff);
-  _position = (sum - diff * digits);
+  _position = new_pos;
   return *this;
 }
 
@@ -318,12 +308,10 @@ template <class Iterator>
 constexpr bit_iterator<Iterator>& bit_iterator<Iterator>::operator-=(difference_type n) {
   constexpr difference_type digits = binary_digits<word_type>::value;
   const difference_type sum = _position - n;
-  difference_type diff = sum / digits;
-  if (sum < 0 && diff * digits != sum) {
-    --diff;
-  }
+  const difference_type diff = (sum - (n > 0) * (digits - 1)) / digits;
+  const size_type new_pos = static_cast<size_t>(sum) % static_cast<size_t>(digits);
   _current = std::next(_current, diff);
-  _position = (sum - diff * digits);
+  _position = new_pos;
   return *this;
 }
 // -------------------------------------------------------------------------- //
