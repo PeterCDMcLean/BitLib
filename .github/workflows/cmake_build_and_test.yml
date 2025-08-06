@@ -283,7 +283,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: benchmark_${{ inputs.test_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}_${{ inputs.build_type }}_${{ github.event.pull_request.base.ref }}_json
-        path: '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_base_ref.json'
+        path: ${{ steps.strings.outputs.build-output-dir }}/benchmark/base_ref
 
     - name: Compare Benchmarks
       if: inputs.preset == 'benchmark' && steps.base_ref_json.outcome == 'success'
@@ -291,7 +291,7 @@ jobs:
       run: |
         python3 '${{ steps.strings.outputs.build-output-dir }}/_deps/benchmark-src/tools/compare.py' benchmarks \
           '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result.json' \
-          '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_base_ref.json' \
+          '${{ steps.strings.outputs.build-output-dir }}/benchmark/base_ref/benchmark_result.json' \
           | tee '${{ steps.strings.outputs.build-output-dir }}/benchmark/comparison.txt'
 
     - name: Archive benchmark results
@@ -300,5 +300,4 @@ jobs:
       with:
         name: benchmark_${{ inputs.test_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}_${{ inputs.build_type }}_${{ github.event.pull_request.head.ref }}_json
         path: |
-          '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_*.json'
-          '${{ steps.strings.outputs.build-output-dir }}/benchmark/*.txt'
+          ${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result.json
