@@ -309,8 +309,8 @@ jobs:
         pip install --upgrade setuptools
         python -m pip install -r '${{ steps.strings.outputs.build-output-dir }}/_deps/benchmark-src/tools/requirements.txt'
         python3 '${{ steps.strings.outputs.build-output-dir }}/_deps/benchmark-src/tools/compare.py' benchmarks \
-          '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result.json' \
           '${{ steps.strings.outputs.build-output-dir }}/base_ref_build/benchmark/benchmark_result.json' \
+          '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result.json' \
           | tee '${{ steps.strings.outputs.build-output-dir }}/benchmark/comparison.txt'
 
     - name: Archive benchmark results
