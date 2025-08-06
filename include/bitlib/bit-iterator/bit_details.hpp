@@ -299,18 +299,19 @@ enum class _mask_len {
 
 template <std::integral T, _mask_len len_in_range = _mask_len::in_range, typename size_type = size_t>
 constexpr T _mask(const size_type len) {
-  constexpr std::make_unsigned_t<T> one = std::make_unsigned_t<T>(1);
+  using unsigned_t = std::make_unsigned_t<T>;
+  constexpr unsigned_t one = unsigned_t(1);
   if constexpr (len_in_range != _mask_len::unknown) {
 #ifdef BITLIB_DETECT_UNDEFINED_SHIFT
     assert(len < bitsof<T>());
 #endif
-    return static_cast<T>((one << len) - one);
+    return static_cast<T>((one << static_cast<unsigned_t>(len)) - one);
   } else {
     // The digits_mask is solely here to prevent Undefined Sanitizer
     // complaining about shift of len >= digits
     // Note: on -O1 the (len & digits_mask) is optimized to simply (len)
-    constexpr std::make_unsigned_t<T> digits_mask = bitsof<T>() - one;
-    return static_cast<T>((one << (len & digits_mask)) * (len < bitsof<T>()) - one);
+    constexpr unsigned_t digits_mask = static_cast<unsigned_t>(bitsof<T>()) - one;
+    return static_cast<T>((one << (static_cast<unsigned_t>(len) & digits_mask)) * static_cast<unsigned_t>(len < bitsof<T>()) - one);
   }
 }
 
