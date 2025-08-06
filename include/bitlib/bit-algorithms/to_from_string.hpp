@@ -313,13 +313,13 @@ constexpr void from_string(
       }
       if (store_bits < bits) {
         Policy::truncation::template from_integral<word_type, std::dynamic_extent, RandomAccessIt>(
-            bit_it, bit_last, work);
+            work, bit_it, bit_last);
         return;
       } else if ((store_bits > bits) && (cursor < 0)) {
         const bit_iterator<word_type*> p_integral(&work);
         bit_it = ::bit::copy(p_integral, p_integral + bits, bit_it);
         Policy::extension::template from_integral<word_type, std::dynamic_extent, RandomAccessIt>(
-            bit_it, bit_last, work);
+            work, bit_it, bit_last);
       } else if (store_bits >= bits) {
         const bit_iterator<word_type*> p_integral(&work);
         bit_it = ::bit::copy(p_integral, p_integral + bits, bit_it);
