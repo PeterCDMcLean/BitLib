@@ -276,42 +276,29 @@ jobs:
               --output-on-failure \
               --parallel
 
-    - name: Cache benchmark json
-      if: inputs.preset == 'benchmark'
-      uses: actions/cache@v4
-      with:
-        path: '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result.json'
-        key: benchmark_${{ inputs.test_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}_${{ inputs.build_type }}_${{ github.event.pull_request.head.ref }}
-
-    - name: Rename current benchmark json
-      if: inputs.preset == 'benchmark'
-      shell: bash
-      run: |
-        mv '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result.json' '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result_new.json'
-
     - name: Fetch base_ref benchmark json
       if: inputs.preset == 'benchmark'
       id: base_ref_json
-      uses: actions/cache@v4
+      continue-on-error: true
+      uses: actions/download-artifact@v4
       with:
-        path: '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result.json'
-        key: benchmark_${{ inputs.test_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}_${{ inputs.build_type }}_${{ github.event.pull_request.base.ref }}
+        name: benchmark_${{ inputs.test_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}_${{ inputs.build_type }}_${{ github.event.pull_request.base.ref }}_json
+        path: '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_base_ref.json'
 
     - name: Compare Benchmarks
-      if: inputs.preset == 'benchmark' && steps.base_ref_json.outputs.cache-hit == 'true'
+      if: inputs.preset == 'benchmark' && steps.base_ref_json.outcome == 'success'
       shell: bash
       run: |
         python3 '${{ steps.strings.outputs.build-output-dir }}/_deps/benchmark-src/tools/compare.py' benchmarks \
           '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result.json' \
-          '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result_new.json' \
+          '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_base_ref.json' \
           | tee '${{ steps.strings.outputs.build-output-dir }}/benchmark/comparison.txt'
 
     - name: Archive benchmark results
-      if: inputs.preset == 'benchmark' && steps.base_ref_json.outputs.cache-hit == 'true'
+      if: inputs.preset == 'benchmark'
       uses: actions/upload-artifact@v4
       with:
-        name: benchmark_${{ inputs.os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}_json
+        name: benchmark_${{ inputs.test_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}_${{ inputs.build_type }}_${{ github.event.pull_request.head.ref }}_json
         path: |
-          '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result.json'
-          '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result_new.json'
-          '${{ steps.strings.outputs.build-output-dir }}/benchmark/comparison.txt'
+          '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_*.json'
+          '${{ steps.strings.outputs.build-output-dir }}/benchmark/*.txt'
