@@ -230,8 +230,6 @@ constexpr typename bit_iterator<Iterator>::reference bit_iterator<Iterator>::ope
 }
 // -------------------------------------------------------------------------- //
 
-
-
 // ------------- BIT ITERATOR: INCREMENT AND DECREMENT OPERATORS ------------ //
 // Increments the bit iterator and returns it
 template <class Iterator>

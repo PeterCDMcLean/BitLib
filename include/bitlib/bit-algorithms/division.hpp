@@ -34,9 +34,9 @@ constexpr typename bit_iterator<RandomAccessItOut>::word_type division(
     const U& integral_operand) {
   using word_type = typename bit_iterator<RandomAccessItOut>::word_type;
   auto long_div = [integral_operand](
-      const word_type& remainder,
-      const word_type& word,
-      size_t bits = bitsof<word_type>()) {
+                      const word_type& remainder,
+                      const word_type& word,
+                      size_t bits = bitsof<word_type>()) {
     word_type next_remainder;
     word_type result_word = _divx(remainder, word, static_cast<word_type>(integral_operand), &next_remainder);
     return std::make_pair(result_word, next_remainder);
