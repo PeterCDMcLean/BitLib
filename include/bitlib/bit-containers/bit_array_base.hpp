@@ -230,9 +230,9 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
               [](const word_type& a, const word_type& b) -> word_type { return a | b; });
     return result;
   }
-  constexpr Derived& operator|=(bit_sized_range auto& other) {
+  constexpr Derived& operator|=(const bit_sized_range auto& other) {
     assert(other.size() == size());
-    transform(derived().begin(), derived().end(), other.begin(), derived().begin(),
+    transform(derived().cbegin(), derived().cend(), other.begin(), derived().begin(),
               [](const word_type& a, const word_type& b) -> word_type { return a | b; });
     return derived();
   }
@@ -243,9 +243,9 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
               [](const word_type& a, const word_type& b) -> word_type { return a & b; });
     return result;
   }
-  constexpr Derived& operator&=(bit_sized_range auto& other) {
+  constexpr Derived& operator&=(const bit_sized_range auto& other) {
     assert(other.size() == size());
-    transform(derived().begin(), derived().end(), other.begin(), derived().begin(),
+    transform(derived().cbegin(), derived().cend(), other.begin(), derived().begin(),
               [](const word_type& a, const word_type& b) -> word_type { return a & b; });
     return derived();
   }
@@ -256,9 +256,9 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
               [](const word_type& a, const word_type& b) -> word_type { return a ^ b; });
     return result;
   }
-  constexpr Derived& operator^=(bit_sized_range auto& other) {
+  constexpr Derived& operator^=(const bit_sized_range auto& other) {
     assert(other.size() == size());
-    transform(derived().begin(), derived().end(), other.begin(), derived().begin(),
+    transform(derived().cbegin(), derived().cend(), other.begin(), derived().begin(),
               [](const word_type& a, const word_type& b) -> word_type { return a ^ b; });
     return derived();
   }
@@ -314,21 +314,21 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
   constexpr void from_integral(const U& integral) {
     if constexpr (N == std::dynamic_extent) {
       if ((size() * bitsof<value_type>()) < bitsof<U>()) {
-        Policy::truncation::template from_integral<U, N>(derived(), integral);
+        Policy::truncation::template from_integral<U, N>(integral, derived());
       } else {
         ::bit::copy(&integral, &integral + 1, derived().begin());
       }
       if (bitsof<U>() < (size() * bitsof<value_type>())) {
-        Policy::extension::template from_integral<U, N>(detail::uninitialized, derived(), integral);
+        Policy::extension::template from_integral<U, N>(detail::uninitialized, integral, derived());
       }
     } else {
       if constexpr ((N * bitsof<value_type>()) < bitsof<U>()) {
-        Policy::truncation::template from_integral<U, N>(derived(), integral);
+        Policy::truncation::template from_integral<U, N>(integral, derived());
       } else {
         ::bit::copy(&integral, &integral + 1, derived().begin());
       }
       if constexpr (bitsof<U>() < (N * bitsof<value_type>())) {
-        Policy::extension::template from_integral<U, N>(detail::uninitialized, derived(), integral);
+        Policy::extension::template from_integral<U, N>(detail::uninitialized, integral, derived());
       }
     }
   }

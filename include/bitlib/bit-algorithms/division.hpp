@@ -33,15 +33,15 @@ constexpr typename bit_iterator<RandomAccessItOut>::word_type division(
     const bit_iterator<RandomAccessItOut>& d_first,
     const U& integral_operand) {
   using word_type = typename bit_iterator<RandomAccessItOut>::word_type;
-  word_type remainder = 0;
   auto long_div = [integral_operand](
-      const word_type& remainder,
-      const word_type& word,
-      size_t bits = bitsof<word_type>()) {
+                      const word_type& remainder,
+                      const word_type& word,
+                      size_t bits = bitsof<word_type>()) {
     word_type next_remainder;
     word_type result_word = _divx(remainder, word, static_cast<word_type>(integral_operand), &next_remainder);
     return std::make_pair(result_word, next_remainder);
   };
+  word_type remainder = 0;
   return transform_accumulate_backward(first, last, d_first, d_first + distance(first, last), remainder, long_div, long_div);
 }
 

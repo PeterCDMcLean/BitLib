@@ -362,7 +362,6 @@ template <class T>
 constexpr T _bitswap(T src) noexcept {
   static_assert(binary_digits<T>::value, "");
   using byte_t = unsigned char;
-  constexpr auto ignore = nullptr;
   constexpr T digits = binary_digits<T>::value;
   constexpr unsigned long long int first = 0x80200802ULL;
   constexpr unsigned long long int second = 0x0884422110ULL;
@@ -719,14 +718,14 @@ constexpr T _divx(const T& numerator_hi, const T& numerator_lo, const T& denomin
     shift = std::countl_zero(den);
     den <<= shift;
     numhi <<= shift;
-    numhi |= (numlo >> (-shift & 63)) & (-(int64_t)shift >> 63);
+    numhi |= (numlo >> (-shift & 63)) & (-static_cast<int64_t>(shift) >> 63);
     numlo <<= shift;
 
     // Extract the low digits of the numerator and both digits of the denominator.
-    num1 = (uint32_t)(numlo >> 32);
-    num0 = (uint32_t)(numlo & 0xFFFFFFFFu);
-    den1 = (uint32_t)(den >> 32);
-    den0 = (uint32_t)(den & 0xFFFFFFFFu);
+    num1 = static_cast<uint32_t>(numlo >> 32);
+    num0 = static_cast<uint32_t>(numlo & 0xFFFFFFFFu);
+    den1 = static_cast<uint32_t>(den >> 32);
+    den0 = static_cast<uint32_t>(den & 0xFFFFFFFFu);
 
     // We wish to compute q1 = [n3 n2 n1] / [d1 d0].
     // Estimate q1 as [n3 n2] / [d1], and then correct it.
@@ -738,7 +737,7 @@ constexpr T _divx(const T& numerator_hi, const T& numerator_lo, const T& denomin
     if (c1 > c2) {
       qhat -= (c1 - c2 > den) ? 2 : 1;
     }
-    q1 = (uint32_t)qhat;
+    q1 = static_cast<uint32_t>(qhat);
 
     // Compute the true (partial) remainder.
     rem = numhi * b + num1 - q1 * den;
@@ -752,13 +751,13 @@ constexpr T _divx(const T& numerator_hi, const T& numerator_lo, const T& denomin
     if (c1 > c2) {
       qhat -= (c1 - c2 > den) ? 2 : 1;
     }
-    q0 = (uint32_t)qhat;
+    q0 = static_cast<uint32_t>(qhat);
 
     // Return remainder if requested.
     if (remainder != nullptr) {
       *remainder = (rem * b + num0 - q0 * den) >> shift;
     }
-    return ((uint64_t)q1 << 32) | q0;
+    return (static_cast<uint64_t>(q1) << 32) | q0;
   } else {
     assert(false);
   }
@@ -768,7 +767,6 @@ constexpr T _divx(const T& numerator_hi, const T& numerator_lo, const T& denomin
 // Multiplies src0 and src1 and gets the full result with compiler intrinsics
 template <typename T, typename T128>
 constexpr T _mulx(T src0, T src1, T* hi) noexcept {
-  using wider_t = ceil_integral<bitsof<T>() + bitsof<T>()>;
   constexpr auto digits = bitsof<T>();
   if constexpr (digits > bitsof<uint32_t>()) {
     T128 tmp128 = static_cast<T128>(src0) * static_cast<T128>(src1);
