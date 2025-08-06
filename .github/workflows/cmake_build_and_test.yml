@@ -300,6 +300,7 @@ jobs:
       if: inputs.preset == 'benchmark' && github.event_name == 'pull_request' && steps.base_ref_build.outcome == 'success'
       shell: bash
       run: |
+        python -m pip install -r '${{ steps.strings.outputs.build-output-dir }}/_deps/benchmark-src/tools/requirements.txt'
         python3 '${{ steps.strings.outputs.build-output-dir }}/_deps/benchmark-src/tools/compare.py' benchmarks \
           '${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result.json' \
           '${{ steps.strings.outputs.build-output-dir }}/base_ref_build/benchmark/benchmark_result.json' \
