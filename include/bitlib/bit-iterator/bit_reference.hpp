@@ -276,7 +276,7 @@ constexpr bit_reference<WordRef>& bit_reference<WordRef>::set() const noexcept {
 // Resets the value of the referenced bit to 0
 template <class WordRef>
 constexpr bit_reference<WordRef>& bit_reference<WordRef>::reset() const noexcept {
-  _ref &= ~_mask;
+  _ref &= static_cast<mask_type>(~_mask);
   return const_cast<bit_reference<WordRef>&>(*this);
 }
 

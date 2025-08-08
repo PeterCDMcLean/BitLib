@@ -457,7 +457,7 @@ constexpr exact_floor_integral_t<T> _bitblend(
   static_assert(binary_digits<exact_floor_integral_t<T>>::value, "");
   const promoted_t src0 = static_cast<promoted_t>(src0_);
   const promoted_t src1 = static_cast<promoted_t>(src1_);
-  const promoted_t msk = _mask<promoted_t, _mask_len::unknown, _mask_start::unknown>(len, start);
+  const resolved_t msk = _mask<resolved_t, _mask_len::unknown, _mask_start::unknown>(len, start);
   return static_cast<resolved_t>(src0 ^ ((src0 ^ src1) & msk));
 }
 // -------------------------------------------------------------------------- //
@@ -476,7 +476,6 @@ constexpr void _bitexch(T& src0, T& src1, T msk) noexcept {
 template <class T, class S>
 constexpr void _bitexch(T& src0, T& src1, S start, S len) noexcept {
   static_assert(binary_digits<T>::value, "");
-  constexpr auto digits = binary_digits<T>::value;
   const T msk = _mask<T, _mask_len::unknown, _mask_start::unknown>(len, start);
   src0 = src0 ^ static_cast<T>(src1 & msk);
   src1 = src1 ^ static_cast<T>(src0 & msk);

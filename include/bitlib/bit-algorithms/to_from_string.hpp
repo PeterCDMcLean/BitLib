@@ -299,7 +299,7 @@ constexpr void from_string(
       for (; (bits < bitsof<word_type>()) && (cursor >= 0); cursor--) {
         char c = str_first[cursor];
         // TODO: This should be a policy
-        if (c >= base_from_digits.size()) {
+        if (static_cast<size_t>(c) >= base_from_digits.size()) {
           continue;
         }
         auto digit = base_from_digits[c];
