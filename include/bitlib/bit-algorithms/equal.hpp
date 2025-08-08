@@ -64,7 +64,7 @@ struct equal_impl {
       const size_type partial_bits_to_check = ::std::min(
           remaining_bits_to_check,
           digits - d_first.position());
-      const word_type mask = static_cast<word_type>(_mask<word_type>(partial_bits_to_check) << d_first.position());
+      const word_type mask = _mask<word_type>(partial_bits_to_check, d_first.position());
       const word_type comp = static_cast<word_type>(
           get_word<word_type>(first, partial_bits_to_check)
           << d_first.position());

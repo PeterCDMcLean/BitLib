@@ -105,8 +105,8 @@ bit_iterator<RandomAccessIt> shift_left(
             first.position(),
             digits - first.position());
       } else {
-        const int n1 = digits - middle.position();
-        const int n2 = digits - first.position() - n1;
+        const size_t n1 = digits - middle.position();
+        const size_t n2 = digits - first.position() - n1;
         *first.base() = _bitblend<word_type>(
             *first.base(),
             lsr(*middle.base(), (middle.position() - first.position())),
@@ -114,7 +114,7 @@ bit_iterator<RandomAccessIt> shift_left(
             n1);
         *first.base() = _bitblend<word_type>(
             *first.base(),
-            static_cast<word_type>((*std::next(middle.base())) << (digits - n2)),
+            static_cast<word_type>((*std::next(middle.base()) << (digits - n2))),
             first.position() + n1,
             n2);
       }

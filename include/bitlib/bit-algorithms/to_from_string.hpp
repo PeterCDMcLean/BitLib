@@ -213,7 +213,7 @@ constexpr size_t estimate_length(
     const auto bits = distance(first, last) - skip_leading_bits;
     const auto fixed_point = (bits * LOG2BASE);
     const size_t max_len = (fixed_point >> 16) + ((fixed_point & ((1 << 16) - 1)) != 0);
-    return static_cast<size_t>(std::max(max_len, static_cast<decltype(max_len)>(1)));
+    return static_cast<size_t>(std::max(static_cast<size_t>(1), max_len));
   }
 }
 
@@ -332,14 +332,13 @@ constexpr void from_string(
     }
     using word_type = typename bit_iterator<RandomAccessIt>::word_type;
     std::vector<word_type> vec;
-    size_t store_bits = distance(bit_first, bit_last);
 
     // TODO: template with uninitialized_t
     ::bit::fill(bit_first, bit_last, bit0);  // Clear the bits first
 
     CharIt cursor = str_first;
     while (cursor != str_last) {
-      unsigned char c = (*cursor - '0');
+      unsigned char c = static_cast<unsigned char>(*cursor - '0');
       if (c <= 9) {
         auto overflow_mult = ::bit::multiplication(bit_first, bit_last, word_type{10});
         auto overflow_add = ::bit::addition(bit_first, bit_last, c);
