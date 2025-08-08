@@ -180,8 +180,6 @@ TEST(BitIteratorAdapter_BigToSmall, OperatorSubscript) {
   // Negative index: it[ -1 ] => moves to previous base word;
   // but since there's no previous word, behavior is UB. We skip testing negative here.
 
-  // If we do it + 4, then subscript( it + 4 )[0] should be same as it[4]
-  auto it_shift = it + 4;  // rolls into next base (out-of-bounds, but for test allocate two words)
   // For safety, create two‐element array:
   uint32_t arr2[2] = {0x01020304u, 0x05060708u};
   Adapter8_32 it2(arr2, 0);

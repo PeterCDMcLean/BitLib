@@ -380,7 +380,7 @@ constexpr std::vector<uintptr_t> from_string(
       for (; (bits < bitsof<uintptr_t>()) && (last >= first); last--) {
         char c = *last;
         // TODO: This should be a policy
-        if (c >= base_from_digits.size()) {
+        if (static_cast<size_t>(c) >= base_from_digits.size()) {
           continue;
         }
         auto digit = base_from_digits[c];
