@@ -77,7 +77,7 @@
       "name": "warnings_base",
       "hidden": true,
       "environment": {
-        "TARGET_FLAGS": "-Wall -Wextra -Wpedantic -Wold-style-cast -Wconversion -Wshadow -Wno-error"
+        "TARGET_FLAGS": "-Wall -Wextra -Wpedantic -Wshadow -Werror"
       }
     },
     {
