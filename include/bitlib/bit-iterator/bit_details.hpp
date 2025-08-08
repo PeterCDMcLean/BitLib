@@ -435,17 +435,17 @@ template <typename T, typename U>
 constexpr exact_floor_integral_t<T> _bitblend(
     const T src0_,
     const U src1_,
-    const exact_floor_integral_t<T> start,
-    const exact_floor_integral_t<T> len) noexcept
+    const unsigned int start,
+    const unsigned int len) noexcept
   requires(std::is_same_v<exact_floor_integral_t<T>, exact_floor_integral_t<U>>)
 {
   using resolved_t = exact_floor_integral_t<T>;
   using promoted_t = std::conditional_t<bitsof<resolved_t>() < bitsof<int>(), int, resolved_t>;
   static_assert(binary_digits<exact_floor_integral_t<T>>::value, "");
-  constexpr resolved_t digits = static_cast<resolved_t>(bitsof<resolved_t>());
+  constexpr unsigned int digits = static_cast<unsigned int>(bitsof<resolved_t>());
   const promoted_t src0 = static_cast<promoted_t>(src0_);
   const promoted_t src1 = static_cast<promoted_t>(src1_);
-  const promoted_t msk = _mask<promoted_t, _mask_len::unknown>(len) << static_cast<promoted_t>(start);
+  const promoted_t msk = _mask<promoted_t, _mask_len::unknown>(len) << start;
   return static_cast<resolved_t>(src0 ^ ((src0 ^ src1) & (msk * (start < digits))));
 }
 // -------------------------------------------------------------------------- //
