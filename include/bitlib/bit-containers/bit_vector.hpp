@@ -42,7 +42,7 @@ class bit_vector {
 
   // TODO are privates always inlined?
   // @brief Get the number of words needed to represet num_bits bits
-  constexpr uint64_t word_count(unsigned int num_bits) {
+  constexpr uint64_t word_count(size_t num_bits) {
     return ((num_bits + digits - 1) / digits);
   }
 

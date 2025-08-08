@@ -227,11 +227,11 @@ constexpr void _bitexch(T& src0, T& src1, S start0, S start1, S len) noexcept;
 
 // Double precision shift left
 template <class T>
-constexpr T _shld(T dst, T src, T cnt) noexcept;
+constexpr T _shld(T dst, T src, size_t cnt) noexcept;
 
 // Double precision shift right
 template <class T>
-constexpr T _shrd(T dst, T src, T cnt) noexcept;
+constexpr T _shrd(T dst, T src, size_t cnt) noexcept;
 
 // Multiword multiply
 template <typename T, typename T128 = decltype(__uint128_t(T()))>
@@ -524,9 +524,9 @@ constexpr void _bitexch(T& src0, T& src1, S start0, S start1, S len) noexcept
 // --- IMPLEMENTATION DETAILS: INSTRUCTIONS: DOUBLE PRECISION SHIFT LEFT ---- //
 // Left shifts dst by cnt bits, filling the lsbs of dst by the msbs of src
 template <class T>
-constexpr T _shld(T dst, T src, T cnt) noexcept {
+constexpr T _shld(T dst, T src, size_t cnt) noexcept {
   static_assert(binary_digits<T>::value, "");
-  constexpr T digits = binary_digits<T>::value;
+  constexpr size_t digits = binary_digits<T>::value;
   if (cnt < digits) {
     dst = lsl(dst, cnt) | (lsr(src, (digits - cnt)));
   } else {
@@ -539,9 +539,9 @@ constexpr T _shld(T dst, T src, T cnt) noexcept {
 // --- IMPLEMENTATION DETAILS: INSTRUCTIONS: DOUBLE PRECISION SHIFT RIGHT --- //
 // Right shifts dst by cnt bits, filling the msbs of dst by the lsbs of src
 template <class T>
-constexpr T _shrd(T dst, T src, T cnt) noexcept {
+constexpr T _shrd(T dst, T src, size_t cnt) noexcept {
   static_assert(binary_digits<T>::value, "");
-  constexpr T digits = binary_digits<T>::value;
+  constexpr size_t digits = binary_digits<T>::value;
   if (cnt < digits) {
     dst = (lsr(dst, cnt)) | lsl(src, (digits - cnt));
   } else {

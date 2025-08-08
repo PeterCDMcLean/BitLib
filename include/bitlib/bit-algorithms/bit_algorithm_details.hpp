@@ -104,10 +104,10 @@ constexpr bool is_within(
 template <class T, class InputIt>
 T get_word(const bit_iterator<InputIt>& first, size_t len = binary_digits<T>::value) {
   using native_word_type = typename bit_iterator<InputIt>::word_type;
-  constexpr T digits = binary_digits<native_word_type>::value;
+  constexpr size_t digits = binary_digits<native_word_type>::value;
   assert(digits >= len);
   using non_const_T = std::remove_cvref_t<T>;
-  non_const_T offset = digits - first.position();
+  size_t offset = digits - first.position();
   non_const_T ret_word = lsr<T>(*first.base(), first.position());
 
   // We've already assigned enough bits
@@ -210,16 +210,14 @@ T get_masked_word(const bit_iterator<InputIt>& first, size_t len = binary_digits
     //return ret_word;
 //}
 
-
 // Writes len bits from src beginning at dstIt
 template <class src_type, class OutputIt>
 void write_word(src_type src, bit_iterator<OutputIt> dst_bit_it,
-        src_type len=binary_digits<src_type>::value
-        )
-{
+                size_t len = binary_digits<src_type>::value) {
   using dst_type = typename bit_iterator<OutputIt>::word_type;
-  constexpr dst_type dst_digits = binary_digits<dst_type>::value;
-  constexpr dst_type src_digits = binary_digits<src_type>::value;
+  using size_type = typename bit_iterator<OutputIt>::size_type;
+  constexpr size_type dst_digits = binary_digits<dst_type>::value;
+  constexpr size_type src_digits = binary_digits<src_type>::value;
 
   if constexpr (dst_digits >= src_digits) {
     if (dst_bit_it.position() == 0 && len == dst_digits) {
@@ -268,25 +266,21 @@ void write_word(src_type src, bit_iterator<OutputIt> dst_bit_it,
           _mask<dst_type>(len));
     }
   }
-    return;
+  return;
 }
-
 
 // Shifts the range [first, last) to the left by n, filling the empty
 // bits with 0
 template <class RandomAccessIt>
 RandomAccessIt word_shift_left(RandomAccessIt first,
-                          RandomAccessIt last,
-                          typename RandomAccessIt::difference_type n
-)
-{
-    if (n <= 0) return last;
-    if (n >= distance(first, last)) return first;
-    RandomAccessIt mid = first + n;
-    auto ret = std::move(mid, last, first);
-    return ret;
+                               RandomAccessIt last,
+                               typename RandomAccessIt::difference_type n) {
+  if (n <= 0) return last;
+  if (n >= distance(first, last)) return first;
+  RandomAccessIt mid = first + n;
+  auto ret = std::move(mid, last, first);
+  return ret;
 }
-
 
 // Shifts the range [first, right) to the left by n, filling the empty
 // bits with 0
@@ -417,9 +411,7 @@ typename bit_iterator<It>::word_type _padded_read(bit_iterator<It> first,
 }
 // -------------------------------------------------------------------------- //
 
-
-
 // ========================================================================== //
 }  // namespace bit
-#endif // _BIT_ALGORITHM_DETAILS_HPP_INCLUDED
+#endif  // _BIT_ALGORITHM_DETAILS_HPP_INCLUDED
 // ========================================================================== //

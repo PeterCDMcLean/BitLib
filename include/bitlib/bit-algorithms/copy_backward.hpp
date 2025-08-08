@@ -100,5 +100,5 @@ constexpr bit_iterator<RandomAccessIt2> copy_backward(bit_iterator<RandomAccessI
 // ========================================================================== //
 }  // namespace bit
 
-#endif // _COPY_BACKWARD_HPP_INCLUDED
+#endif  // _COPY_BACKWARD_HPP_INCLUDED
 // ========================================================================== //
