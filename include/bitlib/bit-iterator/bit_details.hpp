@@ -455,11 +455,10 @@ constexpr exact_floor_integral_t<T> _bitblend(
   using resolved_t = exact_floor_integral_t<T>;
   using promoted_t = std::conditional_t<bitsof<resolved_t>() < bitsof<int>(), int, resolved_t>;
   static_assert(binary_digits<exact_floor_integral_t<T>>::value, "");
-  constexpr size_t digits = bitsof<resolved_t>();
   const promoted_t src0 = static_cast<promoted_t>(src0_);
   const promoted_t src1 = static_cast<promoted_t>(src1_);
   const promoted_t msk = _mask<promoted_t, _mask_len::unknown, _mask_start::unknown>(len, start);
-  return (src0 ^ ((src0 ^ src1) & msk));
+  return static_cast<resolved_t>(src0 ^ ((src0 ^ src1) & msk));
 }
 // -------------------------------------------------------------------------- //
 
