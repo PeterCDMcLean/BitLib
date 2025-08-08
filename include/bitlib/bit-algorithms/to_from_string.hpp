@@ -472,4 +472,4 @@ constexpr void from_string(
 
 }  // namespace bit
 
-#endif // _BIT_TO_STRING_HPP_INCLUDED
+#endif  // _BIT_TO_STRING_HPP_INCLUDED
