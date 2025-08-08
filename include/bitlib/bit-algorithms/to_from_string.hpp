@@ -161,7 +161,7 @@ constexpr CharIt to_string(
               return std::make_pair(false, cursor);
             }
             *(--cursor) = base_digits[word & (meta.base - 1)];
-            word >>= base_bits;
+            word >>= static_cast<decltype(word)>(base_bits);
           }
           return std::make_pair(cursor != str_first, cursor);
         });

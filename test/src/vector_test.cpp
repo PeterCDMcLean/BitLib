@@ -149,7 +149,7 @@ TYPED_TEST(VectorTest, StringConstructor) {
       std::string rand_bs(strlen, 0);
       this->empty_vec_bool.clear();
       for (auto& pos : rand_bs) {
-        pos = generate_random_number('0', '1');
+        pos = static_cast<char>(generate_random_number('0', '1'));
         this->empty_vec_bool.push_back(pos == '1');
       }
       this->empty_vec = bit::bit_vector<WordType>(rand_bs);

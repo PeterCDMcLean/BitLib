@@ -101,7 +101,7 @@ count(
         }
       }
       if (last.position() != 0) {
-        word_type last_value = *last.base() << (digits - last.position());
+        word_type last_value = static_cast<word_type>(*last.base() << (digits - last.position()));
         result += std::popcount(static_cast<std::make_unsigned_t<word_type>>(last_value));
       }
       // Computation when bits belong to the same underlying word
