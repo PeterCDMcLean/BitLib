@@ -156,8 +156,7 @@ constexpr CharIt to_string(
         policy::AccumulateNoInitialSubword{},
         bit_first, bit_last, str_last,
         [meta, base_bits, base_digits, str_first](CharIt cursor, auto word, const size_t bits = bitsof<decltype(word)>()) {
-          const int characters = ((bits + base_bits - 1) / base_bits);
-          for (int i = characters - 1; i >= 0; i--) {
+          for (size_t i = 0; i < ((bits + base_bits - 1) / base_bits); i++) {
             if (cursor == str_first) {
               return std::make_pair(false, cursor);
             }
@@ -203,17 +202,17 @@ constexpr size_t estimate_length(
   if (std::has_single_bit(base)) {
     const auto base_bits = std::bit_width(base - 1);
 
-    int skip_leading_bits = str_sign_extend_zeros ? 0 : count_msb(first, last, bit0);
+    size_t skip_leading_bits = str_sign_extend_zeros ? 0 : count_msb(first, last, bit0);
 
-    int str_len = (distance(first, last) - skip_leading_bits);
+    size_t str_len = (distance(first, last) - skip_leading_bits);
     str_len = (str_len + base_bits - 1) / base_bits;  // Round up to nearest base digit
-    return static_cast<size_t>(std::max(1, str_len));
+    return static_cast<size_t>(std::max(static_cast<size_t>(1), str_len));
   } else {
     const uint32_t LOG2BASE = static_cast<uint32_t>(std::ceil(static_cast<float>(1 << 16) / std::logbf(static_cast<float>(base))));
-    int skip_leading_bits = str_sign_extend_zeros ? 0 : count_msb(first, last, bit0);
+    size_t skip_leading_bits = str_sign_extend_zeros ? 0 : count_msb(first, last, bit0);
     const auto bits = distance(first, last) - skip_leading_bits;
     const auto fixed_point = (bits * LOG2BASE);
-    const auto max_len = (fixed_point >> 16) + ((fixed_point & ((1 << 16) - 1)) != 0);
+    const size_t max_len = (fixed_point >> 16) + ((fixed_point & ((1 << 16) - 1)) != 0);
     return static_cast<size_t>(std::max(max_len, static_cast<decltype(max_len)>(1)));
   }
 }

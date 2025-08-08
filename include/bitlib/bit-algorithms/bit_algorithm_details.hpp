@@ -145,71 +145,6 @@ T get_masked_word(const bit_iterator<InputIt>& first, size_t len = binary_digits
   return get_word<T>(first, len) & _mask<T>(len);
 }
 
-// Get next len bits beginning at start and store them in a word of type T
-// If we reach `last` before we get len bits, break and return the current word
-// bits_read will store the number of bits that we read.
-//template <class T, class InputIt>
-//T get_word(bit_iterator<InputIt> first, bit_iterator<InputIt> last,
-        //T& bits_read, T len=binary_digits<T>::value
-        //)
-//{
-    //using native_word_type = typename bit_iterator<InputIt>::word_type;
-    //constexpr T native_digits = binary_digits<native_word_type>::value;
-    //constexpr T ret_digits = binary_digits<T>::value;
-    //assert(ret_digits >= len);
-    //bits_read = native_digits - first.position();
-    //T ret_word = *first.base() >> first.position();
-
-    //// TODO vincent mentioned that we should aim for only 1 return function
-    //// per function. However I'm not sure how that can be accomplished here
-    //// without suffering a minor performance loss
-
-    //// We have reached the last iterator
-    //if (first.base() == last.base()) {
-        //bits_read -= (native_digits - last.position());
-        //return ret_word;
-    //}
-    //// We've already assigned enough bits
-    //if (len <= bits_read) {
-        //return ret_word;
-    //}
-
-    //InputIt it = std::next(first.base());
-    //len -= bits_read;
-    //// Fill up ret_word starting at bit [bits_read] using it
-    //// TODO define a mask and use the _bitblend that takes in the extra mask
-    //while (len > native_digits && it != last.base()) {
-        //ret_word = _bitblend(
-                //ret_word,
-                //static_cast<T>(static_cast<T>(*it) << bits_read),
-                //bits_read,
-                //native_digits
-        //);
-        //++it;
-        //bits_read += native_digits;
-        //len -= native_digits;
-    //}
-
-    //// Assign remaining len bits of last word
-    //if (it == last.base()) {
-        //bits_read -= (native_digits - last.position());
-        //ret_word = _bitblend(
-                //ret_word,
-                //static_cast<T>(static_cast<T>(*it) << bits_read),
-                //bits_read,
-                //last.position()
-        //);
-    //} else {
-        //ret_word = _bitblend(
-                //ret_word,
-                //static_cast<T>(static_cast<T>(*it) << bits_read),
-                //bits_read,
-                //len
-        //);
-    //}
-    //return ret_word;
-//}
-
 // Writes len bits from src beginning at dstIt
 template <class src_type, class OutputIt>
 void write_word(src_type src, bit_iterator<OutputIt> dst_bit_it,
@@ -227,7 +162,7 @@ void write_word(src_type src, bit_iterator<OutputIt> dst_bit_it,
           *dst_bit_it.base(),
           static_cast<src_type>(src << dst_bit_it.position()),
           dst_bit_it.position(),
-          std::min<src_type>(
+          std::min<size_type>(
               dst_digits - dst_bit_it.position(),
               len));
       if (len > dst_digits - dst_bit_it.position()) {
@@ -275,8 +210,12 @@ template <class RandomAccessIt>
 RandomAccessIt word_shift_left(RandomAccessIt first,
                                RandomAccessIt last,
                                typename RandomAccessIt::difference_type n) {
-  if (n <= 0) return last;
-  if (n >= distance(first, last)) return first;
+  if (n <= 0) {
+    return last;
+  }
+  if (n >= distance(first, last)) {
+    return first;
+  }
   RandomAccessIt mid = first + n;
   auto ret = std::move(mid, last, first);
   return ret;
