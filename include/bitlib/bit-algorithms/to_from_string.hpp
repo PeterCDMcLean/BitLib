@@ -318,11 +318,13 @@ constexpr void from_string(
       } else if ((store_bits > bits) && (cursor < 0)) {
         const bit_iterator<word_type*> p_integral(&work);
         bit_it = ::bit::copy(p_integral, p_integral + bits, bit_it);
-        Policy::extension::template from_integral<word_type, std::dynamic_extent, RandomAccessIt>(
-            work, bit_it, bit_last);
+        // TODO: policy
+        ::bit::fill(bit_it, bit_last, meta.is_signed ? bit_it[-1] : bit0);  // Clear the rest
+        return;
       } else if (store_bits >= bits) {
         const bit_iterator<word_type*> p_integral(&work);
         bit_it = ::bit::copy(p_integral, p_integral + bits, bit_it);
+        store_bits -= bits;
       }
     }
   } else {

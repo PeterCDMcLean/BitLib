@@ -888,6 +888,11 @@ struct uninitialized_t {
 };
 inline constexpr uninitialized_t uninitialized{};
 
+struct initialized_t {
+  explicit initialized_t() = default;
+};
+inline constexpr initialized_t initialized{};
+
 template <typename size_type, bool resizeable, std::size_t Extent>
 struct container_size_storage {
   constexpr size_type size() const noexcept {
