@@ -246,8 +246,8 @@ bit_iterator<RandomAccessIt> shift_right(
         static_cast<word_type>(
             (*first.base() & (static_cast<word_type>(-1) << first.position()))
             << n),
-        static_cast<word_type>(first.position()),
-        static_cast<word_type>((is_last_aligned ? digits : last.position()) - first.position()));
+        first.position(),
+        ((is_last_aligned ? digits : last.position()) - first.position()));
     return first + n;
   }
 

@@ -89,8 +89,8 @@ struct copy_impl {
           static_cast<word_type>(
               get_word<word_type>(first, partial_bits_to_copy)
               << static_cast<word_type>(d_first.position())),
-          static_cast<word_type>(d_first.position()),
-          static_cast<word_type>(partial_bits_to_copy));
+          d_first.position(),
+          partial_bits_to_copy);
       remaining_bits_to_copy -= partial_bits_to_copy;
       advance(first, partial_bits_to_copy);
       it++;

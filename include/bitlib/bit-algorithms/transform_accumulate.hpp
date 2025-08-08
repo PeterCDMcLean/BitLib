@@ -58,8 +58,8 @@ constexpr auto transform_accumulate(
         *d_it = _bitblend(
             *d_it,
             word,
-            static_cast<word_type>(d_first.position()),
-            static_cast<word_type>(partial_bits_to_op));
+            d_first.position(),
+            partial_bits_to_op);
         total_bits_to_op -= partial_bits_to_op;
         advance(first, partial_bits_to_op);
         advance(d_it, 1);
@@ -77,8 +77,8 @@ constexpr auto transform_accumulate(
         *d_it = _bitblend(
             *d_it,
             word,
-            static_cast<word_type>(d_first.position()),
-            static_cast<word_type>(partial_bits_to_op));
+            d_first.position(),
+            partial_bits_to_op);
         total_bits_to_op -= partial_bits_to_op;
       }
     }
