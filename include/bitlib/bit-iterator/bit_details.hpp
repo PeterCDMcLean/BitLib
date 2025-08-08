@@ -250,7 +250,7 @@ Logical shift right
 template <std::integral T, typename size_type = size_t>
 constexpr T lsr(const T val, const size_type shift) {
 #ifdef BITLIB_DETECT_UNDEFINED_SHIFT
-  assert(shift < bitsof<T>());
+  assert(static_cast<size_t>(shift) < bitsof<T>());
 #endif
   return static_cast<T>(static_cast<std::make_unsigned_t<T>>(val) >> shift);
 }
@@ -439,12 +439,14 @@ constexpr exact_floor_integral_t<T> _bitblend(
     const exact_floor_integral_t<T> len) noexcept
   requires(std::is_same_v<exact_floor_integral_t<T>, exact_floor_integral_t<U>>)
 {
+  using resolved_t = exact_floor_integral_t<T>;
+  using promoted_t = std::conditional_t<bitsof<resolved_t>() < bitsof<int>(), int, resolved_t>;
   static_assert(binary_digits<exact_floor_integral_t<T>>::value, "");
-  constexpr exact_floor_integral_t<T> digits = bitsof<exact_floor_integral_t<T>>();
-  const exact_floor_integral_t<T> src0 = static_cast<exact_floor_integral_t<T>>(src0_);
-  const exact_floor_integral_t<U> src1 = static_cast<exact_floor_integral_t<U>>(src1_);
-  const exact_floor_integral_t<T> msk = _mask<exact_floor_integral_t<T>, _mask_len::unknown>(len) << start;
-  return src0 ^ ((src0 ^ src1) & msk * (start < digits));
+  constexpr resolved_t digits = static_cast<resolved_t>(bitsof<resolved_t>());
+  const promoted_t src0 = static_cast<promoted_t>(src0_);
+  const promoted_t src1 = static_cast<promoted_t>(src1_);
+  const promoted_t msk = _mask<promoted_t, _mask_len::unknown>(len) << static_cast<promoted_t>(start);
+  return static_cast<resolved_t>(src0 ^ ((src0 ^ src1) & (msk * (start < digits))));
 }
 // -------------------------------------------------------------------------- //
 
