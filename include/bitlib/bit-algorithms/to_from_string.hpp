@@ -1,7 +1,7 @@
-// ================================= array_REF =================================== //
+// ============================= to_from_string ============================= //
 // Project:     The Experimental Bit Algorithms Library
-// \file        to_string.hpp
-// Description: Implementation of array_ref
+// \file        to_from_string.hpp
+// Description: Implementation of to_string and from_string
 // Creator:     Vincent Reverdy
 // Contributor: Peter McLean [2025]
 // License:     BSD 3-Clause License
@@ -275,7 +275,7 @@ constexpr CharIt to_string(
   return to_string(bits, str_first, str_last, meta);
 }
 
-template <typename CharIt, typename RandomAccessIt, typename Policy = policy::typical<typename RandomAccessIt::value_type>>
+template <typename CharIt, typename RandomAccessIt, typename Policy = policy::typical<typename std::iterator_traits<RandomAccessIt>::value_type>>
 constexpr void from_string(
     const CharIt str_first, const CharIt str_last,
     const bit_iterator<RandomAccessIt>& bit_first, const bit_iterator<RandomAccessIt>& bit_last,
@@ -356,7 +356,7 @@ constexpr void from_string(
 template <string::metadata_t meta = string::typical(),
           typename CharIt,
           typename RandomAccessIt,
-          typename Policy = policy::typical<typename RandomAccessIt::value_type>>
+          typename Policy = policy::typical<typename std::iterator_traits<RandomAccessIt>::value_type>>
 constexpr void from_string(
     const CharIt str_first, const CharIt str_last,
     const bit_iterator<RandomAccessIt>& bit_first, const bit_iterator<RandomAccessIt>& bit_last) {
@@ -410,7 +410,7 @@ constexpr std::vector<uintptr_t> from_string(
   return from_string(first, last, meta);
 }
 
-template <string::metadata_t meta = string::typical(), typename RandomAccessIt, typename Policy = policy::typical<typename RandomAccessIt::value_type>>
+template <string::metadata_t meta = string::typical(), typename RandomAccessIt, typename Policy = policy::typical<typename std::iterator_traits<RandomAccessIt>::value_type>>
 constexpr void from_string(
     const std::string& str,
     const bit_iterator<RandomAccessIt>& bit_first, const bit_iterator<RandomAccessIt>& bit_last) {
@@ -418,7 +418,7 @@ constexpr void from_string(
   from_string<meta, RandomAccessIt, Policy>(str.c_str(), str.c_str() + str.length(), bit_first, bit_last);
 }
 
-template <string::metadata_t meta = string::typical(), bit_range RangeT, typename Policy = policy::typical<typename std::ranges::iterator_t<RangeT>::value_type>>
+template <string::metadata_t meta = string::typical(), bit_range RangeT, typename Policy = policy::typical<typename std::ranges::iterator_t<RangeT>::word_type>>
 constexpr void from_string(
     const std::string& str,
     RangeT&& bits) {
@@ -427,7 +427,7 @@ constexpr void from_string(
   from_string<meta, std::string::const_iterator, RandomAccessIt, Policy>(str.begin(), str.end(), bits.begin(), bits.end());
 }
 
-template <typename RandomAccessIt, typename Policy = policy::typical<typename RandomAccessIt::value_type>>
+template <typename RandomAccessIt, typename Policy = policy::typical<typename std::iterator_traits<RandomAccessIt>::value_type>>
 constexpr void from_string(
     const std::string& str,
     const bit_iterator<RandomAccessIt>& bit_first, const bit_iterator<RandomAccessIt>& bit_last,
@@ -438,7 +438,7 @@ constexpr void from_string(
       meta);
 }
 
-template <bit_range RangeT, typename Policy = policy::typical<typename std::ranges::iterator_t<RangeT>::value_type>>
+template <bit_range RangeT, typename Policy = policy::typical<typename std::ranges::iterator_t<RangeT>::word_type>>
 constexpr void from_string(
     const std::string& str,
     RangeT&& bits,
@@ -451,6 +451,25 @@ constexpr void from_string(
       meta);
 }
 
+template <typename CharIt, bit_range RangeT, typename Policy = policy::typical<typename std::ranges::iterator_t<RangeT>::word_type>>
+constexpr void from_string(
+    const CharIt first, const CharIt last,
+    RangeT&& bits,
+    string::metadata_t meta = string::typical()) {
+  using range_iterator_t = std::ranges::iterator_t<RangeT>;
+  using RandomAccessIt = typename range_iterator_t::iterator_type;
+  from_string<CharIt, RandomAccessIt, Policy>(first, last, bits.begin(), bits.end(), meta);
+}
+
+template <string::metadata_t meta = string::typical(), typename CharIt, bit_range RangeT, typename Policy = policy::typical<typename std::ranges::iterator_t<RangeT>::word_type>>
+constexpr void from_string(
+    const CharIt first, const CharIt last,
+    RangeT&& bits) {
+  using range_iterator_t = std::ranges::iterator_t<RangeT>;
+  using RandomAccessIt = typename range_iterator_t::iterator_type;
+  return from_string<CharIt, RandomAccessIt, Policy>(first, last, bits.begin(), bits.end(), meta);
+}
+
 }  // namespace bit
 
-#endif // _BIT_TO_STRING_HPP_INCLUDED
+#endif  // _BIT_TO_STRING_HPP_INCLUDED
