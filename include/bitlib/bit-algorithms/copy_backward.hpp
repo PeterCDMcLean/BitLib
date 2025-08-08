@@ -97,8 +97,6 @@ constexpr bit_iterator<RandomAccessIt2> copy_backward(bit_iterator<RandomAccessI
     return d_last - total_bits_to_copy;
 }
 
-
-
 // ========================================================================== //
 } // namespace bit
 

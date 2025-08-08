@@ -22,8 +22,6 @@
 namespace bit {
 // ========================================================================== //
 
-
-
 // -------------------------- Iterator Algorithms --------------------------- //
 // Returns the number of increments needed to get to last from first.
 // May be negative if last comes before first (Only when input is RAI)
@@ -59,8 +57,6 @@ bit_iterator<ForwardIt> next(
 }
 
 // -------------------------------------------------------------------------- //
-
-
 
 // --------------------------- Utility Functions ---------------------------- //
 
