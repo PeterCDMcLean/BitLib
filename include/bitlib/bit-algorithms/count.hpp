@@ -100,14 +100,17 @@ count(
           result += popcnt(&*it, words);
         }
       }
-        if (last.position() != 0) {
-            word_type last_value = *last.base() << (digits - last.position());
-            result += std::popcount(static_cast<std::make_unsigned_t<word_type>>(last_value));
-        }
-    // Computation when bits belong to the same underlying word
+      if (last.position() != 0) {
+        word_type last_value = static_cast<word_type>(*last.base() << (digits - last.position()));
+        result += std::popcount(static_cast<std::make_unsigned_t<word_type>>(last_value));
+      }
+      // Computation when bits belong to the same underlying word
     } else {
       result = std::popcount(static_cast<std::make_unsigned_t<word_type>>(
-          _bextr<word_type>(*first.base(), first.position(), last.position() - first.position())));
+          _bextr<word_type>(
+              *first.base(),
+              first.position(),
+              last.position() - first.position())));
     }
 
     // Negates when the number of zero bits is requested

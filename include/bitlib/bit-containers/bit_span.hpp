@@ -335,7 +335,8 @@ template <typename WordType, std::size_t Extent, typename Policy>
 constexpr bit_span<WordType, std::dynamic_extent, Policy> bit_span<WordType, Extent, Policy>::last(size_type offset) const noexcept
   requires(Extent == std::dynamic_extent)
 {
+  return bit_span<WordType, Extent, Policy>(begin() + size() - offset);
 }
 
-} // namespace bit
+}  // namespace bit
 #endif

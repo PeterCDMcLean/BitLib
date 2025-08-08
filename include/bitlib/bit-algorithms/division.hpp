@@ -37,6 +37,7 @@ constexpr typename bit_iterator<RandomAccessItOut>::word_type division(
                       const word_type& remainder,
                       const word_type& word,
                       size_t bits = bitsof<word_type>()) {
+    static_cast<void>(bits);  // Suppress unused variable warning
     word_type next_remainder;
     word_type result_word = _divx(remainder, word, static_cast<word_type>(integral_operand), &next_remainder);
     return std::make_pair(result_word, next_remainder);

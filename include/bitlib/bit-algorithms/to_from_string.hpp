@@ -156,13 +156,12 @@ constexpr CharIt to_string(
         policy::AccumulateNoInitialSubword{},
         bit_first, bit_last, str_last,
         [meta, base_bits, base_digits, str_first](CharIt cursor, auto word, const size_t bits = bitsof<decltype(word)>()) {
-          const int characters = ((bits + base_bits - 1) / base_bits);
-          for (int i = characters - 1; i >= 0; i--) {
+          for (size_t i = 0; i < ((bits + base_bits - 1) / base_bits); i++) {
             if (cursor == str_first) {
               return std::make_pair(false, cursor);
             }
             *(--cursor) = base_digits[word & (meta.base - 1)];
-            word >>= base_bits;
+            word >>= static_cast<decltype(word)>(base_bits);
           }
           return std::make_pair(cursor != str_first, cursor);
         });
@@ -203,18 +202,18 @@ constexpr size_t estimate_length(
   if (std::has_single_bit(base)) {
     const auto base_bits = std::bit_width(base - 1);
 
-    int skip_leading_bits = str_sign_extend_zeros ? 0 : count_msb(first, last, bit0);
+    size_t skip_leading_bits = str_sign_extend_zeros ? 0 : count_msb(first, last, bit0);
 
-    int str_len = (distance(first, last) - skip_leading_bits);
+    size_t str_len = (distance(first, last) - skip_leading_bits);
     str_len = (str_len + base_bits - 1) / base_bits;  // Round up to nearest base digit
-    return static_cast<size_t>(std::max(1, str_len));
+    return static_cast<size_t>(std::max(static_cast<size_t>(1), str_len));
   } else {
     const uint32_t LOG2BASE = static_cast<uint32_t>(std::ceil(static_cast<float>(1 << 16) / std::logbf(static_cast<float>(base))));
-    int skip_leading_bits = str_sign_extend_zeros ? 0 : count_msb(first, last, bit0);
+    size_t skip_leading_bits = str_sign_extend_zeros ? 0 : count_msb(first, last, bit0);
     const auto bits = distance(first, last) - skip_leading_bits;
     const auto fixed_point = (bits * LOG2BASE);
-    const auto max_len = (fixed_point >> 16) + ((fixed_point & ((1 << 16) - 1)) != 0);
-    return static_cast<size_t>(std::max(max_len, static_cast<decltype(max_len)>(1)));
+    const size_t max_len = (fixed_point >> 16) + ((fixed_point & ((1 << 16) - 1)) != 0);
+    return static_cast<size_t>(std::max(static_cast<size_t>(1), max_len));
   }
 }
 
@@ -300,7 +299,7 @@ constexpr void from_string(
       for (; (bits < bitsof<word_type>()) && (cursor >= 0); cursor--) {
         char c = str_first[cursor];
         // TODO: This should be a policy
-        if (c >= base_from_digits.size()) {
+        if (static_cast<size_t>(c) >= base_from_digits.size()) {
           continue;
         }
         auto digit = base_from_digits[c];
@@ -318,11 +317,13 @@ constexpr void from_string(
       } else if ((store_bits > bits) && (cursor < 0)) {
         const bit_iterator<word_type*> p_integral(&work);
         bit_it = ::bit::copy(p_integral, p_integral + bits, bit_it);
-        Policy::extension::template from_integral<word_type, std::dynamic_extent, RandomAccessIt>(
-            work, bit_it, bit_last);
+        // TODO: policy
+        ::bit::fill(bit_it, bit_last, meta.is_signed ? bit_it[-1] : bit0);  // Clear the rest
+        return;
       } else if (store_bits >= bits) {
         const bit_iterator<word_type*> p_integral(&work);
         bit_it = ::bit::copy(p_integral, p_integral + bits, bit_it);
+        store_bits -= bits;
       }
     }
   } else {
@@ -331,14 +332,13 @@ constexpr void from_string(
     }
     using word_type = typename bit_iterator<RandomAccessIt>::word_type;
     std::vector<word_type> vec;
-    size_t store_bits = distance(bit_first, bit_last);
 
     // TODO: template with uninitialized_t
     ::bit::fill(bit_first, bit_last, bit0);  // Clear the bits first
 
     CharIt cursor = str_first;
     while (cursor != str_last) {
-      unsigned char c = (*cursor - '0');
+      unsigned char c = static_cast<unsigned char>(*cursor - '0');
       if (c <= 9) {
         auto overflow_mult = ::bit::multiplication(bit_first, bit_last, word_type{10});
         auto overflow_add = ::bit::addition(bit_first, bit_last, c);
@@ -380,7 +380,7 @@ constexpr std::vector<uintptr_t> from_string(
       for (; (bits < bitsof<uintptr_t>()) && (last >= first); last--) {
         char c = *last;
         // TODO: This should be a policy
-        if (c >= base_from_digits.size()) {
+        if (static_cast<size_t>(c) >= base_from_digits.size()) {
           continue;
         }
         auto digit = base_from_digits[c];

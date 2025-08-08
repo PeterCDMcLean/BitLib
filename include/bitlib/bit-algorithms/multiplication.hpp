@@ -35,7 +35,7 @@ constexpr typename bit_iterator<It>::word_type multiplication(
             [&carry, integral_operand](auto word, auto bits = bitsof<word_type>()) -> word_type {
               word_type result_word = (carry + _mulx(static_cast<word_type>(integral_operand), word, &carry));
               if (bits < bitsof<word_type>()) {
-                carry = (carry << (bitsof<word_type>() - bits)) | lsr(result_word, bits);
+                carry = static_cast<word_type>((carry << (bitsof<word_type>() - bits)) | lsr(result_word, bits));
               }
               return result_word;
             });

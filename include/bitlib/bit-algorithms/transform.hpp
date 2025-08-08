@@ -191,8 +191,8 @@ constexpr bit_iterator<RandomAccessItOut> transform(
             static_cast<word_type>(
                 get_masked_word<word_type>(first2, partial_bits_to_op)
                 << static_cast<word_type>(d_first.position()))),
-        static_cast<word_type>(d_first.position()),
-        static_cast<word_type>(partial_bits_to_op));
+        d_first.position(),
+        partial_bits_to_op);
     remaining_bits_to_op -= partial_bits_to_op;
     advance(first1, partial_bits_to_op);
     advance(first2, partial_bits_to_op);

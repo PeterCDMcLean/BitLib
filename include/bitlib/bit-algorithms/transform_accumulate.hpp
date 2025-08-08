@@ -58,8 +58,8 @@ constexpr auto transform_accumulate(
         *d_it = _bitblend(
             *d_it,
             word,
-            static_cast<word_type>(d_first.position()),
-            static_cast<word_type>(partial_bits_to_op));
+            d_first.position(),
+            partial_bits_to_op);
         total_bits_to_op -= partial_bits_to_op;
         advance(first, partial_bits_to_op);
         advance(d_it, 1);
@@ -71,14 +71,14 @@ constexpr auto transform_accumulate(
           total_bits_to_op,
           d_last.position());
       if (partial_bits_to_op != 0) {
-        advance(last, -partial_bits_to_op);
+        reverse(last, partial_bits_to_op);
         word_type word;
         std::tie(word, acc) = binary_op_subword(std::move(acc), get_masked_word<word_type>(last, partial_bits_to_op), partial_bits_to_op);
         *d_it = _bitblend(
             *d_it,
             word,
-            static_cast<word_type>(d_first.position()),
-            static_cast<word_type>(partial_bits_to_op));
+            d_first.position(),
+            partial_bits_to_op);
         total_bits_to_op -= partial_bits_to_op;
       }
     }
@@ -96,8 +96,8 @@ constexpr auto transform_accumulate(
       advance(first, digits);
       std::advance(d_it, 1);
     } else {
-      advance(last, -digits);
-      std::advance(d_it, -1);
+      reverse(last, digits);
+      reverse(d_it, 1);
       word_type word;
       std::tie(word, acc) = binary_op(std::move(acc), get_word<word_type>(last));
       *d_it = word;
@@ -114,8 +114,8 @@ constexpr auto transform_accumulate(
           remaining_bits_to_op);
 
     } else {
-      advance(last, -remaining_bits_to_op);
-      std::advance(d_it, -1);
+      reverse(last, remaining_bits_to_op);
+      reverse(d_it, 1);
       word_type word;
       std::tie(word, acc) = binary_op_subword(std::move(acc), get_masked_word<word_type>(last, remaining_bits_to_op), remaining_bits_to_op);
       *d_it = _bitblend(

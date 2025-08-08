@@ -149,7 +149,7 @@ TYPED_TEST(VectorTest, StringConstructor) {
       std::string rand_bs(strlen, 0);
       this->empty_vec_bool.clear();
       for (auto& pos : rand_bs) {
-        pos = generate_random_number('0', '1');
+        pos = static_cast<char>(generate_random_number('0', '1'));
         this->empty_vec_bool.push_back(pos == '1');
       }
       this->empty_vec = bit::bit_vector<WordType>(rand_bs);
@@ -270,13 +270,13 @@ TYPED_TEST(VectorTest, AtRead) {
   constexpr auto digits = bit::binary_digits<WordType>::value;
   EXPECT_EQ(this->v3_.at(0), bit::bit0);
   EXPECT_EQ(this->v3_.at(8), bit::bit1);
-  for (unsigned int vec_idx = 0; vec_idx < this->random_bitvecs.size(); ++vec_idx) {
+  for (size_t vec_idx = 0; vec_idx < this->random_bitvecs.size(); ++vec_idx) {
     auto& bitvec = this->random_bitvecs[vec_idx];
     auto& boolvec = this->random_boolvecs[vec_idx];
-    for (unsigned int i = 0; i < boolvec.size(); i++) {
+    for (size_t i = 0; i < boolvec.size(); i++) {
       EXPECT_TRUE(comparator(bitvec.at(i), boolvec.at(i)));
     }
-    for (unsigned int i = boolvec.size(); i < boolvec.size() + 4 * digits; i++) {
+    for (size_t i = boolvec.size(); i < boolvec.size() + 4 * digits; i++) {
       EXPECT_THROW(bitvec.at(i), std::out_of_range);
     }
   }

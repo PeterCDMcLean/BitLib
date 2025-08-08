@@ -61,46 +61,44 @@ constexpr bit_iterator<RandomAccessIt2> copy_backward(bit_iterator<RandomAccessI
                 get_word<word_type>(last - partial_bits_to_copy, partial_bits_to_copy)
                 << (d_last.position() - partial_bits_to_copy)),
             d_last.position() - partial_bits_to_copy,
-            static_cast<word_type>(partial_bits_to_copy));
+            partial_bits_to_copy);
         remaining_bits_to_copy -= partial_bits_to_copy;
-        advance(last, -partial_bits_to_copy);
+        reverse(last, partial_bits_to_copy);
     }
 
     if (remaining_bits_to_copy > 0) {
-        const bool is_last_aligned = last.position() == 0;
-        //size_type words_to_copy = ::std::ceil(remaining_bits_to_copy / static_cast<float>(digits));
-        // d_last will be aligned at this point
-        if (is_last_aligned && remaining_bits_to_copy >= digits) {
-          auto N = ::std::distance(first.base(), last.base()) - 1;
-          it = ::std::copy_backward(first.base() + 1, last.base(), it);
-          last -= digits * N;
-          remaining_bits_to_copy -= digits * N;
-        } else {
-          // TODO benchmark if its faster to ::std::copy the entire range then shift
-          while (remaining_bits_to_copy >= digits) {
-            *(--it) = get_word<word_type>(last - digits, digits);
-            remaining_bits_to_copy -= digits;
-            advance(last, -digits);
-          }
+      const bool is_last_aligned = last.position() == 0;
+      //size_type words_to_copy = ::std::ceil(remaining_bits_to_copy / static_cast<float>(digits));
+      // d_last will be aligned at this point
+      if (is_last_aligned && remaining_bits_to_copy >= digits) {
+        auto N = ::std::distance(first.base(), last.base()) - 1;
+        it = ::std::copy_backward(first.base() + 1, last.base(), it);
+        last -= digits * N;
+        remaining_bits_to_copy -= digits * N;
+      } else {
+        // TODO benchmark if its faster to ::std::copy the entire range then shift
+        while (remaining_bits_to_copy >= digits) {
+          *(--it) = get_word<word_type>(last - digits, digits);
+          remaining_bits_to_copy -= digits;
+          reverse(last, digits);
         }
-        if (remaining_bits_to_copy > 0) {
-          it--;
-          *it = _bitblend<word_type>(
-              *it,
-              static_cast<word_type>(get_word<word_type>(last - remaining_bits_to_copy, remaining_bits_to_copy)
-                                     << (digits - remaining_bits_to_copy)),
-              digits - remaining_bits_to_copy,
-              remaining_bits_to_copy);
-          remaining_bits_to_copy = 0;
-        }
+      }
+      if (remaining_bits_to_copy > 0) {
+        it--;
+        *it = _bitblend<word_type>(
+            *it,
+            static_cast<word_type>(get_word<word_type>(last - remaining_bits_to_copy, remaining_bits_to_copy)
+                                   << (digits - remaining_bits_to_copy)),
+            digits - remaining_bits_to_copy,
+            remaining_bits_to_copy);
+        remaining_bits_to_copy = 0;
+      }
     }
     return d_last - total_bits_to_copy;
 }
 
-
-
 // ========================================================================== //
-} // namespace bit
+}  // namespace bit
 
-#endif // _COPY_BACKWARD_HPP_INCLUDED
+#endif  // _COPY_BACKWARD_HPP_INCLUDED
 // ========================================================================== //

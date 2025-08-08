@@ -22,43 +22,41 @@
 namespace bit {
 // ========================================================================== //
 
-
-
 // -------------------------- Iterator Algorithms --------------------------- //
 // Returns the number of increments needed to get to last from first.
 // May be negative if last comes before first (Only when input is RAI)
 template <class InputIt>
 typename bit_iterator<InputIt>::difference_type
-    distance(bit_iterator<InputIt> first,
-             bit_iterator<InputIt> last
-)
-{
-    _assert_range_viability(first, last);
-    using word_type = typename bit_iterator<InputIt>::word_type;
-    using size_type = typename bit_iterator<InputIt>::size_type;
-    constexpr size_type digits = binary_digits<word_type>::value;
-    return std::distance(first.base(), last.base())*digits
-           + (last.position() - first.position());
+distance(bit_iterator<InputIt> first,
+         bit_iterator<InputIt> last) {
+  _assert_range_viability(first, last);
+  using word_type = typename bit_iterator<InputIt>::word_type;
+  using difference_type = typename bit_iterator<InputIt>::difference_type;
+  constexpr difference_type digits = binary_digits<word_type>::value;
+  return std::distance(first.base(), last.base()) * digits +
+         static_cast<difference_type>(last.position()) -
+         static_cast<difference_type>(first.position());
 }
 
 // Increments the iterator n times. (If n is negative, the iterator is decremented n times)
-template <class InputIt, class Distance>
-void advance(bit_iterator<InputIt>& first, Distance n)
-{
-    first += n;
+template <class InputIt>
+void advance(bit_iterator<InputIt>& first, typename bit_iterator<InputIt>::difference_type n) {
+  first += n;
 }
 
-template<class ForwardIt>
+template <typename InputIt, std::integral T>
+void reverse(InputIt& it, const T& n) {
+  ::std::advance(it, -static_cast<std::make_signed_t<T>>(n));
+}
+
+template <class ForwardIt>
 bit_iterator<ForwardIt> next(
-        bit_iterator<ForwardIt> bit_it,
-        typename bit_iterator<ForwardIt>::difference_type n = 1
-) {
-    return bit_it + n;
+    bit_iterator<ForwardIt> bit_it,
+    typename bit_iterator<ForwardIt>::difference_type n = 1) {
+  return bit_it + n;
 }
 
 // -------------------------------------------------------------------------- //
-
-
 
 // --------------------------- Utility Functions ---------------------------- //
 
@@ -106,10 +104,10 @@ constexpr bool is_within(
 template <class T, class InputIt>
 T get_word(const bit_iterator<InputIt>& first, size_t len = binary_digits<T>::value) {
   using native_word_type = typename bit_iterator<InputIt>::word_type;
-  constexpr T digits = binary_digits<native_word_type>::value;
+  constexpr size_t digits = binary_digits<native_word_type>::value;
   assert(digits >= len);
   using non_const_T = std::remove_cvref_t<T>;
-  non_const_T offset = digits - first.position();
+  size_t offset = digits - first.position();
   non_const_T ret_word = lsr<T>(*first.base(), first.position());
 
   // We've already assigned enough bits
@@ -147,81 +145,14 @@ T get_masked_word(const bit_iterator<InputIt>& first, size_t len = binary_digits
   return get_word<T>(first, len) & _mask<T>(len);
 }
 
-// Get next len bits beginning at start and store them in a word of type T
-// If we reach `last` before we get len bits, break and return the current word
-// bits_read will store the number of bits that we read.
-//template <class T, class InputIt>
-//T get_word(bit_iterator<InputIt> first, bit_iterator<InputIt> last,
-        //T& bits_read, T len=binary_digits<T>::value
-        //)
-//{
-    //using native_word_type = typename bit_iterator<InputIt>::word_type;
-    //constexpr T native_digits = binary_digits<native_word_type>::value;
-    //constexpr T ret_digits = binary_digits<T>::value;
-    //assert(ret_digits >= len);
-    //bits_read = native_digits - first.position();
-    //T ret_word = *first.base() >> first.position();
-
-    //// TODO vincent mentioned that we should aim for only 1 return function
-    //// per function. However I'm not sure how that can be accomplished here
-    //// without suffering a minor performance loss
-
-    //// We have reached the last iterator
-    //if (first.base() == last.base()) {
-        //bits_read -= (native_digits - last.position());
-        //return ret_word;
-    //}
-    //// We've already assigned enough bits
-    //if (len <= bits_read) {
-        //return ret_word;
-    //}
-
-    //InputIt it = std::next(first.base());
-    //len -= bits_read;
-    //// Fill up ret_word starting at bit [bits_read] using it
-    //// TODO define a mask and use the _bitblend that takes in the extra mask
-    //while (len > native_digits && it != last.base()) {
-        //ret_word = _bitblend(
-                //ret_word,
-                //static_cast<T>(static_cast<T>(*it) << bits_read),
-                //bits_read,
-                //native_digits
-        //);
-        //++it;
-        //bits_read += native_digits;
-        //len -= native_digits;
-    //}
-
-    //// Assign remaining len bits of last word
-    //if (it == last.base()) {
-        //bits_read -= (native_digits - last.position());
-        //ret_word = _bitblend(
-                //ret_word,
-                //static_cast<T>(static_cast<T>(*it) << bits_read),
-                //bits_read,
-                //last.position()
-        //);
-    //} else {
-        //ret_word = _bitblend(
-                //ret_word,
-                //static_cast<T>(static_cast<T>(*it) << bits_read),
-                //bits_read,
-                //len
-        //);
-    //}
-    //return ret_word;
-//}
-
-
 // Writes len bits from src beginning at dstIt
 template <class src_type, class OutputIt>
 void write_word(src_type src, bit_iterator<OutputIt> dst_bit_it,
-        src_type len=binary_digits<src_type>::value
-        )
-{
+                size_t len = binary_digits<src_type>::value) {
   using dst_type = typename bit_iterator<OutputIt>::word_type;
-  constexpr dst_type dst_digits = binary_digits<dst_type>::value;
-  constexpr dst_type src_digits = binary_digits<src_type>::value;
+  using size_type = typename bit_iterator<OutputIt>::size_type;
+  constexpr size_type dst_digits = binary_digits<dst_type>::value;
+  constexpr size_type src_digits = binary_digits<src_type>::value;
 
   if constexpr (dst_digits >= src_digits) {
     if (dst_bit_it.position() == 0 && len == dst_digits) {
@@ -231,7 +162,7 @@ void write_word(src_type src, bit_iterator<OutputIt> dst_bit_it,
           *dst_bit_it.base(),
           static_cast<src_type>(src << dst_bit_it.position()),
           dst_bit_it.position(),
-          std::min<src_type>(
+          std::min<size_type>(
               dst_digits - dst_bit_it.position(),
               len));
       if (len > dst_digits - dst_bit_it.position()) {
@@ -270,25 +201,25 @@ void write_word(src_type src, bit_iterator<OutputIt> dst_bit_it,
           _mask<dst_type>(len));
     }
   }
-    return;
+  return;
 }
-
 
 // Shifts the range [first, last) to the left by n, filling the empty
 // bits with 0
 template <class RandomAccessIt>
 RandomAccessIt word_shift_left(RandomAccessIt first,
-                          RandomAccessIt last,
-                          typename RandomAccessIt::difference_type n
-)
-{
-    if (n <= 0) return last;
-    if (n >= distance(first, last)) return first;
-    RandomAccessIt mid = first + n;
-    auto ret = std::move(mid, last, first);
-    return ret;
+                               RandomAccessIt last,
+                               typename RandomAccessIt::difference_type n) {
+  if (n <= 0) {
+    return last;
+  }
+  if (n >= distance(first, last)) {
+    return first;
+  }
+  RandomAccessIt mid = first + n;
+  auto ret = std::move(mid, last, first);
+  return ret;
 }
-
 
 // Shifts the range [first, right) to the left by n, filling the empty
 // bits with 0
@@ -419,9 +350,7 @@ typename bit_iterator<It>::word_type _padded_read(bit_iterator<It> first,
 }
 // -------------------------------------------------------------------------- //
 
-
-
 // ========================================================================== //
-} // namespace bit
-#endif // _BIT_ALGORITHM_DETAILS_HPP_INCLUDED
+}  // namespace bit
+#endif  // _BIT_ALGORITHM_DETAILS_HPP_INCLUDED
 // ========================================================================== //

@@ -205,9 +205,9 @@ constexpr bool _assert_range_viability(Iterator first, Iterator last);
 
 // Bit field extraction
 template <class T, class = decltype(__builtin_ia32_bextr_u64(T(), T(), T()))>
-constexpr T _bextr(T src, T start, T len) noexcept;
+constexpr T _bextr(T src, size_t start, size_t len) noexcept;
 template <class T, class... X>
-constexpr T _bextr(T src, T start, T len, X...) noexcept;
+constexpr T _bextr(T src, size_t start, size_t len, X...) noexcept;
 
 // Bit swap
 template <class T>
@@ -227,11 +227,11 @@ constexpr void _bitexch(T& src0, T& src1, S start0, S start1, S len) noexcept;
 
 // Double precision shift left
 template <class T>
-constexpr T _shld(T dst, T src, T cnt) noexcept;
+constexpr T _shld(const T& dst, const T& src, const size_t& cnt) noexcept;
 
 // Double precision shift right
 template <class T>
-constexpr T _shrd(T dst, T src, T cnt) noexcept;
+constexpr T _shrd(const T& dst, const T& src, const size_t& cnt) noexcept;
 
 // Multiword multiply
 template <typename T, typename T128 = decltype(__uint128_t(T()))>
@@ -250,7 +250,7 @@ Logical shift right
 template <std::integral T, typename size_type = size_t>
 constexpr T lsr(const T val, const size_type shift) {
 #ifdef BITLIB_DETECT_UNDEFINED_SHIFT
-  assert(shift < bitsof<T>());
+  assert(static_cast<size_t>(shift) < bitsof<T>());
 #endif
   return static_cast<T>(static_cast<std::make_unsigned_t<T>>(val) >> shift);
 }
@@ -263,7 +263,7 @@ constexpr exact_floor_integral_t<T> lsr(const T val, const size_type shift) {
   static_assert(!std::is_same_v<exact_floor_integral_t<T>, void>,
                 "Type T must be convertible to an integral type");
 #ifdef BITLIB_DETECT_UNDEFINED_SHIFT
-  assert(shift < bitsof<exact_floor_integral_t<T>>());
+  assert(static_cast<size_t>(shift) < bitsof<exact_floor_integral_t<T>>());
 #endif
   return static_cast<exact_floor_integral_t<T>>(static_cast<std::make_unsigned_t<exact_floor_integral_t<T>>>(val) >> shift);
 }
@@ -274,7 +274,7 @@ Logical shift left
 template <std::integral T, typename size_type = size_t>
 constexpr T lsl(const T val, const size_type shift) {
 #ifdef BITLIB_DETECT_UNDEFINED_SHIFT
-  assert(shift < bitsof<T>());
+  assert(static_cast<size_t>(shift) < bitsof<T>());
 #endif
   return static_cast<T>(static_cast<std::make_unsigned_t<T>>(val) << shift);
 }
@@ -287,7 +287,7 @@ constexpr exact_floor_integral_t<T> lsl(const T val, const size_type shift) {
   static_assert(!std::is_same_v<exact_floor_integral_t<T>, void>,
                 "Type T must be convertible to an integral type");
 #ifdef BITLIB_DETECT_UNDEFINED_SHIFT
-  assert(shift < bitsof<exact_floor_integral_t<T>>());
+  assert(static_cast<size_t>(shift) < bitsof<exact_floor_integral_t<T>>());
 #endif
   return static_cast<exact_floor_integral_t<T>>(static_cast<std::make_unsigned_t<exact_floor_integral_t<T>>>(val) << shift);
 }
@@ -296,21 +296,37 @@ enum class _mask_len {
   unknown,
   in_range
 };
+enum class _mask_start {
+  unknown,
+  in_range
+};
 
 template <std::integral T, _mask_len len_in_range = _mask_len::in_range, typename size_type = size_t>
 constexpr T _mask(const size_type len) {
-  constexpr std::make_unsigned_t<T> one = std::make_unsigned_t<T>(1);
+  using unsigned_t = std::make_unsigned_t<T>;
+  constexpr unsigned_t one = unsigned_t(1);
   if constexpr (len_in_range != _mask_len::unknown) {
 #ifdef BITLIB_DETECT_UNDEFINED_SHIFT
-    assert(len < bitsof<T>());
+    assert(static_cast<size_t>(len) < bitsof<T>());
 #endif
-    return static_cast<T>((one << len) - one);
+    return static_cast<T>((one << static_cast<unsigned_t>(len)) - one);
   } else {
     // The digits_mask is solely here to prevent Undefined Sanitizer
     // complaining about shift of len >= digits
     // Note: on -O1 the (len & digits_mask) is optimized to simply (len)
-    constexpr std::make_unsigned_t<T> digits_mask = bitsof<T>() - one;
-    return static_cast<T>((one << (len & digits_mask)) * (len < bitsof<T>()) - one);
+    constexpr unsigned_t digits_mask = static_cast<unsigned_t>(bitsof<T>()) - one;
+    return static_cast<T>((one << (static_cast<unsigned_t>(len) & digits_mask)) * static_cast<unsigned_t>(len < bitsof<T>()) - one);
+  }
+}
+template <std::integral T,
+          _mask_len len_in_range = _mask_len::in_range,
+          _mask_start start_in_range = _mask_start::in_range,
+          typename size_type = size_t>
+constexpr T _mask(const size_type len, const size_type start) {
+  if constexpr (start_in_range != _mask_start::unknown) {
+    return static_cast<T>(_mask<T, len_in_range>(len) << start);
+  } else {
+    return static_cast<T>((_mask<T, len_in_range>(len) << start) * (start < bitsof<T>()));
   }
 }
 
@@ -331,9 +347,9 @@ constexpr bool _assert_range_viability(Iterator first, Iterator last) {
 // ------- IMPLEMENTATION DETAILS: INSTRUCTIONS: BIT FIELD EXTRACTION ------- //
 // Extacts to lsbs a field of contiguous bits with compiler intrinsics
 template <class T, class>
-constexpr T _bextr(T src, T start, T len) noexcept {
+constexpr T _bextr(T src, size_t start, size_t len) noexcept {
   static_assert(binary_digits<T>::value, "");
-  constexpr T digits = binary_digits<T>::value;
+  constexpr size_t digits = binary_digits<T>::value;
   T dst = T();
   if (digits <= std::numeric_limits<unsigned int>::digits) {
     dst = __builtin_ia32_bextr_u32(src, start, len);
@@ -347,12 +363,10 @@ constexpr T _bextr(T src, T start, T len) noexcept {
 
 // Extacts to lsbs a field of contiguous bits without compiler intrinsics
 template <class T, class... X>
-constexpr T _bextr(T src, T start, T len, X...) noexcept {
+constexpr T _bextr(T src, size_t start, size_t len, X...) noexcept {
   static_assert(binary_digits<T>::value, "");
-  constexpr T digits = binary_digits<T>::value;
-  constexpr T one = 1;
-  const T msk = (one << len) * (len < digits) - one;
-  return (lsr(src, start)) & msk * (start < digits);
+  const T msk = _mask<T, _mask_len::unknown>(len);
+  return (lsr(src, start))&msk;
 }
 // -------------------------------------------------------------------------- //
 
@@ -394,7 +408,7 @@ constexpr T _bitswap(T src) noexcept {
   static_assert(binary_digits<T>::value, "");
   constexpr T cnt = N >> 1;
   constexpr T msk = _bitswap<T, cnt>();
-  src = ((lsr(src, cnt)) & msk) | ((src << cnt) & ~msk);
+  src = static_cast<T>(((lsr(src, cnt))&msk) | ((src << cnt) & ~msk));
   return cnt > 1 ? _bitswap<T, cnt>(src) : src;
 }
 
@@ -407,7 +421,7 @@ constexpr T _bitswap() noexcept {
   T msk = ~T();
   while (cnt != N) {
     cnt = lsr(cnt, 1);
-    msk ^= (msk << cnt);
+    msk ^= static_cast<T>(msk << cnt);
   }
   return msk;
 }
@@ -434,16 +448,17 @@ template <typename T, typename U>
 constexpr exact_floor_integral_t<T> _bitblend(
     const T src0_,
     const U src1_,
-    const exact_floor_integral_t<T> start,
-    const exact_floor_integral_t<T> len) noexcept
+    const size_t start,
+    const size_t len) noexcept
   requires(std::is_same_v<exact_floor_integral_t<T>, exact_floor_integral_t<U>>)
 {
+  using resolved_t = exact_floor_integral_t<T>;
+  using promoted_t = std::conditional_t<bitsof<resolved_t>() < bitsof<int>(), int, resolved_t>;
   static_assert(binary_digits<exact_floor_integral_t<T>>::value, "");
-  constexpr exact_floor_integral_t<T> digits = bitsof<exact_floor_integral_t<T>>();
-  const exact_floor_integral_t<T> src0 = static_cast<exact_floor_integral_t<T>>(src0_);
-  const exact_floor_integral_t<U> src1 = static_cast<exact_floor_integral_t<U>>(src1_);
-  const exact_floor_integral_t<T> msk = _mask<exact_floor_integral_t<T>, _mask_len::unknown>(len) << start;
-  return src0 ^ ((src0 ^ src1) & msk * (start < digits));
+  const promoted_t src0 = static_cast<promoted_t>(src0_);
+  const promoted_t src1 = static_cast<promoted_t>(src1_);
+  const resolved_t msk = _mask<resolved_t, _mask_len::unknown, _mask_start::unknown>(len, start);
+  return static_cast<resolved_t>(src0 ^ ((src0 ^ src1) & msk));
 }
 // -------------------------------------------------------------------------- //
 
@@ -461,14 +476,10 @@ constexpr void _bitexch(T& src0, T& src1, T msk) noexcept {
 template <class T, class S>
 constexpr void _bitexch(T& src0, T& src1, S start, S len) noexcept {
   static_assert(binary_digits<T>::value, "");
-  constexpr auto digits = binary_digits<T>::value;
-  const T msk = (len < digits)
-                    ? _mask<T, _mask_len::unknown>(len) << start
-                    : -1;  // TODO: What if start > 0 here?
+  const T msk = _mask<T, _mask_len::unknown, _mask_start::unknown>(len, start);
   src0 = src0 ^ static_cast<T>(src1 & msk);
   src1 = src1 ^ static_cast<T>(src0 & msk);
   src0 = src0 ^ static_cast<T>(src1 & msk);
-  return;
 }
 
 // Replaces len bits of src0 by the ones of src1 starting at start0
@@ -521,30 +532,28 @@ constexpr void _bitexch(T& src0, T& src1, S start0, S start1, S len) noexcept
 // --- IMPLEMENTATION DETAILS: INSTRUCTIONS: DOUBLE PRECISION SHIFT LEFT ---- //
 // Left shifts dst by cnt bits, filling the lsbs of dst by the msbs of src
 template <class T>
-constexpr T _shld(T dst, T src, T cnt) noexcept {
+constexpr T _shld(const T& dst, const T& src, const size_t& cnt) noexcept {
   static_assert(binary_digits<T>::value, "");
-  constexpr T digits = binary_digits<T>::value;
+  constexpr size_t digits = binary_digits<T>::value;
   if (cnt < digits) {
-    dst = lsl(dst, cnt) | (lsr(src, (digits - cnt)));
+    return static_cast<T>(lsl(dst, cnt) | (lsr(src, (digits - cnt))));
   } else {
-    dst = lsl(src, cnt - digits) * (cnt < (digits + digits));
+    return static_cast<T>(lsl(src, cnt - digits) * (cnt < (digits + digits)));
   }
-  return dst;
 }
 // -------------------------------------------------------------------------- //
 
 // --- IMPLEMENTATION DETAILS: INSTRUCTIONS: DOUBLE PRECISION SHIFT RIGHT --- //
 // Right shifts dst by cnt bits, filling the msbs of dst by the lsbs of src
 template <class T>
-constexpr T _shrd(T dst, T src, T cnt) noexcept {
+constexpr T _shrd(const T& dst, const T& src, const size_t& cnt) noexcept {
   static_assert(binary_digits<T>::value, "");
-  constexpr T digits = binary_digits<T>::value;
+  constexpr size_t digits = binary_digits<T>::value;
   if (cnt < digits) {
-    dst = (lsr(dst, cnt)) | lsl(src, (digits - cnt));
+    return static_cast<T>((lsr(dst, cnt)) | lsl(src, (digits - cnt)));
   } else {
-    dst = (lsr(src, (cnt - digits))) * (cnt < (digits + digits));
+    return static_cast<T>((lsr(src, (cnt - digits))) * (cnt < (digits + digits)));
   }
-  return dst;
 }
 // -------------------------------------------------------------------------- //
 
@@ -783,7 +792,7 @@ constexpr T _mulx(T src0, T src1, T* hi, X...) noexcept {
   using wider_t = ceil_integral<bitsof<T>() + bitsof<T>()>;
   if constexpr ((digits + digits) <= bitsof<wider_t>()) {
     wider_t tmp = static_cast<wider_t>(src0) * static_cast<wider_t>(src1);
-    *hi = tmp >> digits;
+    *hi = static_cast<T>(tmp >> digits);
     return static_cast<T>(tmp);
   } else {
     // Multiplies src0 and src1 and gets the full result without compiler intrinsics
@@ -886,6 +895,11 @@ struct uninitialized_t {
   explicit uninitialized_t() = default;
 };
 inline constexpr uninitialized_t uninitialized{};
+
+struct initialized_t {
+  explicit initialized_t() = default;
+};
+inline constexpr initialized_t initialized{};
 
 template <typename size_type, bool resizeable, std::size_t Extent>
 struct container_size_storage {

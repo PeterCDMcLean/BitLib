@@ -42,7 +42,7 @@ class bit_vector {
 
   // TODO are privates always inlined?
   // @brief Get the number of words needed to represet num_bits bits
-  constexpr uint64_t word_count(unsigned int num_bits) {
+  constexpr uint64_t word_count(size_t num_bits) {
     return ((num_bits + digits - 1) / digits);
   }
 
@@ -531,26 +531,26 @@ bit_vector<WordType, Allocator>::insert(
 }
 
 // TODO should use std::insert to maintain the constant amortized time.
-template<class WordType, class Allocator>
+template <class WordType, class Allocator>
 constexpr typename bit_vector<WordType, Allocator>::iterator
 bit_vector<WordType, Allocator>::insert(
-        const_iterator pos,
-        size_type count,
-        const bit_vector<WordType, Allocator>::value_type& value) {
-    const auto d = distance(cbegin(), pos);
-    if (count == 0) {
-        return begin() + d;
-    }
-    const float bits_available = word_vector.size() * digits;
-    const bool need_to_add = length_ + count > bits_available;
-    if (need_to_add) {
-        const auto words_to_add = word_count(length_ + count - bits_available);
-        word_vector.resize(word_vector.size() + words_to_add);
-    }
-    length_ += count;
-    shift_right(begin() + d, begin() + length_, count);
-    fill(begin() + d, begin() + d + count, value);
+    const_iterator pos,
+    size_type count,
+    const bit_vector<WordType, Allocator>::value_type& value) {
+  const auto d = distance(cbegin(), pos);
+  if (count == 0) {
     return begin() + d;
+  }
+  const size_t bits_available = word_vector.size() * digits;
+  const bool need_to_add = length_ + count > bits_available;
+  if (need_to_add) {
+    const auto words_to_add = word_count(length_ + count - bits_available);
+    word_vector.resize(word_vector.size() + words_to_add);
+  }
+  length_ += count;
+  shift_right(begin() + d, begin() + length_, count);
+  fill(begin() + d, begin() + d + count, value);
+  return begin() + d;
 }
 
 template <class WordType, class Allocator>
@@ -565,7 +565,7 @@ bit_vector<WordType, Allocator>::insert(
   if (count == 0) {
     return begin() + d;
   }
-  const float bits_available = word_vector.size() * digits;
+  const size_t bits_available = word_vector.size() * digits;
   const auto need_to_add = length_ + count > bits_available;
   if (need_to_add) {
     const auto words_to_add = word_count(length_ + count - bits_available);
