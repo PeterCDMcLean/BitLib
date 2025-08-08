@@ -315,7 +315,8 @@ template <class Iterator>
 constexpr bit_iterator<Iterator>::difference_type
 bit_iterator<Iterator>::operator-(const bit_iterator<Iterator>& other) const {
   constexpr difference_type digits = binary_digits<word_type>::value;
-  return (_current - other._current) * digits + (_position - other._position);
+  return (_current - other._current) * digits +
+         (static_cast<difference_type>(_position) - static_cast<difference_type>(other._position));
 }
 
 // -------------------- BIT ITERATOR: UNDERLYING DETAILS -------------------- //
@@ -359,7 +360,7 @@ operator-(const bit_iterator<T>& lhs, const bit_iterator<U>& rhs) {
   constexpr difference_type digits = rhs_digits;
   static_assert(lhs_digits == rhs_digits, "");
   const difference_type main = lhs._current - rhs._current;
-  return main * digits + (lhs._position - rhs._position);
+  return main * digits + (static_cast<difference_type>(lhs._position) - static_cast<difference_type>(rhs._position));
 }
 
 static_assert(bit_iterator_c<bit_iterator<uint8_t*>>, "bit_iterator does not satisfy bit_iterator_c concept!");

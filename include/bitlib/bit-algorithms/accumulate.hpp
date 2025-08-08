@@ -48,7 +48,7 @@ constexpr auto accumulate(
     } else {
       sub_digits = std::min(last.position(), total_bits_to_op);
       if (sub_digits != 0) {
-        advance(last, -sub_digits);
+        reverse(last, sub_digits);
         acc = binary_op_subword(std::move(acc), get_masked_word<word_type>(last, sub_digits), sub_digits);
       }
     }
@@ -63,7 +63,7 @@ constexpr auto accumulate(
       acc = binary_op(std::move(acc), get_word<word_type>(first));
       advance(first, digits);
     } else {
-      advance(last, -digits);
+      reverse(last, digits);
       acc = binary_op(std::move(acc), get_word<word_type>(last));
     }
   }
@@ -71,7 +71,7 @@ constexpr auto accumulate(
     if constexpr (forward) {
       acc = binary_op_subword(std::move(acc), get_masked_word<word_type>(first, remaining_bits_to_op), remaining_bits_to_op);
     } else {
-      advance(last, -remaining_bits_to_op);
+      reverse(last, remaining_bits_to_op);
       acc = binary_op_subword(std::move(acc), get_masked_word<word_type>(last, remaining_bits_to_op), remaining_bits_to_op);
     }
   }
@@ -106,7 +106,7 @@ constexpr auto accumulate_while(
       } else {
         sub_digits = std::min(last.position(), total_bits_to_op);
         if (sub_digits != 0) {
-          advance(last, -sub_digits);
+          reverse(last, sub_digits);
           std::tie(keep_going, acc) = binary_op_subword(std::move(acc), get_masked_word<word_type>(first, sub_digits), sub_digits);
         }
       }
@@ -125,7 +125,7 @@ constexpr auto accumulate_while(
       std::tie(keep_going, acc) = binary_op(std::move(acc), get_word<word_type>(first));
       advance(first, digits);
     } else {
-      advance(last, -digits);
+      reverse(last, digits);
       std::tie(keep_going, acc) = binary_op(std::move(acc), get_word<word_type>(last));
     }
     if (!keep_going) {
@@ -136,7 +136,7 @@ constexpr auto accumulate_while(
     if constexpr (forward) {
       std::tie(std::ignore, acc) = binary_op_subword(std::move(acc), get_masked_word<word_type>(first, remaining_bits_to_op), remaining_bits_to_op);
     } else {
-      advance(last, -remaining_bits_to_op);
+      reverse(last, remaining_bits_to_op);
       std::tie(std::ignore, acc) = binary_op_subword(std::move(acc), get_masked_word<word_type>(last, remaining_bits_to_op), remaining_bits_to_op);
     }
   }

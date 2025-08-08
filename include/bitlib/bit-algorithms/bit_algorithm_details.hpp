@@ -29,31 +29,33 @@ namespace bit {
 // May be negative if last comes before first (Only when input is RAI)
 template <class InputIt>
 typename bit_iterator<InputIt>::difference_type
-    distance(bit_iterator<InputIt> first,
-             bit_iterator<InputIt> last
-)
-{
-    _assert_range_viability(first, last);
-    using word_type = typename bit_iterator<InputIt>::word_type;
-    using size_type = typename bit_iterator<InputIt>::size_type;
-    constexpr size_type digits = binary_digits<word_type>::value;
-    return std::distance(first.base(), last.base())*digits
-           + (last.position() - first.position());
+distance(bit_iterator<InputIt> first,
+         bit_iterator<InputIt> last) {
+  _assert_range_viability(first, last);
+  using word_type = typename bit_iterator<InputIt>::word_type;
+  using difference_type = typename bit_iterator<InputIt>::difference_type;
+  constexpr difference_type digits = binary_digits<word_type>::value;
+  return std::distance(first.base(), last.base()) * digits +
+         static_cast<difference_type>(last.position()) -
+         static_cast<difference_type>(first.position());
 }
 
 // Increments the iterator n times. (If n is negative, the iterator is decremented n times)
-template <class InputIt, class Distance>
-void advance(bit_iterator<InputIt>& first, Distance n)
-{
-    first += n;
+template <class InputIt>
+void advance(bit_iterator<InputIt>& first, typename bit_iterator<InputIt>::difference_type n) {
+  first += n;
 }
 
-template<class ForwardIt>
+template <typename InputIt, std::integral T>
+void reverse(InputIt& it, const T& n) {
+  ::std::advance(it, -static_cast<std::make_signed_t<T>>(n));
+}
+
+template <class ForwardIt>
 bit_iterator<ForwardIt> next(
-        bit_iterator<ForwardIt> bit_it,
-        typename bit_iterator<ForwardIt>::difference_type n = 1
-) {
-    return bit_it + n;
+    bit_iterator<ForwardIt> bit_it,
+    typename bit_iterator<ForwardIt>::difference_type n = 1) {
+  return bit_it + n;
 }
 
 // -------------------------------------------------------------------------- //

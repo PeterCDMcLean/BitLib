@@ -628,6 +628,36 @@
         "lhs": "${hostSystemName}",
         "rhs": "Linux"
       }
+    },
+    {
+      "name": "warnings_linux_gcc_libstdcxx",
+      "configurePreset": "warnings_linux_gcc_libstdcxx",
+      "execution": {
+        "jobs": 1
+      },
+      "output": {
+        "verbosity": "verbose"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "warnings_linux_clang_libcxx",
+      "configurePreset": "warnings_linux_clang_libcxx",
+      "execution": {
+        "jobs": 1
+      },
+      "output": {
+        "verbosity": "verbose"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
     }
   ],
   "workflowPresets": [
@@ -798,6 +828,40 @@
         {
           "type": "test",
           "name": "benchmark_linux_clang_libcxx"
+        }
+      ]
+    },
+    {
+      "name": "warnings_linux_gcc_libstdcxx",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "warnings_linux_gcc_libstdcxx"
+        },
+        {
+          "type": "build",
+          "name": "warnings_linux_gcc_libstdcxx"
+        },
+        {
+          "type": "test",
+          "name": "warnings_linux_gcc_libstdcxx"
+        }
+      ]
+    },
+    {
+      "name": "warnings_linux_clang_libcxx",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "warnings_linux_clang_libcxx"
+        },
+        {
+          "type": "build",
+          "name": "warnings_linux_clang_libcxx"
+        },
+        {
+          "type": "test",
+          "name": "warnings_linux_clang_libcxx"
         }
       ]
     }
