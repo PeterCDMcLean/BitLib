@@ -46,7 +46,7 @@ class bit_reference {
   // Types
  public:
   using word_type = WordType;
-  using size_type = unsigned int;
+  using size_type = std::size_t;
   using mask_type = std::make_unsigned_t<word_type>;
 
   // Lifecycle
