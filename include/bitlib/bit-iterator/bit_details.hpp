@@ -263,7 +263,7 @@ constexpr exact_floor_integral_t<T> lsr(const T val, const size_type shift) {
   static_assert(!std::is_same_v<exact_floor_integral_t<T>, void>,
                 "Type T must be convertible to an integral type");
 #ifdef BITLIB_DETECT_UNDEFINED_SHIFT
-  assert(shift < bitsof<exact_floor_integral_t<T>>());
+  assert(static_cast<size_t>(shift) < bitsof<exact_floor_integral_t<T>>());
 #endif
   return static_cast<exact_floor_integral_t<T>>(static_cast<std::make_unsigned_t<exact_floor_integral_t<T>>>(val) >> shift);
 }
@@ -274,7 +274,7 @@ Logical shift left
 template <std::integral T, typename size_type = size_t>
 constexpr T lsl(const T val, const size_type shift) {
 #ifdef BITLIB_DETECT_UNDEFINED_SHIFT
-  assert(shift < bitsof<T>());
+  assert(static_cast<size_t>(shift) < bitsof<T>());
 #endif
   return static_cast<T>(static_cast<std::make_unsigned_t<T>>(val) << shift);
 }
@@ -287,7 +287,7 @@ constexpr exact_floor_integral_t<T> lsl(const T val, const size_type shift) {
   static_assert(!std::is_same_v<exact_floor_integral_t<T>, void>,
                 "Type T must be convertible to an integral type");
 #ifdef BITLIB_DETECT_UNDEFINED_SHIFT
-  assert(shift < bitsof<exact_floor_integral_t<T>>());
+  assert(static_cast<size_t>(shift) < bitsof<exact_floor_integral_t<T>>());
 #endif
   return static_cast<exact_floor_integral_t<T>>(static_cast<std::make_unsigned_t<exact_floor_integral_t<T>>>(val) << shift);
 }
@@ -303,7 +303,7 @@ constexpr T _mask(const size_type len) {
   constexpr unsigned_t one = unsigned_t(1);
   if constexpr (len_in_range != _mask_len::unknown) {
 #ifdef BITLIB_DETECT_UNDEFINED_SHIFT
-    assert(len < bitsof<T>());
+    assert(static_cast<size_t>(len) < bitsof<T>());
 #endif
     return static_cast<T>((one << static_cast<unsigned_t>(len)) - one);
   } else {
