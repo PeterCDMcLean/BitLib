@@ -420,6 +420,6 @@ typename bit_iterator<It>::word_type _padded_read(bit_iterator<It> first,
 
 
 // ========================================================================== //
-} // namespace bit
+}  // namespace bit
 #endif // _BIT_ALGORITHM_DETAILS_HPP_INCLUDED
 // ========================================================================== //
