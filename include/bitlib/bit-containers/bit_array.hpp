@@ -94,6 +94,7 @@ class array : public array_base<array<T, N, W, Policy>, T, N, W, false, Policy, 
  private:
   std::array<word_type, Words(N)> storage;
 
+  friend class bit_array<T, std::dynamic_extent, V, W>;
  public:
   /*
   * Constructors, copies and moves...
