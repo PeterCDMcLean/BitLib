@@ -121,5 +121,5 @@ target_link_libraries(bitlib-bench-primitive PRIVATE
 
 add_test(
   NAME BenchmarkPrimitive
-  COMMAND $<TARGET_FILE:bitlib-bench-primitive> --benchmark_format=json --benchmark_out=primitive_benchmark_result.json --benchmark_min_warmup_time=0.001 --benchmark_min_time=0.01s
+  COMMAND $<TARGET_FILE:bitlib-bench-primitive> --benchmark_format=json --benchmark_out=primitive_benchmark_result.json --benchmark_min_warmup_time=0 --benchmark_min_time=0.001s --benchmark_repetitions=1
 )
