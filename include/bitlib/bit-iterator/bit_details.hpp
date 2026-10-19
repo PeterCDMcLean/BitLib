@@ -60,10 +60,12 @@ template <size_t Bits>
 class primitive;
 template <typename WordRef, size_t PrimitiveBits>
 class reference;
-template <class Iterator>
-class bit_iterator;
+template <class Iterator,
+          size_t PrimitiveBits = 1,
+          size_t Alignment = PrimitiveBits>
+class iterator;
 template <class WordType>
-using bit_pointer = bit_iterator<WordType*>;
+using bit_pointer = iterator<WordType*, 1, 1>;
 template <typename target_word_ptr, typename source_word_ptr>
 class bit_word_pointer_adapter;
 
@@ -817,20 +819,20 @@ constexpr T _mulx(T src0, T src1, T* hi, X...) noexcept {
 
 template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
 constexpr auto with_bit_iterator_adapter(
-    const bit_iterator<SrcIt>& first,
-    const bit_iterator<SrcIt>& last,
-    const bit_iterator<DstIt>& d_first) {
-  using dst_word_type = typename bit_iterator<DstIt>::word_type;
-  using src_word_type = typename bit_iterator<SrcIt>::word_type;
+    const iterator<SrcIt>& first,
+    const iterator<SrcIt>& last,
+    const iterator<DstIt>& d_first) {
+  using dst_word_type = typename iterator<DstIt>::word_type;
+  using src_word_type = typename iterator<SrcIt>::word_type;
   if constexpr (!std::is_same_v<src_word_type, dst_word_type> && bitsof<src_word_type>() != bitsof<dst_word_type>()) {
     if constexpr (bitsof<src_word_type>() > bitsof<dst_word_type>()) {
-      bit_iterator<bit_word_pointer_adapter<DstIt, SrcIt>> adapted_first(
+      iterator<bit_word_pointer_adapter<DstIt, SrcIt>> adapted_first(
           bit_word_pointer_adapter<DstIt, SrcIt>(first.base(), first.position() / bitsof<dst_word_type>()), first.position() % bitsof<dst_word_type>());
-      bit_iterator<bit_word_pointer_adapter<DstIt, SrcIt>> adapted_last(
+      iterator<bit_word_pointer_adapter<DstIt, SrcIt>> adapted_last(
           bit_word_pointer_adapter<DstIt, SrcIt>(last.base(), last.position() / bitsof<dst_word_type>()), last.position() % bitsof<dst_word_type>());
       return AlgoFunc{}(adapted_first, adapted_last, d_first);
     } else {
-      bit_iterator<bit_word_pointer_adapter<SrcIt, DstIt>> adapted_d_first(
+      iterator<bit_word_pointer_adapter<SrcIt, DstIt>> adapted_d_first(
           bit_word_pointer_adapter<SrcIt, DstIt>(d_first.base(), d_first.position() / bitsof<src_word_type>()), d_first.position() % bitsof<src_word_type>());
       return AlgoFunc{}(first, last, adapted_d_first);
     }
@@ -839,35 +841,39 @@ constexpr auto with_bit_iterator_adapter(
   }
 }
 
+// Raw-pointer source range: wrap the pointers into iterators, then delegate.
 template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
+  requires std::is_pointer_v<SrcIt>
 constexpr auto with_bit_iterator_adapter(
     const SrcIt& first,
     const SrcIt& last,
-    const bit_iterator<DstIt>& d_first) {
-  return with_bit_iterator_adapter<AlgoFunc>(bit_iterator(first), bit_iterator(last), d_first);
+    const iterator<DstIt>& d_first) {
+  return with_bit_iterator_adapter<AlgoFunc>(iterator(first), iterator(last), d_first);
 }
 
+// Raw-pointer destination: wrap it into an iterator, then delegate.
 template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
+  requires std::is_pointer_v<DstIt>
 constexpr auto with_bit_iterator_adapter(
-    const bit_iterator<SrcIt>& first,
-    const bit_iterator<SrcIt>& last,
+    const iterator<SrcIt>& first,
+    const iterator<SrcIt>& last,
     const DstIt& d_first) {
-  return with_bit_iterator_adapter<AlgoFunc>(first, last, bit_iterator(d_first));
+  return with_bit_iterator_adapter<AlgoFunc>(first, last, iterator(d_first));
 }
 
 template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
 constexpr auto with_bit_iterator_adapter(
-    const bit_iterator<SrcIt>& first,
-    const bit_iterator<DstIt>& last) {
-  using dst_word_type = typename bit_iterator<DstIt>::word_type;
-  using src_word_type = typename bit_iterator<SrcIt>::word_type;
+    const iterator<SrcIt>& first,
+    const iterator<DstIt>& last) {
+  using dst_word_type = typename iterator<DstIt>::word_type;
+  using src_word_type = typename iterator<SrcIt>::word_type;
   if constexpr (!std::is_same_v<src_word_type, dst_word_type> && bitsof<src_word_type>() != bitsof<dst_word_type>()) {
     if constexpr (bitsof<src_word_type>() > bitsof<dst_word_type>()) {
-      bit_iterator<bit_word_pointer_adapter<DstIt, SrcIt>> adapted_first(
+      iterator<bit_word_pointer_adapter<DstIt, SrcIt>> adapted_first(
           bit_word_pointer_adapter<DstIt, SrcIt>(first.base(), first.position() / bitsof<dst_word_type>()), first.position() % bitsof<dst_word_type>());
       return AlgoFunc{}(adapted_first, last);
     } else {
-      bit_iterator<bit_word_pointer_adapter<SrcIt, DstIt>> adapted_last(
+      iterator<bit_word_pointer_adapter<SrcIt, DstIt>> adapted_last(
           bit_word_pointer_adapter<SrcIt, DstIt>(last.base(), last.position() / bitsof<src_word_type>()), last.position() % bitsof<src_word_type>());
       return AlgoFunc{}(first, adapted_last);
     }
@@ -876,18 +882,22 @@ constexpr auto with_bit_iterator_adapter(
   }
 }
 
+// Raw-pointer source: wrap into an iterator, then delegate.
 template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
+  requires std::is_pointer_v<SrcIt>
 constexpr auto with_bit_iterator_adapter(
     const SrcIt& first,
-    const bit_iterator<DstIt>& last) {
-  return with_bit_iterator_adapter<AlgoFunc>(bit_iterator(first), last);
+    const iterator<DstIt>& last) {
+  return with_bit_iterator_adapter<AlgoFunc>(iterator(first), last);
 }
 
+// Raw-pointer destination: wrap into an iterator, then delegate.
 template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
+  requires std::is_pointer_v<DstIt>
 constexpr auto with_bit_iterator_adapter(
-    const bit_iterator<SrcIt>& first,
+    const iterator<SrcIt>& first,
     const DstIt& last) {
-  return with_bit_iterator_adapter<AlgoFunc>(first, bit_iterator(last));
+  return with_bit_iterator_adapter<AlgoFunc>(first, iterator(last));
 }
 
 namespace detail {
