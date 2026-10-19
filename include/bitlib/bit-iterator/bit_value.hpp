@@ -96,13 +96,6 @@ class primitive
     template <class T>
     void swap(reference<T, 1> other) noexcept;
 
-    // Bit manipulation
-  public:
-    constexpr primitive& set(bool b) noexcept;
-    constexpr primitive& set() noexcept;
-    constexpr primitive& reset() noexcept;
-    constexpr primitive& flip() noexcept;
-
     // Bitwise operators
   public:
     friend constexpr primitive operator~(
@@ -362,49 +355,9 @@ void primitive<Bits>::swap(
 ) noexcept
 {
     if (static_cast<bool>(other) != static_cast<bool>(_value)) {
-        flip();
-        other.flip();
+        _value = static_cast<storage_type>(!static_cast<bool>(_value));
+        other = primitive<1>(static_cast<storage_type>(!static_cast<bool>(other)));
     }
-}
-// -------------------------------------------------------------------------- //
-
-
-// ---------------------- BIT VALUE: BIT MANIPULATION ----------------------- //
-// Sets the value of the bit to the provided boolean value
-template <size_t Bits>
-constexpr primitive<Bits>& primitive<Bits>::set(
-    bool b
-) noexcept
-{
-    _value = static_cast<storage_type>(b);
-    return *this;
-}
-
-// Sets the value of the bit to 1
-template <size_t Bits>
-constexpr primitive<Bits>& primitive<Bits>::set(
-) noexcept
-{
-    _value = bit_mask();
-    return *this;
-}
-
-// Resets the value of the bit to 0
-template <size_t Bits>
-constexpr primitive<Bits>& primitive<Bits>::reset(
-) noexcept
-{
-    _value = storage_type(0);
-    return *this;
-}
-
-// Flips the value of the bit
-template <size_t Bits>
-constexpr primitive<Bits>& primitive<Bits>::flip(
-) noexcept
-{
-    _value = ~_value & bit_mask();
-    return *this;
 }
 // -------------------------------------------------------------------------- //
 
@@ -437,10 +390,10 @@ std::basic_istream<CharT, Traits>& operator>>(
             } else {
                 char_value = traits_type::to_char_type(int_value);
                 if (traits_type::eq(char_value, is.widen(zero))) {
-                    tmp.reset();
+                    tmp = bit_value(false);
                     ok = true;
                 } else if (traits_type::eq(char_value, is.widen(one))) {
-                    tmp.set();
+                    tmp = bit_value(true);
                     ok = true;
                 } else {
                     int_value = is.rdbuf()->sputbackc(char_value);

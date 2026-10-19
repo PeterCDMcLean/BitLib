@@ -31,38 +31,6 @@ struct bit
 
 
 
-/* ********************************* IS BIT ********************************* */
-// Is bit structure definition
-template <class T>
-struct is_bit
-: std::false_type
-{
-};
-
-// Is bit structure specialization: bit
-template <>
-struct is_bit<::bit::bit>
-: std::true_type
-{
-};
-
-// Is bit structure specialization: bit value
-template <>
-struct is_bit<bit_value>
-: std::true_type
-{
-};
-
-// Is bit structure specialization: bit reference
-template <class WordType>
-struct is_bit<reference<WordType&>>
-    : std::true_type {
-};
-
-// Is bit value template definition
-template <class T>
-inline constexpr bool is_bit_v = is_bit<T>::value;
-/* ************************************************************************** */
 
 
 
@@ -81,8 +49,6 @@ inline constexpr bool is_iterator_v = is_iterator<T>::value;
 /* ************************************************************************** */
 
 
-
-/* *************************** IS FORWARD ITERATOR ************************** */
 template<typename T, typename = void>
 struct is_forward_iterator : std::false_type {};
 

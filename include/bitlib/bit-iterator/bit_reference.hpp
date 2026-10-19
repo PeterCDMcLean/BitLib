@@ -152,13 +152,6 @@ class reference {
     void swap(reference<T, B> other) const;
     void swap(bit_value& other) const;
 
-    // Bit manipulation
-  public:
-    constexpr reference& set(bool b) const noexcept;
-    constexpr reference& set() const noexcept;
-    constexpr reference& reset() const noexcept;
-    constexpr reference& flip() const noexcept;
-
     // Implementation details: function members
   private:
     reference() noexcept = default;
@@ -229,7 +222,13 @@ template <class WordRef, size_t PrimitiveBits>
 constexpr reference<WordRef, PrimitiveBits>&
 reference<WordRef, PrimitiveBits>::operator=(const reference& other)
     const noexcept {
-  other ? set() : reset();
+  // Copy all PrimitiveBits bits from other, not just its boolean truth
+  word_type other_val = static_cast<word_type>(
+      (static_cast<word_type>(other._ref) & other._mask)
+      >> std::countr_zero(other._mask));
+  _ref = static_cast<word_type>(
+      (static_cast<word_type>(_ref) & ~_mask) |
+      (static_cast<word_type>(other_val) << std::countr_zero(_mask)));
   return const_cast<reference<WordRef, PrimitiveBits>&>(*this);
 }
 
@@ -239,7 +238,13 @@ template <class T, size_t B>
 constexpr reference<WordRef, PrimitiveBits>&
 reference<WordRef, PrimitiveBits>::operator=(const reference<T, B>& other)
     const noexcept {
-  other ? set() : reset();
+  // Copy all PrimitiveBits bits from other, not just its boolean truth
+  word_type other_val = static_cast<word_type>(
+      (static_cast<word_type>(other._ref) & other._mask)
+      >> std::countr_zero(other._mask));
+  _ref = static_cast<word_type>(
+      (static_cast<word_type>(_ref) & ~_mask) |
+      (static_cast<word_type>(other_val) << std::countr_zero(_mask)));
   return const_cast<reference<WordRef, PrimitiveBits>&>(*this);
 }
 
@@ -359,8 +364,22 @@ template <class WordRef, size_t PrimitiveBits>
 template <class T, size_t B>
 void reference<WordRef, PrimitiveBits>::swap(reference<T, B> other) const {
   if (other != *this) {
-    flip();
-    other.flip();
+    size_t my_shift = std::countr_zero(_mask);
+    typename reference<T, B>::mask_type other_mask = other._mask;
+    typename reference<T, B>::word_type other_shift = std::countr_zero(other_mask);
+
+    word_type my_val =
+        (static_cast<word_type>(_ref) & _mask) >> my_shift;
+    typename reference<T, B>::word_type other_val =
+        (static_cast<typename reference<T, B>::word_type>(other._ref) & other_mask)
+        >> other_shift;
+
+    _ref = static_cast<WordRef>(
+        (static_cast<word_type>(_ref) & ~_mask) |
+        (static_cast<word_type>(other_val) << my_shift));
+    other._ref = static_cast<T>(
+        (static_cast<typename reference<T, B>::word_type>(other._ref) & ~other_mask) |
+        (static_cast<typename reference<T, B>::word_type>(my_val) << other_shift));
   }
 }
 
@@ -368,57 +387,30 @@ void reference<WordRef, PrimitiveBits>::swap(reference<T, B> other) const {
 template <class WordRef, size_t PrimitiveBits>
 void reference<WordRef, PrimitiveBits>::swap(bit_value& other) const {
   if (other != *this) {
-    flip();
-    other.flip();
+    word_type my_mask = _mask;
+    size_t my_shift = countr_zero(my_mask);
+    word_type my_val =
+        (static_cast<word_type>(_ref) & my_mask) >> my_shift;
+    bool other_val = static_cast<bool>(other);
+
+    _ref = static_cast<WordRef>(
+        (static_cast<word_type>(_ref) & ~my_mask) |
+        (static_cast<word_type>(other_val) << my_shift));
+    other = primitive<1>(static_cast<typename primitive<1>::storage_type>(my_val));
   }
 }
 // -------------------------------------------------------------------------- //
 
 
 
-// -------------------- BIT REFERENCE: BIT MANIPULATION --------------------- //
-// Sets the value of the referenced bits to the provided boolean value
-template <class WordRef, size_t PrimitiveBits>
-constexpr reference<WordRef, PrimitiveBits>& reference<
-    WordRef, PrimitiveBits>::set(bool b) const noexcept {
-  b ? set() : reset();
-  return const_cast<reference<WordRef, PrimitiveBits>&>(*this);
-}
-
-// Sets the value of the referenced bits to 1
-template <class WordRef, size_t PrimitiveBits>
-constexpr reference<WordRef, PrimitiveBits>&
-reference<WordRef, PrimitiveBits>::set() const noexcept {
-  _ref = static_cast<word_type>(_ref | _mask);
-  return const_cast<reference<WordRef, PrimitiveBits>&>(*this);
-}
-
-// Resets the value of the referenced bits to 0
-template <class WordRef, size_t PrimitiveBits>
-constexpr reference<WordRef, PrimitiveBits>&
-reference<WordRef, PrimitiveBits>::reset() const noexcept {
-  _ref = static_cast<word_type>(_ref & static_cast<mask_type>(~_mask));
-  return const_cast<reference<WordRef, PrimitiveBits>&>(*this);
-}
-
-// Flips the value of the referenced bits
-template <class WordRef, size_t PrimitiveBits>
-constexpr reference<WordRef, PrimitiveBits>&
-reference<WordRef, PrimitiveBits>::flip() const noexcept {
-  _ref = static_cast<word_type>(_ref ^ _mask);
-  return const_cast<reference<WordRef, PrimitiveBits>&>(*this);
-}
-// -------------------------------------------------------------------------- //
-
-
-
-// -------------------------- BIT REFERENCE: SWAP --------------------------- //
 // Swaps two bit references
 template <class T, class U>
 void swap(reference<T> lhs, reference<U> rhs) noexcept {
   if (lhs != rhs) {
-    lhs.flip();
-    rhs.flip();
+    bool l = static_cast<bool>(lhs);
+    bool r = static_cast<bool>(rhs);
+    lhs = bit_value(r);
+    rhs = bit_value(l);
   }
 }
 
@@ -426,8 +418,10 @@ void swap(reference<T> lhs, reference<U> rhs) noexcept {
 template <class T>
 void swap(reference<T> lhs, bit_value& rhs) noexcept {
   if (lhs != rhs) {
-    lhs.flip();
-    rhs.flip();
+    bool l = static_cast<bool>(lhs);
+    bool r = static_cast<bool>(rhs);
+    lhs = bit_value(r);
+    rhs = bit_value(l);
   }
 }
 
@@ -435,8 +429,10 @@ void swap(reference<T> lhs, bit_value& rhs) noexcept {
 template <class U>
 void swap(bit_value& lhs, reference<U> rhs) noexcept {
   if (lhs != rhs) {
-    lhs.flip();
-    rhs.flip();
+    bool l = static_cast<bool>(lhs);
+    bool r = static_cast<bool>(rhs);
+    lhs = bit_value(r);
+    rhs = bit_value(l);
   }
 }
 // -------------------------------------------------------------------------- //
@@ -470,10 +466,10 @@ std::basic_istream<CharT, Traits>& operator>>(
       } else {
         char_value = traits_type::to_char_type(int_value);
         if (traits_type::eq(char_value, is.widen(zero))) {
-          tmp.reset();
+          tmp = bit_value(false);
           ok = true;
         } else if (traits_type::eq(char_value, is.widen(one))) {
-          tmp.set();
+          tmp = bit_value(true);
           ok = true;
         } else {
           int_value = is.rdbuf()->sputbackc(char_value);
