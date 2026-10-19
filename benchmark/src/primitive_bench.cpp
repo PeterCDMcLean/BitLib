@@ -3,6 +3,7 @@
 #include <iterator>
 #include <string>
 #include <tuple>
+#include <utility>
 
 #include "benchmark_utils.hpp"
 #include "bitlib/bitlib.hpp"
@@ -75,12 +76,15 @@ auto BM_PrimitiveConstruct = [](benchmark::State& state, auto input) {
     }
 };
 
-// Register for PrimitiveBits = 1 (baseline) and N = 8, 16, 32, 64
-#define REGISTER_PRIM(PBITS, WT, SIZE)                                          \
+// Register for PrimitiveBits = 1 (baseline) and N = 8, 16, 32 (multi-bit)
+#define REGISTER_PRIM(PBITS, WT, SIZE, SIZELABEL)                               \
     do {                                                                        \
-        std::string rw_name = std::string("prim_readwrite<" #PBITS "/uint64_t>"); \
-        std::string cp_name = std::string("prim_copy<" #PBITS "/uint64_t>");    \
-        std::string cn_name = std::string("prim_construct<" #PBITS "/uint64_t>"); \
+        std::string rw_name =                                                   \
+            std::string("prim_readwrite<" #PBITS "/uint64_t>/") + SIZELABEL;    \
+        std::string cp_name =                                                   \
+            std::string("prim_copy<" #PBITS "/uint64_t>/") + SIZELABEL;         \
+        std::string cn_name =                                                   \
+            std::string("prim_construct<" #PBITS "/uint64_t>/") + SIZELABEL;    \
         benchmark::RegisterBenchmark(                                           \
             rw_name.c_str(),                                                    \
             BM_PrimitiveReadWrite<PBITS, WT>,                                   \
@@ -97,22 +101,23 @@ auto BM_PrimitiveConstruct = [](benchmark::State& state, auto input) {
 
 int main(int argc, char** argv) {
     unsigned int size_small = 1 << 12;
-    unsigned int size_large = 1 << 20;
+    unsigned int size_large = 1 << 16;
     unsigned int construct_count = 1 << 16;
 
-    for (auto size : {size_small, size_large}) {
-        REGISTER_PRIM(1,  uint64_t, size);
-        REGISTER_PRIM(8,  uint64_t, size);
-        REGISTER_PRIM(16, uint64_t, size);
-        REGISTER_PRIM(32, uint64_t, size);
-        // REGISTER_PRIM(64, uint64_t, size);  // segfaults in combined run, works individually
+    for (auto [size, label] : {
+                 std::make_pair(size_small, std::string("small")),
+                 std::make_pair(size_large, std::string("large")),
+             }) {
+        REGISTER_PRIM(1,  uint64_t, size, label);
+        REGISTER_PRIM(8,  uint64_t, size, label);
+        REGISTER_PRIM(16, uint64_t, size, label);
+        REGISTER_PRIM(32, uint64_t, size, label);
     }
 
-    REGISTER_PRIM(1,  uint64_t, construct_count);
-    REGISTER_PRIM(8,  uint64_t, construct_count);
-    REGISTER_PRIM(16, uint64_t, construct_count);
-    REGISTER_PRIM(32, uint64_t, construct_count);
-    // REGISTER_PRIM(64, uint64_t, construct_count);
+    REGISTER_PRIM(1,  uint64_t, construct_count, "construct");
+    REGISTER_PRIM(8,  uint64_t, construct_count, "construct");
+    REGISTER_PRIM(16, uint64_t, construct_count, "construct");
+    REGISTER_PRIM(32, uint64_t, construct_count, "construct");
 
     benchmark::Initialize(&argc, argv);
     benchmark::RunSpecifiedBenchmarks();
