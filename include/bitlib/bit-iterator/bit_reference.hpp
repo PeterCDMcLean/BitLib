@@ -70,6 +70,51 @@ class bit_reference {
   constexpr bit_reference& operator|=(bit_value other) const noexcept;
   constexpr bit_reference& operator^=(bit_value other) const noexcept;
 
+  // Comparison operators
+  friend constexpr bool operator==(
+      const bit_reference& lhs,
+      const bit_reference& rhs
+  ) noexcept {
+    return static_cast<bool>(lhs) == static_cast<bool>(rhs);
+  }
+  friend constexpr bool operator!=(
+      const bit_reference& lhs,
+      const bit_reference& rhs
+  ) noexcept {
+    return static_cast<bool>(lhs) != static_cast<bool>(rhs);
+  }
+  friend constexpr bool operator<(
+      const bit_reference& lhs,
+      const bit_reference& rhs
+  ) noexcept {
+    return static_cast<bool>(lhs) < static_cast<bool>(rhs);
+  }
+  friend constexpr bool operator<=(
+      const bit_reference& lhs,
+      const bit_reference& rhs
+  ) noexcept {
+    return static_cast<bool>(lhs) <= static_cast<bool>(rhs);
+  }
+  friend constexpr bool operator>(
+      const bit_reference& lhs,
+      const bit_reference& rhs
+  ) noexcept {
+    return static_cast<bool>(lhs) > static_cast<bool>(rhs);
+  }
+  friend constexpr bool operator>=(
+      const bit_reference& lhs,
+      const bit_reference& rhs
+  ) noexcept {
+    return static_cast<bool>(lhs) >= static_cast<bool>(rhs);
+  }
+
+  // Bitwise not operator
+  friend constexpr bit_value operator~(
+      const bit_reference& ref
+  ) noexcept {
+    return bit_value(!static_cast<bool>(ref));
+  }
+
   // Conversion
  public:
   explicit constexpr operator bool() const noexcept;
@@ -288,6 +333,8 @@ constexpr bit_reference<WordRef>& bit_reference<WordRef>::flip() const noexcept 
 }
 // -------------------------------------------------------------------------- //
 
+
+
 // -------------------------- BIT REFERENCE: SWAP --------------------------- //
 // Swaps two bit references
 template <class T, class U>
@@ -376,6 +423,8 @@ std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>&
   return os << os.widen(x ? one : zero);
 }
 // -------------------------------------------------------------------------- //
+
+
 
 // -------- BIT REFERENCE: IMPLEMENTATION DETAILS: FUNCTION MEMBERS --------- //
 // Privately explicitly constructs an aligned bit reference from a pointer

@@ -56,7 +56,8 @@
 // Third-party libraries
 // Miscellaneous
 namespace bit {
-class bit_value;
+template <size_t Bits>
+class primitive;
 template <class WordType>
 class bit_reference;
 template <class Iterator>

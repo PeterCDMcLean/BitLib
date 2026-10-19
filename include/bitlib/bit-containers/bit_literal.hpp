@@ -20,8 +20,6 @@
 
 namespace bit {
 
-class bit_value;
-
 template <typename T, std::size_t N, typename W, typename Policy>
 class array;
 
