@@ -18,7 +18,7 @@ inline constexpr from_range_t from_range{};
 namespace bit {
 
 // Forward declaration of the generic N-bit primitive class.
-template <size_t Bits = 1>
+template <size_t Bits>
 class primitive;
 
 // bit_value remains as an alias for a single bit: a partial-default

@@ -25,7 +25,7 @@ namespace bit {
 
 /* ******************************* BIT VALUE ******************************** */
 // Bit value class definition - generic N-bit primitive
-template <size_t Bits>
+template <size_t Bits = 1>
 class primitive
 {
     // Assertions
@@ -37,7 +37,7 @@ class primitive
                   "primitive supports at most 64 bits");
 
     // Friendship
-    template <class> friend class bit_reference;
+    template <class, size_t> friend class reference;
 
     // Types
   public:
@@ -64,7 +64,7 @@ class primitive
     // Lifecycle
     constexpr primitive() noexcept;
     template <class T>
-    constexpr primitive(bit_reference<T> ref) noexcept;
+    constexpr primitive(reference<T, 1> ref) noexcept;
     template <class WordType>
     explicit constexpr primitive(WordType val) noexcept;
     explicit constexpr primitive(bool val) noexcept;
@@ -74,7 +74,7 @@ class primitive
     // Assignment
   public:
     template <class T>
-    constexpr primitive& operator=(bit_reference<T> ref) noexcept;
+    constexpr primitive& operator=(reference<T, 1> ref) noexcept;
     template <class WordType>
     constexpr primitive& assign(WordType val) noexcept;
     template <class WordType>
@@ -94,7 +94,7 @@ class primitive
   public:
     void swap(primitive& other) noexcept;
     template <class T>
-    void swap(bit_reference<T> other) noexcept;
+    void swap(reference<T, 1> other) noexcept;
 
     // Bit manipulation
   public:
@@ -220,7 +220,7 @@ constexpr primitive<Bits>::primitive(
 template <size_t Bits>
 template <class T>
 constexpr primitive<Bits>::primitive(
-    bit_reference<T> ref
+    reference<T, 1> ref
 ) noexcept
 : _value(static_cast<storage_type>(static_cast<bool>(ref)))
 {
@@ -266,7 +266,7 @@ constexpr primitive<Bits>::primitive(
 template <size_t Bits>
 template <class T>
 constexpr primitive<Bits>& primitive<Bits>::operator=(
-    bit_reference<T> ref
+    reference<T, 1> ref
 ) noexcept
 {
     _value = static_cast<storage_type>(static_cast<bool>(ref));
@@ -358,7 +358,7 @@ inline void primitive<Bits>::swap(
 template <size_t Bits>
 template <class T>
 void primitive<Bits>::swap(
-    bit_reference<T> other
+    reference<T, 1> other
 ) noexcept
 {
     if (static_cast<bool>(other) != static_cast<bool>(_value)) {

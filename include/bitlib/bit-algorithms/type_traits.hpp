@@ -55,7 +55,7 @@ struct is_bit<bit_value>
 
 // Is bit structure specialization: bit reference
 template <class WordType>
-struct is_bit<bit_reference<WordType&>>
+struct is_bit<reference<WordType&>>
     : std::true_type {
 };
 

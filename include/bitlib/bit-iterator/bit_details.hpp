@@ -58,8 +58,8 @@
 namespace bit {
 template <size_t Bits>
 class primitive;
-template <class WordType>
-class bit_reference;
+template <typename WordRef, size_t PrimitiveBits>
+class reference;
 template <class Iterator>
 class bit_iterator;
 template <class WordType>
