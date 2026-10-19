@@ -101,3 +101,25 @@ add_test(
   NAME BenchmarkTest
   COMMAND $<TARGET_FILE:bitlib-bench> --benchmark_format=json --benchmark_out=benchmark_result.json --benchmark_min_warmup_time=0.001 --benchmark_min_time=0.01s
 )
+
+# A/B profiling benchmark for bit::primitive<N> abstraction overhead
+add_executable(bitlib-bench-primitive EXCLUDE_FROM_ALL)
+
+target_sources(bitlib-bench-primitive PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/primitive_bench.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/inc/benchmark_utils.hpp
+)
+target_include_directories(bitlib-bench-primitive PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}/inc
+)
+
+target_link_libraries(bitlib-bench-primitive PRIVATE
+  bitlib
+  benchmark::benchmark
+)
+
+add_test(
+  NAME BenchmarkPrimitive
+  COMMAND $<TARGET_FILE:bitlib-bench-primitive> --benchmark_format=json --benchmark_out=primitive_benchmark_result.json --benchmark_min_warmup_time=0 --benchmark_min_time=0.001s --benchmark_repetitions=1
+)
