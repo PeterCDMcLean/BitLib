@@ -24,109 +24,119 @@ namespace bit {
 
 
 /* ******************************* BIT VALUE ******************************** */
-// Bit value class definition - generic N-bit primitive
-template <size_t Bits = 1>
-class primitive
-{
-    // Assertions
-    static_assert(Bits >= 1, "primitive must have at least 1 bit");
-    static_assert(
-        Bits <= bitsof<std::size_t>(),
-        "primitive bit width exceeds the native integer size of the architecture");
-    static_assert(Bits <= bitsof<std::uint64_t>(),
-                  "primitive supports at most 64 bits");
+// Forward declaration of the generic N-bit primitive class.
+// The primary template (Bits > 1) is defined in bit_array.hpp after the
+// array class is available, breaking the recursive dependency:
+//   primitive<1> (bit_value) does not depend on array
+//   array<bit_value, ...> depends on bit_value (= primitive<1>)
+//   primitive<Bits> (Bits > 1) depends on array<bit_value, ...>
+template <size_t Bits>
+class primitive;
 
+// primitive<1> is the fundamental bit type, i.e. bit_value.
+// It stores a single bool and does not depend on array.
+template <>
+class primitive<1> {
     // Friendship
-    template <class, size_t> friend class reference;
+    template <class, primitive_c> friend class reference;
 
     // Types
   public:
-    static constexpr std::size_t bits = Bits;
+    static constexpr std::size_t bits = 1;
     using size_type = std::size_t;
-    using storage_type = ceil_integral<Bits>;
+    using storage_type = bool;
+    using word_type = std::uint8_t;
 
   private:
-    // Mask keeping only the low Bits bits significant
-    static constexpr storage_type bit_mask()
-    {
-        if constexpr (Bits == bitsof<storage_type>()) {
-            return ~storage_type(0);
-        } else {
-            return (storage_type(1) << Bits) - storage_type(1);
-        }
-    }
-
-    // Implementation details: data members
-  private:
-    storage_type _value;
+    bool _value;
 
   public:
     // Lifecycle
-    constexpr primitive() noexcept;
+    constexpr primitive() noexcept : _value(false) {}
     template <class T>
-    constexpr primitive(reference<T, 1> ref) noexcept;
+    constexpr primitive(reference<T> ref) noexcept
+        : _value(static_cast<bool>(ref)) {}
     template <class WordType>
-    explicit constexpr primitive(WordType val) noexcept;
-    explicit constexpr primitive(bool val) noexcept;
-    template <class WordType>
-    constexpr primitive(WordType val, size_type pos);
+    explicit constexpr primitive(WordType val) noexcept
+        : _value(static_cast<bool>(val & 1)) {}
+    explicit constexpr primitive(bool val) noexcept : _value(val) {}
 
     // Assignment
   public:
     template <class T>
-    constexpr primitive& operator=(reference<T, 1> ref) noexcept;
+    constexpr primitive& operator=(reference<T> ref) noexcept {
+        _value = static_cast<bool>(ref);
+        return *this;
+    }
     template <class WordType>
-    constexpr primitive& assign(WordType val) noexcept;
-    template <class WordType>
-    constexpr primitive& assign(WordType val, size_type pos);
+    constexpr primitive& assign(WordType val) noexcept {
+        _value = static_cast<bool>(val & 1);
+        return *this;
+    }
 
     // Bitwise assignment operators
   public:
-    constexpr primitive& operator&=(primitive other) noexcept;
-    constexpr primitive& operator|=(primitive other) noexcept;
-    constexpr primitive& operator^=(primitive other) noexcept;
+    constexpr primitive& operator&=(primitive other) noexcept {
+        _value &= other._value;
+        return *this;
+    }
+    constexpr primitive& operator|=(primitive other) noexcept {
+        _value |= other._value;
+        return *this;
+    }
+    constexpr primitive& operator^=(primitive other) noexcept {
+        _value ^= other._value;
+        return *this;
+    }
 
     // Conversion
   public:
-    explicit constexpr operator bool() const noexcept;
+    explicit constexpr operator bool() const noexcept { return _value; }
+    constexpr word_type word_value() const noexcept { return static_cast<word_type>(_value); }
+
+    // Bit manipulation
+    constexpr primitive<1>& flip() noexcept { _value = !_value; return *this; }
 
     // Swap members
   public:
-    void swap(primitive& other) noexcept;
+    void swap(primitive& other) noexcept {
+        std::swap(_value, other._value);
+    }
     template <class T>
-    void swap(reference<T, 1> other) noexcept;
+    void swap(reference<T> other) noexcept {
+        if (other != *this) {
+            flip();
+            other.flip();
+        }
+    }
 
     // Bitwise operators
   public:
     friend constexpr primitive operator~(
         primitive rhs
-    ) noexcept
-    {
-        return primitive(static_cast<storage_type>(~rhs._value));
+    ) noexcept {
+        return primitive(!rhs._value);
     }
 
     friend constexpr primitive operator&(
         primitive lhs,
         primitive rhs
-    ) noexcept
-    {
-        return primitive(static_cast<storage_type>(lhs._value & rhs._value));
+    ) noexcept {
+        return primitive(lhs._value & rhs._value);
     }
 
     friend constexpr primitive operator|(
         primitive lhs,
         primitive rhs
-    ) noexcept
-    {
-        return primitive(static_cast<storage_type>(lhs._value | rhs._value));
+    ) noexcept {
+        return primitive(lhs._value | rhs._value);
     }
 
     friend constexpr primitive operator^(
         primitive lhs,
         primitive rhs
-    ) noexcept
-    {
-        return primitive(static_cast<storage_type>(lhs._value ^ rhs._value));
+    ) noexcept {
+        return primitive(lhs._value ^ rhs._value);
     }
 
     // Comparison operators
@@ -134,242 +144,81 @@ class primitive
     friend constexpr bool operator==(
         primitive lhs,
         primitive rhs
-    ) noexcept
-    {
+    ) noexcept {
         return lhs._value == rhs._value;
     }
 
     friend constexpr bool operator!=(
         primitive lhs,
         primitive rhs
-    ) noexcept
-    {
+    ) noexcept {
         return lhs._value != rhs._value;
     }
 
     friend constexpr bool operator<(
         primitive lhs,
         primitive rhs
-    ) noexcept
-    {
+    ) noexcept {
         return lhs._value < rhs._value;
     }
 
     friend constexpr bool operator<=(
         primitive lhs,
         primitive rhs
-    ) noexcept
-    {
+    ) noexcept {
         return lhs._value <= rhs._value;
     }
 
     friend constexpr bool operator>(
         primitive lhs,
         primitive rhs
-    ) noexcept
-    {
+    ) noexcept {
         return lhs._value > rhs._value;
     }
 
     friend constexpr bool operator>=(
         primitive lhs,
         primitive rhs
-    ) noexcept
-    {
+    ) noexcept {
         return lhs._value >= rhs._value;
     }
 };
 
-// Alias: bit_value is a single bit, i.e. a partial-default instantiation
-// of the generic primitive<Bits> class with Bits fixed to 1.
+// Alias: bit_value is a single bit, i.e. primitive<1>.
 using bit_value = primitive<1>;
 
+// Forward declaration of the array class template.
+// Defined in bit_array.hpp.
+template <typename T, std::size_t N, typename W, typename Policy>
+class array;
+
 // Stream functions
-template <class CharT, class Traits>
+template <class CharT, class Traits, size_t Bits>
 std::basic_istream<CharT, Traits>& operator>>(
     std::basic_istream<CharT, Traits>& is,
-    bit_value& x
+    primitive<Bits>& x
 );
-template <class CharT, class Traits>
+template <class CharT, class Traits, size_t Bits>
 std::basic_ostream<CharT, Traits>& operator<<(
     std::basic_ostream<CharT, Traits>& os,
-    bit_value x
+    primitive<Bits> x
 );
 
 // Constants
 /* ************************************************************************** */
 
-
-// -------------------------- BIT VALUE: LIFECYCLE -------------------------- //
-// Implicitly default constructs a bit value initialized to zero
-template <size_t Bits>
-constexpr primitive<Bits>::primitive(
-) noexcept
-: _value(storage_type(0))
-{
-}
-
-// Implicitly constructs a bit value from a bit reference
-template <size_t Bits>
-template <class T>
-constexpr primitive<Bits>::primitive(
-    reference<T, 1> ref
-) noexcept
-: _value(static_cast<storage_type>(static_cast<bool>(ref)))
-{
-}
-
-// Explicitly constructs a bit from a bool
-template <size_t Bits>
-constexpr primitive<Bits>::primitive(
-    bool b
-) noexcept
-: _value(static_cast<storage_type>(b))
-{
-}
-
-// Explicitly constructs an aligned bit value
-template <size_t Bits>
-template <class WordType>
-constexpr primitive<Bits>::primitive(
-    WordType val
-) noexcept
-: _value(static_cast<storage_type>(val) & bit_mask())
-{
-    static_assert(binary_digits<WordType>::value, "");
-}
-
-// Explicitly constructs an unaligned bit value
-template <size_t Bits>
-template <class WordType>
-constexpr primitive<Bits>::primitive(
-    WordType val,
-    size_type pos
-)
-: _value((assert(pos + Bits <= binary_digits<WordType>::value),
-          static_cast<storage_type>(val >> pos) & bit_mask()))
-{
-    static_assert(binary_digits<WordType>::value, "");
-}
+constexpr bit_value bit_off(0U);
+constexpr bit_value bit_on(1U);
+constexpr bit_value bit0(0U);
+constexpr bit_value bit1(1U);
 // -------------------------------------------------------------------------- //
 
-
-// ------------------------- BIT VALUE: ASSIGNMENT -------------------------- //
-// Assigns a bit reference to the bit value
-template <size_t Bits>
-template <class T>
-constexpr primitive<Bits>& primitive<Bits>::operator=(
-    reference<T, 1> ref
-) noexcept
-{
-    _value = static_cast<storage_type>(static_cast<bool>(ref));
-    return *this;
-}
-
-// Assigns the aligned bit of a value to the bit value
-template <size_t Bits>
-template <class WordType>
-constexpr primitive<Bits>& primitive<Bits>::assign(
-    WordType val
-) noexcept
-{
-    static_assert(binary_digits<WordType>::value, "");
-    _value = static_cast<storage_type>(val) & bit_mask();
-    return *this;
-}
-
-// Assigns an unaligned bit of a value to the bit value
-template <size_t Bits>
-template <class WordType>
-constexpr primitive<Bits>& primitive<Bits>::assign(
-    WordType val,
-    size_type pos
-)
-{
-    assert(pos + Bits <= binary_digits<WordType>::value);
-    _value = static_cast<storage_type>(val >> pos) & bit_mask();
-    return *this;
-}
-// -------------------------------------------------------------------------- //
-
-
-// ---------------- BIT VALUE: BITWISE ASSIGNMENT OPERATORS ----------------- //
-// Assigns the value of the bit through a bitwise and operation
-template <size_t Bits>
-constexpr primitive<Bits>& primitive<Bits>::operator&=(
-    primitive other
-) noexcept
-{
-    _value &= other._value;
-    return *this;
-}
-
-// Assigns the value of the bit through a bitwise or operation
-template <size_t Bits>
-constexpr primitive<Bits>& primitive<Bits>::operator|=(
-    primitive other
-) noexcept
-{
-    _value |= other._value;
-    return *this;
-}
-
-// Assigns the value of the bit through a bitwise xor operation
-template <size_t Bits>
-constexpr primitive<Bits>& primitive<Bits>::operator^=(
-    primitive other
-) noexcept
-{
-    _value ^= other._value;
-    return *this;
-}
-// -------------------------------------------------------------------------- //
-
-
-// ------------------------- BIT VALUE: CONVERSION -------------------------- //
-// Explicitly converts the bit value to a boolean value
-template <size_t Bits>
-constexpr primitive<Bits>::operator bool(
-) const noexcept
-{
-    return _value != storage_type(0);
-}
-// -------------------------------------------------------------------------- //
-
-
-// ------------------------ BIT VALUE: SWAP MEMBERS ------------------------- //
-// Swaps the bit value with another bit value
-template <size_t Bits>
-inline void primitive<Bits>::swap(
-    primitive& other
-) noexcept
-{
-    std::swap(*this, other);
-}
-
-// Swaps the bit value with the value of a bit reference
-template <size_t Bits>
-template <class T>
-void primitive<Bits>::swap(
-    reference<T, 1> other
-) noexcept
-{
-    if (static_cast<bool>(other) != static_cast<bool>(_value)) {
-        _value = static_cast<storage_type>(!static_cast<bool>(_value));
-        other = primitive<1>(static_cast<storage_type>(!static_cast<bool>(other)));
-    }
-}
-// -------------------------------------------------------------------------- //
-
-
-// ---------------------- BIT VALUE: STREAM FUNCTIONS ----------------------- //
-// Extracts a bit value from an input stream
-template <class CharT, class Traits>
+// Stream functions
+template <class CharT, class Traits, size_t Bits>
 std::basic_istream<CharT, Traits>& operator>>(
     std::basic_istream<CharT, Traits>& is,
-    bit_value& x
-)
-{
+    primitive<Bits>& x
+) {
     using stream_type = std::basic_istream<CharT, Traits>;
     using traits_type = typename stream_type::traits_type;
     using ios_base = typename stream_type::ios_base;
@@ -381,7 +230,6 @@ std::basic_istream<CharT, Traits>& operator>>(
     typename stream_type::int_type int_value = 0;
     typename stream_type::sentry sentry(is);
     bool ok = false;
-    bit_value tmp = x;
     if (sentry) {
         try {
             int_value = is.rdbuf()->sbumpc();
@@ -390,10 +238,10 @@ std::basic_istream<CharT, Traits>& operator>>(
             } else {
                 char_value = traits_type::to_char_type(int_value);
                 if (traits_type::eq(char_value, is.widen(zero))) {
-                    tmp = bit_value(false);
+                    x = primitive<Bits>(false);
                     ok = true;
                 } else if (traits_type::eq(char_value, is.widen(one))) {
-                    tmp = bit_value(true);
+                    x = primitive<Bits>(true);
                     ok = true;
                 } else {
                     int_value = is.rdbuf()->sputbackc(char_value);
@@ -402,12 +250,12 @@ std::basic_istream<CharT, Traits>& operator>>(
                     }
                 }
             }
-        } catch(...) {
+        } catch (...) {
             is.setstate(ios_base::badbit);
         }
     }
     if (ok) {
-        x = tmp;
+        // x already set
     } else {
         state |= ios_base::failbit;
     }
@@ -415,27 +263,15 @@ std::basic_istream<CharT, Traits>& operator>>(
     return is;
 }
 
-// Inserts a bit value in an output stream
-template <class CharT, class Traits>
+template <class CharT, class Traits, size_t Bits>
 std::basic_ostream<CharT, Traits>& operator<<(
     std::basic_ostream<CharT, Traits>& os,
-    bit_value x
-)
-{
+    primitive<Bits> x
+) {
     constexpr char zero = '0';
     constexpr char one = '1';
-    return os << os.widen(x ? one : zero);
+    return os << os.widen(static_cast<bool>(x) ? one : zero);
 }
-// -------------------------------------------------------------------------- //
-
-
-// -------------------------- BIT VALUE: CONSTANTS -------------------------- //
-// Constant bit values
-constexpr bit_value bit_off(0U);
-constexpr bit_value bit_on(1U);
-constexpr bit_value bit0(0U);
-constexpr bit_value bit1(1U);
-// -------------------------------------------------------------------------- //
 
 
 // ========================================================================== //

@@ -58,14 +58,14 @@
 namespace bit {
 template <size_t Bits>
 class primitive;
-template <typename WordRef, size_t PrimitiveBits>
+template <typename WordRef = uintptr_t&, primitive_c ValueType = primitive<1>>
 class reference;
 template <class Iterator,
-          size_t PrimitiveBits = 1,
-          size_t Alignment = PrimitiveBits>
+          primitive_c ValueType = primitive<1>,
+          size_t Alignment = 1>
 class iterator;
-template <class WordType>
-using bit_pointer = iterator<WordType*, 1, 1>;
+template <typename WordType>
+using bit_pointer = iterator<WordType*, primitive<1>, 1>;
 template <typename target_word_ptr, typename source_word_ptr>
 class bit_word_pointer_adapter;
 

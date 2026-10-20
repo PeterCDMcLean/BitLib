@@ -18,12 +18,15 @@ inline constexpr from_range_t from_range{};
 namespace bit {
 
 // Forward declaration of the generic N-bit primitive class.
+// primitive<1> is defined in bit_value.hpp as bit_value.
 template <size_t Bits>
 class primitive;
 
-// bit_value remains as an alias for a single bit: a partial-default
-// instantiation of the generic primitive<Bits> class with Bits fixed to 1.
-using bit_value = primitive<1>;
+// Concept: any type with a static constexpr size_t bits member.
+template <typename T>
+concept primitive_c = requires {
+    { T::bits } -> std::convertible_to<std::size_t>;
+};
 
 template <typename reference_type, typename value_type>
 concept reference_like =
@@ -51,15 +54,15 @@ concept pointer_like = reference_like<reference_type, value_type> && requires(po
 static_assert(pointer_like<uint8_t*, uint8_t&, uint8_t>, "pointer_like does not match native types");
 
 template <typename T>
-concept bit_reference_c = reference_like<T, bit_value>;
+concept bit_reference_c = reference_like<T, primitive<1>>;
 
 template <typename Ptr, typename Ref>
-concept bit_pointer_c = pointer_like<Ptr, Ref, bit_value>;
+concept bit_pointer_c = pointer_like<Ptr, Ref, primitive<1>>;
 
 template <typename It>
 concept bit_iterator_c =
     std::random_access_iterator<It> &&
-    std::same_as<typename std::iterator_traits<It>::value_type, bit_value> &&
+    primitive_c<typename std::iterator_traits<It>::value_type> &&
     bit_reference_c<typename std::iterator_traits<It>::reference> &&
     bit_pointer_c<typename std::iterator_traits<It>::pointer, typename std::iterator_traits<It>::reference> &&
     requires(It it) {
@@ -85,7 +88,7 @@ concept bit_contiguous_iterator_c = bit_iterator_c<It> &&
 template <typename R>
 concept bit_range =
     std::ranges::range<R> &&
-    std::convertible_to<std::ranges::range_value_t<R>, bit_value>;
+    std::convertible_to<std::ranges::range_value_t<R>, primitive<1>>;
 
 template <typename R>
 concept bit_sized_range =
