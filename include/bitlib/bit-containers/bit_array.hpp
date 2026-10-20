@@ -270,7 +270,7 @@ class primitive {
     using array_type = array<bit_value, Bits, word_type, policy_type>;
 
     // Friendship
-    template <class, primitive_c>
+    template <class, primitive_c, size_t>
     friend class reference;
 
   public:

@@ -38,7 +38,7 @@ class primitive;
 template <>
 class primitive<1> {
     // Friendship
-    template <class, primitive_c> friend class reference;
+    template <class, primitive_c, size_t> friend class reference;
 
     // Types
   public:

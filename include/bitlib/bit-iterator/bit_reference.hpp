@@ -16,6 +16,7 @@
 // C++ standard library
 // Project sources
 #include <bit>
+#include <cstddef>
 #include <type_traits>
 
 #include "bit_details.hpp"
@@ -30,12 +31,18 @@ namespace bit {
 /* ***************************** BIT REFERENCE ****************************** */
 // Bit reference class definition - generic reference to a primitive_c-compliant
 // bit sequence. bit_reference remains as an alias (reference<>).
-template <typename WordRef, primitive_c ValueType>
+template <typename WordRef, primitive_c ValueType, size_t Alignment>
 class reference {
     // Assertions
     static_assert(
         ValueType::bits <= bitsof<std::size_t>(),
         "reference bit width exceeds the native integer size of the architecture");
+    static_assert(
+        Alignment == std::dynamic_extent || Alignment > 0,
+        "reference alignment must be dynamic_extent or a positive value");
+    static_assert(
+        Alignment == std::dynamic_extent || Alignment <= bitsof<std::size_t>(),
+        "reference alignment exceeds the native integer size of the architecture");
 
     // Types
   public:
@@ -45,6 +52,8 @@ class reference {
     using value_type = ValueType;
     using size_type = std::size_t;
     using mask_type = std::make_unsigned_t<WordType>;
+
+    static constexpr size_type alignment_value = Alignment;
 
   private:
     // Mask covering the low ValueType::bits bits.
@@ -57,8 +66,19 @@ class reference {
         }
     }
 
+    // Compile-time mask for aligned references when Alignment is known.
+    // When Alignment == dynamic_extent, this returns 0 (mask is runtime).
+    static constexpr mask_type alignment_mask()
+    {
+        if constexpr (Alignment == std::dynamic_extent) {
+            return mask_type(0);
+        } else {
+            return bit_mask();
+        }
+    }
+
     // Friendship
-    template <class, primitive_c>
+    template <class, primitive_c, size_t>
     friend class reference;
 
     // Lifecycle
@@ -188,22 +208,22 @@ std::basic_ostream<CharT, Traits>& operator<<(
 
 // ------------------------ BIT REFERENCE: LIFECYCLE ------------------------ //
 
-template <class WordRef, primitive_c ValueType>
-constexpr reference<WordRef, ValueType>::reference(
-    const reference<WordRef, ValueType>& other
+template <class WordRef, primitive_c ValueType, size_t Alignment>
+constexpr reference<WordRef, ValueType, Alignment>::reference(
+    const reference<WordRef, ValueType, Alignment>& other
 ) noexcept
     : _ref(other._ref), _mask(other._mask) {
 }
 
 // Explicitly constructs an aligned bit reference
-template <class WordRef, primitive_c ValueType>
-constexpr reference<WordRef, ValueType>::reference(const WordRef& ref) noexcept
+template <class WordRef, primitive_c ValueType, size_t Alignment>
+constexpr reference<WordRef, ValueType, Alignment>::reference(const WordRef& ref) noexcept
     : _ref(ref), _mask(bit_mask()) {
 }
 
 // Explicitly constructs an unaligned bit reference
-template <class WordRef, primitive_c ValueType>
-constexpr reference<WordRef, ValueType>::reference(
+template <class WordRef, primitive_c ValueType, size_t Alignment>
+constexpr reference<WordRef, ValueType, Alignment>::reference(
     const WordRef& ref,
     size_type pos
 ) noexcept
@@ -216,9 +236,9 @@ constexpr reference<WordRef, ValueType>::reference(
 
 // ----------------------- BIT REFERENCE: ASSIGNMENT ------------------------ //
 // Copies a bit reference to the bit reference
-template <class WordRef, primitive_c ValueType>
-constexpr reference<WordRef, ValueType>&
-reference<WordRef, ValueType>::operator=(const reference& other)
+template <class WordRef, primitive_c ValueType, size_t Alignment>
+constexpr reference<WordRef, ValueType, Alignment>&
+reference<WordRef, ValueType, Alignment>::operator=(const reference<WordRef, ValueType, Alignment>& other)
     const noexcept {
   // Copy all ValueType::bits bits from other, not just its boolean truth
   word_type other_val = static_cast<word_type>(
@@ -227,14 +247,14 @@ reference<WordRef, ValueType>::operator=(const reference& other)
   _ref = static_cast<word_type>(
       (static_cast<word_type>(_ref) & ~_mask) |
       (static_cast<word_type>(other_val) << std::countr_zero(_mask)));
-  return const_cast<reference<WordRef, ValueType>&>(*this);
+  return const_cast<reference<WordRef, ValueType, Alignment>&>(*this);
 }
 
 // Assigns a bit reference to the bit reference
-template <class WordRef, primitive_c ValueType>
+template <class WordRef, primitive_c ValueType, size_t Alignment>
 template <class T>
-constexpr reference<WordRef, ValueType>&
-reference<WordRef, ValueType>::operator=(const reference<T, ValueType>& other)
+constexpr reference<WordRef, ValueType, Alignment>&
+reference<WordRef, ValueType, Alignment>::operator=(const reference<T, ValueType>& other)
     const noexcept {
   // Copy all ValueType::bits bits from other, not just its boolean truth
   word_type other_val = static_cast<word_type>(
@@ -243,39 +263,39 @@ reference<WordRef, ValueType>::operator=(const reference<T, ValueType>& other)
   _ref = static_cast<word_type>(
       (static_cast<word_type>(_ref) & ~_mask) |
       (static_cast<word_type>(other_val) << std::countr_zero(_mask)));
-  return const_cast<reference<WordRef, ValueType>&>(*this);
+  return const_cast<reference<WordRef, ValueType, Alignment>&>(*this);
 }
 
 // Assigns a primitive value to the bit reference
-template <class WordRef, primitive_c ValueType>
-constexpr reference<WordRef, ValueType>&
-reference<WordRef, ValueType>::operator=(const ValueType& val)
+template <class WordRef, primitive_c ValueType, size_t Alignment>
+constexpr reference<WordRef, ValueType, Alignment>&
+reference<WordRef, ValueType, Alignment>::operator=(const ValueType& val)
     const noexcept {
   // reference is a friend of primitive, so we can access word_value() directly
   word_type v = static_cast<word_type>(val.word_value());
   word_type masked = (v & bit_mask()) << std::countr_zero(_mask);
   _ref = static_cast<word_type>((_ref & ~_mask) | masked);
-  return const_cast<reference<WordRef, ValueType>&>(*this);
+  return const_cast<reference<WordRef, ValueType, Alignment>&>(*this);
 }
 
 // Assigns the aligned bits of a value to the bit reference
-template <class WordRef, primitive_c ValueType>
-constexpr reference<WordRef, ValueType>&
-reference<WordRef, ValueType>::assign(word_type val) const noexcept {
+template <class WordRef, primitive_c ValueType, size_t Alignment>
+constexpr reference<WordRef, ValueType, Alignment>&
+reference<WordRef, ValueType, Alignment>::assign(word_type val) const noexcept {
   word_type masked = (val & bit_mask()) << std::countr_zero(_mask);
   _ref = static_cast<word_type>((_ref & ~_mask) | masked);
-  return const_cast<reference<WordRef, ValueType>&>(*this);
+  return const_cast<reference<WordRef, ValueType, Alignment>&>(*this);
 }
 
 // Assigns unaligned bits of a value to the bit reference
-template <class WordRef, primitive_c ValueType>
-constexpr reference<WordRef, ValueType>&
-reference<WordRef, ValueType>::assign(word_type val, size_type pos) const {
+template <class WordRef, primitive_c ValueType, size_t Alignment>
+constexpr reference<WordRef, ValueType, Alignment>&
+reference<WordRef, ValueType, Alignment>::assign(word_type val, size_type pos) const {
   assert(pos + ValueType::bits <= binary_digits<word_type>::value);
   mask_type msk = bit_mask() << pos;
   word_type masked = (val >> pos) & bit_mask();
   _ref = static_cast<word_type>((_ref & ~msk) | (masked << pos));
-  return const_cast<reference<WordRef, ValueType>&>(*this);
+  return const_cast<reference<WordRef, ValueType, Alignment>&>(*this);
 }
 // -------------------------------------------------------------------------- //
 
@@ -283,39 +303,39 @@ reference<WordRef, ValueType>::assign(word_type val, size_type pos) const {
 
 // -------------- BIT REFERENCE: BITWISE ASSIGNMENT OPERATORS --------------- //
 // Assigns the value of the referenced bits through a bitwise and operation
-template <class WordRef, primitive_c ValueType>
-constexpr reference<WordRef, ValueType>&
-reference<WordRef, ValueType>::operator&=(const value_type& other)
+template <class WordRef, primitive_c ValueType, size_t Alignment>
+constexpr reference<WordRef, ValueType, Alignment>&
+reference<WordRef, ValueType, Alignment>::operator&=(const value_type& other)
     const noexcept {
   word_type o = static_cast<word_type>(other.word_value()) & bit_mask();
   word_type shifted = o << std::countr_zero(_mask);
   _ref = static_cast<word_type>(
       (_ref & ~_mask) | ((_ref & _mask) & shifted));
-  return const_cast<reference<WordRef, ValueType>&>(*this);
+  return const_cast<reference<WordRef, ValueType, Alignment>&>(*this);
 }
 
 // Assigns the value of the referenced bits through a bitwise or operation
-template <class WordRef, primitive_c ValueType>
-constexpr reference<WordRef, ValueType>&
-reference<WordRef, ValueType>::operator|=(const value_type& other)
+template <class WordRef, primitive_c ValueType, size_t Alignment>
+constexpr reference<WordRef, ValueType, Alignment>&
+reference<WordRef, ValueType, Alignment>::operator|=(const value_type& other)
     const noexcept {
   word_type o = static_cast<word_type>(other.word_value()) & bit_mask();
   word_type shifted = o << std::countr_zero(_mask);
   _ref = static_cast<word_type>(
       (_ref & ~_mask) | ((_ref & _mask) | shifted));
-  return const_cast<reference<WordRef, ValueType>&>(*this);
+  return const_cast<reference<WordRef, ValueType, Alignment>&>(*this);
 }
 
 // Assigns the value of the referenced bits through a bitwise xor operation
-template <class WordRef, primitive_c ValueType>
-constexpr reference<WordRef, ValueType>&
-reference<WordRef, ValueType>::operator^=(const value_type& other)
+template <class WordRef, primitive_c ValueType, size_t Alignment>
+constexpr reference<WordRef, ValueType, Alignment>&
+reference<WordRef, ValueType, Alignment>::operator^=(const value_type& other)
     const noexcept {
   word_type o = static_cast<word_type>(other.word_value()) & bit_mask();
   word_type shifted = o << std::countr_zero(_mask);
   _ref = static_cast<word_type>(
       (_ref & ~_mask) | ((_ref & _mask) ^ shifted));
-  return const_cast<reference<WordRef, ValueType>&>(*this);
+  return const_cast<reference<WordRef, ValueType, Alignment>&>(*this);
 }
 // -------------------------------------------------------------------------- //
 
@@ -323,14 +343,14 @@ reference<WordRef, ValueType>::operator^=(const value_type& other)
 
 // ----------------------- BIT REFERENCE: CONVERSION ------------------------ //
 // Explicitly converts the bit reference to a boolean value
-template <class WordRef, primitive_c ValueType>
-constexpr reference<WordRef, ValueType>::operator bool() const noexcept {
+template <class WordRef, primitive_c ValueType, size_t Alignment>
+constexpr reference<WordRef, ValueType, Alignment>::operator bool() const noexcept {
   return (_ref & _mask) != mask_type(0);
 }
 
 // Converts the bit reference to its primitive value type
-template <class WordRef, primitive_c ValueType>
-constexpr reference<WordRef, ValueType>::operator value_type() const noexcept {
+template <class WordRef, primitive_c ValueType, size_t Alignment>
+constexpr reference<WordRef, ValueType, Alignment>::operator value_type() const noexcept {
   return value_type(static_cast<typename value_type::storage_type>(
       (static_cast<word_type>(_ref) & _mask) >> std::countr_zero(_mask)));
 }
@@ -340,16 +360,16 @@ constexpr reference<WordRef, ValueType>::operator value_type() const noexcept {
 
 // ------------------------- BIT REFERENCE: ACCESS -------------------------- //
 // Gets a bit pointer from the bit reference
-template <class WordRef, primitive_c ValueType>
-constexpr bit_pointer<typename reference<WordRef, ValueType>::
+template <class WordRef, primitive_c ValueType, size_t Alignment>
+constexpr bit_pointer<typename reference<WordRef, ValueType, Alignment>::
     const_word_type>
-reference<WordRef, ValueType>::operator&() const noexcept {
+reference<WordRef, ValueType, Alignment>::operator&() const noexcept {
   return bit_pointer<const_word_type>(&_ref, std::countr_zero(_mask));
 }
 
-template <class WordRef, primitive_c ValueType>
-constexpr bit_pointer<typename reference<WordRef, ValueType>::WordType>
-reference<WordRef, ValueType>::operator&() noexcept {
+template <class WordRef, primitive_c ValueType, size_t Alignment>
+constexpr bit_pointer<typename reference<WordRef, ValueType, Alignment>::WordType>
+reference<WordRef, ValueType, Alignment>::operator&() noexcept {
   return bit_pointer<WordType>(&_ref, std::countr_zero(_mask));
 }
 // -------------------------------------------------------------------------- //
@@ -358,9 +378,9 @@ reference<WordRef, ValueType>::operator&() noexcept {
 
 // ---------------------- BIT REFERENCE: SWAP MEMBERS ----------------------- //
 // Swaps the value of the referenced bits with another bit reference
-template <class WordRef, primitive_c ValueType>
+template <class WordRef, primitive_c ValueType, size_t Alignment>
 template <class T>
-void reference<WordRef, ValueType>::swap(reference<T, ValueType> other) const {
+void reference<WordRef, ValueType, Alignment>::swap(reference<T, ValueType> other) const {
   if (other != *this) {
     value_type me = static_cast<value_type>(*this);
     value_type them = static_cast<value_type>(other);
@@ -370,8 +390,8 @@ void reference<WordRef, ValueType>::swap(reference<T, ValueType> other) const {
 }
 
 // Swaps the value of the referenced bits with a primitive value
-template <class WordRef, primitive_c ValueType>
-void reference<WordRef, ValueType>::swap(ValueType& other) const {
+template <class WordRef, primitive_c ValueType, size_t Alignment>
+void reference<WordRef, ValueType, Alignment>::swap(ValueType& other) const {
   if (other != *this) {
     value_type me = static_cast<value_type>(*this);
     value_type them = static_cast<value_type>(other);
@@ -488,14 +508,14 @@ std::basic_ostream<CharT, Traits>& operator<<(
 
 // -------- BIT REFERENCE: IMPLEMENTATION DETAILS: FUNCTION MEMBERS --------- //
 // Privately explicitly constructs an aligned bit reference from a pointer
-template <class WordRef, primitive_c ValueType>
-constexpr reference<WordRef, ValueType>::reference(word_type* ptr) noexcept
+template <class WordRef, primitive_c ValueType, size_t Alignment>
+constexpr reference<WordRef, ValueType, Alignment>::reference(word_type* ptr) noexcept
     : _ref(*ptr), _mask(bit_mask()) {
 }
 
 // Privately explicitly constructs an unaligned bit reference from a pointer
-template <class WordRef, primitive_c ValueType>
-constexpr reference<WordRef, ValueType>::reference(
+template <class WordRef, primitive_c ValueType, size_t Alignment>
+constexpr reference<WordRef, ValueType, Alignment>::reference(
     word_type* ptr,
     size_type pos
 ) noexcept

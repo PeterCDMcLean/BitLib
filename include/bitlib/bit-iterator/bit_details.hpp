@@ -58,7 +58,7 @@
 namespace bit {
 template <size_t Bits>
 class primitive;
-template <typename WordRef = uintptr_t&, primitive_c ValueType = primitive<1>>
+template <typename WordRef = uintptr_t&, primitive_c ValueType = primitive<1>, size_t Alignment = std::dynamic_extent>
 class reference;
 template <class Iterator,
           primitive_c ValueType = primitive<1>,
