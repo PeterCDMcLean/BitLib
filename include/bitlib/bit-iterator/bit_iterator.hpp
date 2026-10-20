@@ -32,13 +32,18 @@ namespace bit {
 template <typename target_word_ptr, typename source_word_ptr>
 class bit_word_pointer_adapter;
 
-// Generic bit iterator with configurable primitive value type and alignment.
-// bit_iterator remains as an alias to the default instantiation (a single-bit
-// iterator, i.e. ValueType == primitive<1>, whose value_type is bit_value).
+// Generic bit iterator with configurable primitive value type and origin
+// alignment. bit_iterator remains as an alias to the default instantiation (a
+// single-bit iterator, i.e. ValueType == primitive<1>, whose value_type is
+// bit_value). OriginAlignment describes the initial bit alignment of the
+// iterator origin; a value of 1 means no known alignment (runtime position
+// tracking). When OriginAlignment > 1 and equals ValueType::bits, the iterator
+// can use compile-time optimizations since every element starts at a known
+// aligned position within its word.
 template <
     class Iterator,
     primitive_c ValueType,
-    size_t Alignment
+    size_t OriginAlignment
 >
 class iterator
 {
@@ -52,6 +57,9 @@ class iterator
       ValueType::bits <= binary_digits<std::iter_value_t<Iterator>>::value,
       "primitive bit width cannot exceed the underlying word width");
   static_assert(binary_digits<std::iter_value_t<Iterator>>::value, "");
+  static_assert(
+      OriginAlignment == 1 || OriginAlignment <= bitsof<std::size_t>(),
+      "origin alignment exceeds the native integer size of the architecture");
 
   // Types
  public:
@@ -60,20 +68,20 @@ class iterator
   using iterator_category = typename _traits_t::iterator_category;
   using value_type = ValueType;
   using difference_type = std::ptrdiff_t;
-  using pointer = iterator<word_type*, ValueType, Alignment>;
+  using pointer = iterator<word_type*, ValueType, OriginAlignment>;
   using reference = reference<typename _traits_t::reference, ValueType>;
   using size_type = std::size_t;
   using mask_type = std::make_unsigned_t<std::remove_cv_t<word_type>>;
 
   static constexpr size_type primitive_bits = ValueType::bits;
-  static constexpr size_type alignment_value = Alignment;
+  static constexpr size_type origin_alignment_value = OriginAlignment;
 
   // Lifecycle
  public:
   constexpr iterator();
   constexpr iterator(const iterator& other);
-  template <class T, primitive_c U, size_t A>
-  constexpr iterator(const iterator<T, U, A>& other)
+  template <class T, primitive_c U, size_t O>
+  constexpr iterator(const iterator<T, U, O>& other)
     requires std::constructible_from<iterator_type, T>;
   explicit constexpr iterator(iterator_type i);
   constexpr iterator(iterator_type i, size_type pos);
@@ -82,13 +90,13 @@ class iterator
 
   template <typename T>
   constexpr iterator(const iterator<bit_word_pointer_adapter<T, Iterator>,
-                                     ValueType, Alignment>& other);
+                                     ValueType, OriginAlignment>& other);
 
   // Assignment
  public:
   constexpr iterator& operator=(const iterator& other);
-  template <class T, primitive_c U, size_t A>
-  constexpr iterator& operator=(const iterator<T, U, A>& other);
+  template <class T, primitive_c U, size_t O>
+  constexpr iterator& operator=(const iterator<T, U, O>& other);
 
   // Access
  public:
@@ -96,7 +104,7 @@ class iterator
   constexpr pointer operator->() const noexcept;
   constexpr reference operator[](difference_type n) const;
 
-  // Increment and decrement operators
+  // Increment and decrement operators - advance by ValueType::bits elements
  public:
   constexpr iterator& operator++();
   constexpr iterator& operator--();
@@ -113,7 +121,7 @@ class iterator
   constexpr iterator_type base() const;
   constexpr iterator_type address() const;
   constexpr size_type position() const noexcept;
-  constexpr size_type alignment() const noexcept { return Alignment; }
+  constexpr size_type origin_alignment() const noexcept { return OriginAlignment; }
 
   auto operator<=>(const iterator&) const = default;
   // Implementation details: data members
@@ -122,17 +130,17 @@ class iterator
   size_type _position;
 
   // Non-member arithmetic operators
-  template <class T, primitive_c U, size_t A>
-  friend constexpr iterator<T, U, A> operator+(
-      typename iterator<T, U, A>::difference_type n,
-      const iterator<T, U, A>& i);
-  template <class T, primitive_c U, size_t A, class V, primitive_c W, size_t X>
+  template <class T, primitive_c U, size_t O>
+  friend constexpr iterator<T, U, O> operator+(
+      typename iterator<T, U, O>::difference_type n,
+      const iterator<T, U, O>& i);
+  template <class T, primitive_c U, size_t O, class V, primitive_c W, size_t P>
   friend constexpr typename std::common_type<
-      typename iterator<T, U, A>::difference_type,
-      typename iterator<V, W, X>::difference_type>::type
+      typename iterator<T, U, O>::difference_type,
+      typename iterator<V, W, P>::difference_type>::type
   operator-(
-      const iterator<T, U, A>& lhs,
-      const iterator<V, W, X>& rhs);
+      const iterator<T, U, O>& lhs,
+      const iterator<V, W, P>& rhs);
 };
 /* ************************************************************************** */
 
@@ -140,57 +148,57 @@ class iterator
 
 // ------------------------ BIT ITERATOR: LIFECYCLE ------------------------- //
 // Implicitly default constructs a bit iterator
-template <class Iterator, primitive_c ValueType, size_t Alignment>
-constexpr iterator<Iterator, ValueType, Alignment>::iterator()
+template <class Iterator, primitive_c ValueType, size_t OriginAlignment>
+constexpr iterator<Iterator, ValueType, OriginAlignment>::iterator()
     : _current(), _position() {
 }
 
 // Implicitly constructs a bit iterator from another bit iterator
-template <class Iterator, primitive_c ValueType, size_t Alignment>
-constexpr iterator<Iterator, ValueType, Alignment>::iterator(
+template <class Iterator, primitive_c ValueType, size_t OriginAlignment>
+constexpr iterator<Iterator, ValueType, OriginAlignment>::iterator(
     const iterator& other)
     : _current(other.base()), _position(other.position()) {
   assert(_position < binary_digits<word_type>::value);
 }
 
-template <class Iterator, primitive_c ValueType, size_t Alignment>
-template <class T, primitive_c U, size_t A>
-constexpr iterator<Iterator, ValueType, Alignment>::iterator(
-    const iterator<T, U, A>& other)
+template <class Iterator, primitive_c ValueType, size_t OriginAlignment>
+template <class T, primitive_c U, size_t O>
+constexpr iterator<Iterator, ValueType, OriginAlignment>::iterator(
+    const iterator<T, U, O>& other)
   requires std::constructible_from<iterator_type, T>
     : _current(other.base()), _position(other.position()) {
   assert(_position < binary_digits<word_type>::value);
 }
 
 // Explicitly constructs an aligned bit iterator from an iterator
-template <class Iterator, primitive_c ValueType, size_t Alignment>
-constexpr iterator<Iterator, ValueType, Alignment>::iterator(
+template <class Iterator, primitive_c ValueType, size_t OriginAlignment>
+constexpr iterator<Iterator, ValueType, OriginAlignment>::iterator(
     const iterator_type i)
     : _current(i), _position(0) {
 }
 
 // Explicitly constructs an unaligned bit iterator from an iterator
-template <class Iterator, primitive_c ValueType, size_t Alignment>
-constexpr iterator<Iterator, ValueType, Alignment>::iterator(
+template <class Iterator, primitive_c ValueType, size_t OriginAlignment>
+constexpr iterator<Iterator, ValueType, OriginAlignment>::iterator(
     const iterator_type i,
     size_type pos)
     : _current(i), _position((assert(pos < binary_digits<word_type>::value), pos)) {
 }
 
 // Explicitly constructs an unaligned bit iterator from a pointer
-template <class Iterator, primitive_c ValueType, size_t Alignment>
-constexpr iterator<Iterator, ValueType, Alignment>::iterator(
+template <class Iterator, primitive_c ValueType, size_t OriginAlignment>
+constexpr iterator<Iterator, ValueType, OriginAlignment>::iterator(
     const pointer& ptr)
   requires std::constructible_from<iterator_type, word_type*>
     : _current(ptr._current), _position(ptr.position()) {
   assert(_position < binary_digits<word_type>::value);
 }
 
-template <class Iterator, primitive_c ValueType, size_t Alignment>
+template <class Iterator, primitive_c ValueType, size_t OriginAlignment>
 template <typename T>
-constexpr iterator<Iterator, ValueType, Alignment>::iterator(
+constexpr iterator<Iterator, ValueType, OriginAlignment>::iterator(
     const iterator<bit_word_pointer_adapter<T, Iterator>,
-                   ValueType, Alignment>& other)
+                   ValueType, OriginAlignment>& other)
     : _current(other.base().base()),
       _position(other.base().index() *
                     binary_digits<typename bit_word_pointer_adapter<T,
@@ -204,9 +212,9 @@ constexpr iterator<Iterator, ValueType, Alignment>::iterator(
 
 // ------------------------ BIT ITERATOR: ASSIGNMENT ------------------------ //
 // Assigns a bit iterator to the bit iterator
-template <class Iterator, primitive_c ValueType, size_t Alignment>
-constexpr iterator<Iterator, ValueType, Alignment>&
-iterator<Iterator, ValueType, Alignment>::operator=(
+template <class Iterator, primitive_c ValueType, size_t OriginAlignment>
+constexpr iterator<Iterator, ValueType, OriginAlignment>&
+iterator<Iterator, ValueType, OriginAlignment>::operator=(
     const iterator& other) {
   _current = other._current;
   _position = other._position;
@@ -215,11 +223,11 @@ iterator<Iterator, ValueType, Alignment>::operator=(
 }
 
 // Assigns a bit iterator to the bit iterator
-template <class Iterator, primitive_c ValueType, size_t Alignment>
-template <class T, primitive_c U, size_t A>
-constexpr iterator<Iterator, ValueType, Alignment>&
-iterator<Iterator, ValueType, Alignment>::operator=(
-    const iterator<T, U, A>& other) {
+template <class Iterator, primitive_c ValueType, size_t OriginAlignment>
+template <class T, primitive_c U, size_t O>
+constexpr iterator<Iterator, ValueType, OriginAlignment>&
+iterator<Iterator, ValueType, OriginAlignment>::operator=(
+    const iterator<T, U, O>& other) {
   _current = other._current;
   _position = other._position;
   assert(_position < binary_digits<word_type>::value);
@@ -231,173 +239,172 @@ iterator<Iterator, ValueType, Alignment>::operator=(
 
 // -------------------------- BIT ITERATOR: ACCESS -------------------------- //
 // Gets a bit reference from the bit iterator
-template <class Iterator, primitive_c ValueType, size_t Alignment>
-constexpr typename iterator<Iterator, ValueType, Alignment>::reference
-iterator<Iterator, ValueType, Alignment>::operator*() const noexcept {
+template <class Iterator, primitive_c ValueType, size_t OriginAlignment>
+constexpr typename iterator<Iterator, ValueType, OriginAlignment>::reference
+iterator<Iterator, ValueType, OriginAlignment>::operator*() const noexcept {
   return reference(*_current, _position);
 }
 
 // Gets a pointer to a bit
-template <class Iterator, primitive_c ValueType, size_t Alignment>
-constexpr typename iterator<Iterator, ValueType, Alignment>::pointer
-iterator<Iterator, ValueType, Alignment>::operator->() const noexcept {
+template <class Iterator, primitive_c ValueType, size_t OriginAlignment>
+constexpr typename iterator<Iterator, ValueType, OriginAlignment>::pointer
+iterator<Iterator, ValueType, OriginAlignment>::operator->() const noexcept {
   return pointer(&*_current, _position);
 }
 
 // Gets a bit reference, decrementing or incrementing the iterator
-template <class Iterator, primitive_c ValueType, size_t Alignment>
-constexpr typename iterator<Iterator, ValueType, Alignment>::reference
-iterator<Iterator, ValueType, Alignment>::operator[](difference_type n) const {
+template <class Iterator, primitive_c ValueType, size_t OriginAlignment>
+constexpr typename iterator<Iterator, ValueType, OriginAlignment>::reference
+iterator<Iterator, ValueType, OriginAlignment>::operator[](difference_type n) const {
   constexpr difference_type digits = binary_digits<word_type>::value;
-  const difference_type sum = static_cast<difference_type>(_position) + n;
+  constexpr difference_type step = ValueType::bits;
+  const difference_type sum = static_cast<difference_type>(_position) +
+                              n * static_cast<difference_type>(step);
   const difference_type diff = (sum - (n < 0) * (digits - 1)) / digits;
   return reference(*std::next(_current, diff),
                    static_cast<size_type>(sum) % static_cast<size_type>(digits));
 }
 // -------------------------------------------------------------------------- //
 
+
+
 // ------------- BIT ITERATOR: INCREMENT AND DECREMENT OPERATORS ------------ //
-// Increments the bit iterator and returns it
-template <class Iterator, primitive_c ValueType, size_t Alignment>
-constexpr iterator<Iterator, ValueType, Alignment>&
-iterator<Iterator, ValueType, Alignment>::operator++() {
+// Increments the bit iterator by ValueType::bits and returns it
+template <class Iterator, primitive_c ValueType, size_t OriginAlignment>
+constexpr iterator<Iterator, ValueType, OriginAlignment>&
+iterator<Iterator, ValueType, OriginAlignment>::operator++() {
   constexpr auto digits = binary_digits<word_type>::value;
-  _position = (_position + 1) % digits;
-  if (0 == _position) {
+  constexpr auto step = ValueType::bits;
+  _position += step;
+  if (_position >= digits) {
+    _position -= digits;
     ++_current;
   }
   return *this;
 }
 
-// Decrements the bit iterator and returns it
-template <class Iterator, primitive_c ValueType, size_t Alignment>
-constexpr iterator<Iterator, ValueType, Alignment>&
-iterator<Iterator, ValueType, Alignment>::operator--() {
-  constexpr size_type digits = binary_digits<word_type>::value;
-  if (0 == _position) {
+// Decrements the bit iterator by ValueType::bits and returns it
+template <class Iterator, primitive_c ValueType, size_t OriginAlignment>
+constexpr iterator<Iterator, ValueType, OriginAlignment>&
+iterator<Iterator, ValueType, OriginAlignment>::operator--() {
+  constexpr auto digits = binary_digits<word_type>::value;
+  constexpr auto step = ValueType::bits;
+  if (_position < step) {
     --_current;
+    _position += digits - step;
+  } else {
+    _position -= step;
   }
-  _position = (_position - 1) % digits;
   return *this;
 }
 
 // Increments the bit iterator and returns the old one
-template <class Iterator, primitive_c ValueType, size_t Alignment>
-constexpr iterator<Iterator, ValueType, Alignment>
-iterator<Iterator, ValueType, Alignment>::operator++(int) {
+template <class Iterator, primitive_c ValueType, size_t OriginAlignment>
+constexpr iterator<Iterator, ValueType, OriginAlignment>
+iterator<Iterator, ValueType, OriginAlignment>::operator++(int) {
   iterator old = *this;
   ++(*this);
   return old;
 }
 
 // Decrements the bit iterator and returns the old one
-template <class Iterator, primitive_c ValueType, size_t Alignment>
-constexpr iterator<Iterator, ValueType, Alignment>
-iterator<Iterator, ValueType, Alignment>::operator--(int) {
+template <class Iterator, primitive_c ValueType, size_t OriginAlignment>
+constexpr iterator<Iterator, ValueType, OriginAlignment>
+iterator<Iterator, ValueType, OriginAlignment>::operator--(int) {
   iterator old = *this;
   --(*this);
   return old;
 }
 
-// Looks forward several bits and gets an iterator at this position
-template <class Iterator, primitive_c ValueType, size_t Alignment>
-constexpr iterator<Iterator, ValueType, Alignment>
-iterator<Iterator, ValueType, Alignment>::operator+(difference_type n) const {
+// Looks forward several elements and gets an iterator at this position
+template <class Iterator, primitive_c ValueType, size_t OriginAlignment>
+constexpr iterator<Iterator, ValueType, OriginAlignment>
+iterator<Iterator, ValueType, OriginAlignment>::operator+(difference_type n) const {
   constexpr difference_type digits = binary_digits<word_type>::value;
-  const difference_type sum = static_cast<difference_type>(_position) + n;
+  constexpr difference_type step = ValueType::bits;
+  const difference_type sum = static_cast<difference_type>(_position) +
+                              n * static_cast<difference_type>(step);
   const difference_type diff = (sum - (n < 0) * (digits - 1)) / digits;
   const size_type new_pos = static_cast<size_t>(sum) % static_cast<size_t>(digits);
   return iterator(std::next(_current, diff), new_pos);
 }
 
-// Looks backward several bits and gets an iterator at this position
-template <class Iterator, primitive_c ValueType, size_t Alignment>
-constexpr iterator<Iterator, ValueType, Alignment>
-iterator<Iterator, ValueType, Alignment>::operator-(difference_type n) const {
-  constexpr difference_type digits = binary_digits<word_type>::value;
-  const difference_type sum = static_cast<difference_type>(_position) - n;
-  const difference_type diff = (sum - (n > 0) * (digits - 1)) / digits;
-  const size_type new_pos = static_cast<size_t>(sum) % static_cast<size_t>(digits);
-  return iterator(std::next(_current, diff), new_pos);
+// Looks backward several elements and gets an iterator at this position
+template <class Iterator, primitive_c ValueType, size_t OriginAlignment>
+constexpr iterator<Iterator, ValueType, OriginAlignment>
+iterator<Iterator, ValueType, OriginAlignment>::operator-(difference_type n) const {
+  return *this + (-n);
 }
 
-// Increments the iterator by several bits and returns it
-template <class Iterator, primitive_c ValueType, size_t Alignment>
-constexpr iterator<Iterator, ValueType, Alignment>&
-iterator<Iterator, ValueType, Alignment>::operator+=(difference_type n) {
-  constexpr difference_type digits = binary_digits<word_type>::value;
-  const difference_type sum = static_cast<difference_type>(_position) + n;
-  const difference_type diff = (sum - (n < 0) * (digits - 1)) / digits;
-  const size_type new_pos = static_cast<size_t>(sum) % static_cast<size_t>(digits);
-  _current = std::next(_current, diff);
-  _position = new_pos;
+// Increments the iterator by several elements and returns it
+template <class Iterator, primitive_c ValueType, size_t OriginAlignment>
+constexpr iterator<Iterator, ValueType, OriginAlignment>&
+iterator<Iterator, ValueType, OriginAlignment>::operator+=(difference_type n) {
+  *this = *this + n;
   return *this;
 }
 
-// Decrements the iterator by several bits and returns it
-template <class Iterator, primitive_c ValueType, size_t Alignment>
-constexpr iterator<Iterator, ValueType, Alignment>&
-iterator<Iterator, ValueType, Alignment>::operator-=(difference_type n) {
-  constexpr difference_type digits = binary_digits<word_type>::value;
-  const difference_type sum = static_cast<difference_type>(_position) - n;
-  const difference_type diff = (sum - (n > 0) * (digits - 1)) / digits;
-  const size_type new_pos = static_cast<size_t>(sum) % static_cast<size_t>(digits);
-  _current = std::next(_current, diff);
-  _position = new_pos;
+// Decrements the iterator by several elements and returns it
+template <class Iterator, primitive_c ValueType, size_t OriginAlignment>
+constexpr iterator<Iterator, ValueType, OriginAlignment>&
+iterator<Iterator, ValueType, OriginAlignment>::operator-=(difference_type n) {
+  *this = *this - n;
   return *this;
 }
 // -------------------------------------------------------------------------- //
 
-template <class Iterator, primitive_c ValueType, size_t Alignment>
-constexpr typename iterator<Iterator, ValueType, Alignment>::difference_type
-iterator<Iterator, ValueType, Alignment>::operator-(
+template <class Iterator, primitive_c ValueType, size_t OriginAlignment>
+constexpr typename iterator<Iterator, ValueType, OriginAlignment>::difference_type
+iterator<Iterator, ValueType, OriginAlignment>::operator-(
     const iterator& other) const {
   constexpr difference_type digits = binary_digits<word_type>::value;
-  return (_current - other._current) * digits +
+  constexpr difference_type step = ValueType::bits;
+  const difference_type bit_diff = (_current - other._current) * digits +
          (static_cast<difference_type>(_position) -
           static_cast<difference_type>(other._position));
+  return bit_diff / static_cast<difference_type>(step);
 }
 
 // -------------------- BIT ITERATOR: UNDERLYING DETAILS -------------------- //
 // Returns a copy of the underlying iterator
-template <class Iterator, primitive_c ValueType, size_t Alignment>
-constexpr typename iterator<Iterator, ValueType, Alignment>::iterator_type
-iterator<Iterator, ValueType, Alignment>::base() const {
+template <class Iterator, primitive_c ValueType, size_t OriginAlignment>
+constexpr typename iterator<Iterator, ValueType, OriginAlignment>::iterator_type
+iterator<Iterator, ValueType, OriginAlignment>::base() const {
   return _current;
 }
 
-template <class Iterator, primitive_c ValueType, size_t Alignment>
-constexpr typename iterator<Iterator, ValueType, Alignment>::iterator_type
-iterator<Iterator, ValueType, Alignment>::address() const {
+template <class Iterator, primitive_c ValueType, size_t OriginAlignment>
+constexpr typename iterator<Iterator, ValueType, OriginAlignment>::iterator_type
+iterator<Iterator, ValueType, OriginAlignment>::address() const {
   return _current;
 }
 
 // Returns the position of the bit within the underlying word
-template <class Iterator, primitive_c ValueType, size_t Alignment>
-constexpr typename iterator<Iterator, ValueType, Alignment>::size_type
-iterator<Iterator, ValueType, Alignment>::position() const noexcept {
+template <class Iterator, primitive_c ValueType, size_t OriginAlignment>
+constexpr typename iterator<Iterator, ValueType, OriginAlignment>::size_type
+iterator<Iterator, ValueType, OriginAlignment>::position() const noexcept {
   return _position;
 }
 
 // -------------- BIT ITERATOR: NON-MEMBER ARITHMETIC OPERATORS ------------- //
-// Advances the bit iterator several times
-template <class T, primitive_c U, size_t A>
-constexpr iterator<T, U, A> operator+(
-    typename iterator<T, U, A>::difference_type n,
-    const iterator<T, U, A>& i) {
+// Advances the bit iterator several elements
+template <class T, primitive_c U, size_t O>
+constexpr iterator<T, U, O> operator+(
+    typename iterator<T, U, O>::difference_type n,
+    const iterator<T, U, O>& i) {
   return i + n;
 }
 
-// Computes the distance in bits separating two bit iterators
-template <class T, primitive_c U, size_t A, class V, primitive_c W, size_t X>
+// Computes the distance in elements separating two bit iterators
+template <class T, primitive_c U, size_t O, class V, primitive_c W, size_t P>
 constexpr typename std::common_type<
-    typename iterator<T, U, A>::difference_type,
-    typename iterator<V, W, X>::difference_type>::type
-operator-(const iterator<T, U, A>& lhs, const iterator<V, W, X>& rhs) {
-  using lhs_utype = typename iterator<T, U, A>::word_type;
-  using rhs_utype = typename iterator<V, W, X>::word_type;
-  using lhs_type = typename iterator<T, U, A>::difference_type;
-  using rhs_type = typename iterator<V, W, X>::difference_type;
+    typename iterator<T, U, O>::difference_type,
+    typename iterator<V, W, P>::difference_type>::type
+operator-(const iterator<T, U, O>& lhs, const iterator<V, W, P>& rhs) {
+  using lhs_utype = typename iterator<T, U, O>::word_type;
+  using rhs_utype = typename iterator<V, W, P>::word_type;
+  using lhs_type = typename iterator<T, U, O>::difference_type;
+  using rhs_type = typename iterator<V, W, P>::difference_type;
   using difference_type = typename std::common_type<lhs_type, rhs_type>::type;
   constexpr difference_type lhs_digits =
       binary_digits<lhs_utype>::value;
@@ -405,14 +412,16 @@ operator-(const iterator<T, U, A>& lhs, const iterator<V, W, X>& rhs) {
       binary_digits<rhs_utype>::value;
   constexpr difference_type digits = rhs_digits;
   static_assert(lhs_digits == rhs_digits, "");
+  constexpr difference_type step = U::bits;
   const difference_type main = lhs._current - rhs._current;
-  return main * digits +
+  const difference_type bit_diff = main * digits +
          (static_cast<difference_type>(lhs._position) -
           static_cast<difference_type>(rhs._position));
+  return bit_diff / step;
 }
 
 // Alias: bit_iterator remains as an alias to the default instantiation of the
-// generic iterator<Iterator, ValueType, Alignment> class (single-bit,
+// generic iterator<Iterator, ValueType, OriginAlignment> class (single-bit,
 // value_type == primitive<1> == bit_value).
 template <class Iterator>
 using bit_iterator = iterator<Iterator, primitive<1>, 1>;

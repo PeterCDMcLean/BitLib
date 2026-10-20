@@ -276,6 +276,7 @@ class primitive {
   public:
     static constexpr std::size_t bits = Bits;
     using size_type = std::size_t;
+    using storage_type = word_type;
     using value_type = bit_value;
     using reference_type = reference<word_type&>;
     using const_reference_type = const reference<const word_type&>;

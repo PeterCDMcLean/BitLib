@@ -62,7 +62,7 @@ template <typename WordRef = uintptr_t&, primitive_c ValueType = primitive<1>, s
 class reference;
 template <class Iterator,
           primitive_c ValueType = primitive<1>,
-          size_t Alignment = 1>
+          size_t OriginAlignment = 1>
 class iterator;
 template <typename WordType>
 using bit_pointer = iterator<WordType*, primitive<1>, 1>;
