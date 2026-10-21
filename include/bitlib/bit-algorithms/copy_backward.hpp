@@ -22,14 +22,22 @@
 namespace bit {
 // ========================================================================== //
 
+struct copy_backward_impl;
+
+template <class It1, class It2>
+constexpr bit_iterator<It2> copy_backward(
+    const bit_iterator<It1>& first, const bit_iterator<It1>& last,
+    const bit_iterator<It2>& d_last) {
+  return with_bit_iterator_adapter<copy_backward_impl>(first, last, d_last);
+}
 
 // Status: Does not work for Input/Output iterators due to distance call
-template <class RandomAccessIt1, class RandomAccessIt2>
-constexpr bit_iterator<RandomAccessIt2> copy_backward(bit_iterator<RandomAccessIt1> first,
-                            bit_iterator<RandomAccessIt1> last,
-                            bit_iterator<RandomAccessIt2> d_last
-)
-{
+struct copy_backward_impl {
+  template <class RandomAccessIt1, class RandomAccessIt2>
+  constexpr bit_iterator<RandomAccessIt2> operator()(
+      bit_iterator<RandomAccessIt1> first,
+      bit_iterator<RandomAccessIt1> last,
+      bit_iterator<RandomAccessIt2> d_last) {
     // Types and constants
     using dst_word_type = typename bit_iterator<RandomAccessIt2>::word_type;
     using src_word_type = typename bit_iterator<RandomAccessIt1>::word_type;
@@ -40,8 +48,9 @@ constexpr bit_iterator<RandomAccessIt2> copy_backward(bit_iterator<RandomAccessI
     // Assertions
     _assert_range_viability(first, last);
     static_assert(::std::is_same<dst_word_type, src_word_type>::value, "Underlying word types must be equal");
-    if (first == last) return d_last;
-
+    if (first == last) {
+      return d_last;
+    }
 
     // Initialization
     const bool is_d_last_aligned = d_last.position() == 0;
@@ -51,19 +60,18 @@ constexpr bit_iterator<RandomAccessIt2> copy_backward(bit_iterator<RandomAccessI
 
     // d_last is not aligned. Copy partial word to align it
     if (!is_d_last_aligned) {
-        size_type partial_bits_to_copy = ::std::min(
-                remaining_bits_to_copy,
-                d_last.position()
-        );
-        *it = _bitblend<word_type>(
-            *it,
-            static_cast<word_type>(
-                get_word<word_type>(last - partial_bits_to_copy, partial_bits_to_copy)
-                << (d_last.position() - partial_bits_to_copy)),
-            d_last.position() - partial_bits_to_copy,
-            partial_bits_to_copy);
-        remaining_bits_to_copy -= partial_bits_to_copy;
-        reverse(last, partial_bits_to_copy);
+      size_type partial_bits_to_copy = ::std::min(
+          remaining_bits_to_copy,
+          d_last.position());
+      *it = _bitblend<word_type>(
+          *it,
+          static_cast<word_type>(
+              get_word<word_type>(last - partial_bits_to_copy, partial_bits_to_copy)
+              << (d_last.position() - partial_bits_to_copy)),
+          d_last.position() - partial_bits_to_copy,
+          partial_bits_to_copy);
+      remaining_bits_to_copy -= partial_bits_to_copy;
+      reverse(last, partial_bits_to_copy);
     }
 
     if (remaining_bits_to_copy > 0) {
@@ -95,7 +103,8 @@ constexpr bit_iterator<RandomAccessIt2> copy_backward(bit_iterator<RandomAccessI
       }
     }
     return d_last - total_bits_to_copy;
-}
+  }
+};
 
 // ========================================================================== //
 }  // namespace bit

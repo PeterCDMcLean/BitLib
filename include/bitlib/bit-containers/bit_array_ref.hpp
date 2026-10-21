@@ -25,11 +25,11 @@
 
 namespace bit {
 
-template <typename T = bit_value, size_t N = std::dynamic_extent, typename W = std::uintptr_t, typename Policy = policy::typical<std::remove_cvref_t<W>>>
+template <typename T = bit_value, size_t N = std::dynamic_extent, typename W = std::uintptr_t, typename A = std::dynamic_extent, typename Policy = policy::typical<std::remove_cvref_t<W>>>
 class array_ref;
 
-template <size_t N = std::dynamic_extent, typename W = std::uintptr_t, typename Policy = policy::typical<std::remove_cvref_t<W>>>
-using bit_array_ref = array_ref<bit_value, N, W, Policy>;
+template <size_t N = std::dynamic_extent, typename W = std::uintptr_t, typename A = std::dynamic_extent, typename Policy = policy::typical<std::remove_cvref_t<W>>>
+using bit_array_ref = array_ref<bit_value, N, W, A, Policy>;
 
 namespace detail {
 template <typename word_type>
@@ -48,7 +48,7 @@ struct array_ref_iterator_types {
  * @tparam T The value type (typically bit_value)
  * @tparam W The word type used for storage
  */
-template <typename T, size_t N, typename W, typename Policy>
+template <typename T, size_t N, typename W, typename A, typename Policy>
 class array_ref
     : public array_base<array_ref<T, N, W, Policy>, T, N, W, false, Policy, detail::array_ref_iterator_types<W>> {
  public:
@@ -67,7 +67,7 @@ class array_ref
   using typename base::word_type;
 
  private:
-  const bit_pointer<word_type> m_storage;
+  const bit_pointer<word_type, A> m_storage;
 
  public:
   // Constructors

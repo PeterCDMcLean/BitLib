@@ -16,7 +16,8 @@
 // ============================== PREAMBLE ================================== //
 // C++ standard library
 // Project sources
-#include "bitlib/bit-iterator/bit.hpp"
+#include "bitlib/bit-iterator/bit_details.hpp"
+#include "bitlib/bit-iterator/bit_value.hpp"
 // Third-party libraries
 // Miscellaneous
 namespace bit {
@@ -63,8 +64,8 @@ bit_iterator<ForwardIt> next(
 // Returns distance(first, last) <= n
 template <class InputIt>
 bool is_within(
-        bit_iterator<InputIt> first,
-        bit_iterator<InputIt> last,
+    bit_iterator<InputIt> first,
+    bit_iterator<InputIt> last,
         typename InputIt::difference_type n
 ) {
     //using word_type = typename bit_iterator<InputIt>::word_type;
@@ -76,7 +77,7 @@ bool is_within(
 
 template <int N, class InputIt>
 constexpr bool is_within(
-        bit_iterator<InputIt> first,
+    bit_iterator<InputIt> first,
         bit_iterator<InputIt> last
 ) {
     using word_type = typename bit_iterator<InputIt>::word_type;
@@ -115,29 +116,29 @@ T get_word(const bit_iterator<InputIt>& first, size_t len = binary_digits<T>::va
     return ret_word;
   }
 
-    InputIt it = std::next(first.base());
-    len -= offset;
-    // Fill up ret_word starting at bit [offset] using it
-    // TODO define a mask and use the _bitblend that takes in the extra mask
-    while (len > digits) {
-        ret_word = _bitblend<T>(
-                ret_word,
-                static_cast<T>(static_cast<T>(*it) << offset),
-                offset,
+  InputIt it = std::next(first.base());
+  len -= offset;
+  // Fill up ret_word starting at bit [offset] using it
+  // TODO define a mask and use the _bitblend that takes in the extra mask
+  while (len > digits) {
+    ret_word = _bitblend<T>(
+        ret_word,
+        static_cast<T>(static_cast<T>(*it) << offset),
+        offset,
                 digits
         );
-        ++it;
-        offset += digits;
-        len -= digits;
-    }
-    // Assign remaining len bits of last word
-    ret_word = _bitblend<T>(
-            ret_word,
-            static_cast<T>(static_cast<T>(*it) << offset),
-            offset,
+    ++it;
+    offset += digits;
+    len -= digits;
+  }
+  // Assign remaining len bits of last word
+  ret_word = _bitblend<T>(
+      ret_word,
+      static_cast<T>(static_cast<T>(*it) << offset),
+      offset,
             len
     );
-    return ret_word;
+  return ret_word;
 }
 
 template <class T, class InputIt>
@@ -226,56 +227,56 @@ RandomAccessIt word_shift_left(RandomAccessIt first,
 // NOT OPTIMIZED. Will be replaced with std::shift eventually.
 template <class RandomAccessIt>
 RandomAccessIt word_shift_right(RandomAccessIt first,
-                          RandomAccessIt last,
+                                RandomAccessIt last,
                           typename RandomAccessIt::difference_type n
 )
 {
-    auto d = distance(first, last);
+  auto d = distance(first, last);
     if (n <= 0) return first;
     if (n >= d) return last;
-    std::move_backward(first, last-n, last);
-    return std::next(first, n);
+  std::move_backward(first, last - n, last);
+  return std::next(first, n);
 }
 
 // returns a word consisting of all one bits
 constexpr auto _all_ones() {
-    return -1;
+  return -1;
 }
 
 // returns a word consisting of all zero bits
 constexpr auto _all_zeros() {
-    return 0;
+  return 0;
 }
 
 // checks that the passed iterator points to the first bit of a word
 template <class It>
 bool _is_aligned_lsb(bit_iterator<It> iter) {
-    return iter.position() == 0;
+  return iter.position() == 0;
 }
 
 // checks that maybe_end is one position past the last bit of base
 template <class ForwardIt>
 bool _is_one_past_last_bit(bit_iterator<ForwardIt> maybe_end,
-    ForwardIt base) {
-    return maybe_end.position() == 0 && std::next(base) == maybe_end.base();
+                           ForwardIt base) {
+  return maybe_end.position() == 0 && std::next(base) == maybe_end.base();
 }
 
 // checks that two bit iterators point to the same word
 template <class It>
 constexpr bool _in_same_word(bit_iterator<It> lhs, bit_iterator<It> rhs) {
-    return lhs.base() == rhs.base();
+  return lhs.base() == rhs.base();
 }
 
 // simple alias for right shift
 template <class WordType>
 WordType _shift_towards_lsb(WordType word, std::size_t n) {
-    return word >> n;
+  return word >> n;
 }
 
 // simple alias for left shift
 template <class WordType>
 WordType _shift_towards_msb(WordType word, std::size_t n) {
-    return word << n;
+  return word << n;
 }
 
 /* Used to read partial/full words and pad any missing digits. Will not

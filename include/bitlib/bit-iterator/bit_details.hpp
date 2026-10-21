@@ -11,8 +11,6 @@
 #define _BIT_DETAILS_HPP_INCLUDED
 // ========================================================================== //
 
-
-
 // ================================ PREAMBLE ================================ //
 // C++ standard library
 // clang-format off
@@ -50,6 +48,7 @@
 #include <utility>
 
 #include "bitlib/bit-containers/bit_bitsof.hpp"
+#include "bitlib/bit-containers/bit_span_forward.hpp"
 #include "bitlib/bit_concepts.hpp"
 
 // Project sources
@@ -62,10 +61,12 @@ template <typename WordRef = uintptr_t&, primitive_c ValueType = primitive<1>, s
 class reference;
 template <class Iterator,
           primitive_c ValueType = primitive<1>,
-          size_t OriginAlignment = 1>
+          size_t Alignment = std::dynamic_extent>
 class iterator;
-template <typename WordType>
-using bit_pointer = iterator<WordType*, primitive<1>, 1>;
+template <class Iterator, std::size_t Alignment = std::dynamic_extent>
+using bit_iterator = iterator<Iterator, primitive<1>, Alignment>;
+template <typename WordType, std::size_t Alignment = std::dynamic_extent>
+using bit_pointer = iterator<WordType*, primitive<1>, Alignment>;
 template <typename target_word_ptr, typename source_word_ptr>
 class bit_word_pointer_adapter;
 
@@ -89,33 +90,32 @@ using ceil_integral = std::conditional_t<
 /* *************** IMPLEMENTATION DETAILS: CV ITERATOR TRAITS *************** */
 // Cv iterator traits structure definition
 template <class Iterator>
-struct _cv_iterator_traits
-{
-    // Assertions
-    private:
-    using _traits_t = std::iterator_traits<Iterator>;
-    using _difference_t = typename _traits_t::difference_type;
-    using _value_t = typename _traits_t::value_type;
-    using _pointer_t = typename _traits_t::pointer;
-    using _reference_t = typename _traits_t::reference;
-    using _category_t =  typename _traits_t::iterator_category;
-    using _no_pointer_t = typename std::remove_pointer<_pointer_t>::type;
-    using _no_reference_t = typename std::remove_reference<_reference_t>::type;
-    using _raw_value_t = typename std::remove_cv<_value_t>::type;
-    using _raw_pointer_t = typename std::remove_cv<_no_pointer_t>::type;
-    using _raw_reference_t = typename std::remove_cv<_no_reference_t>::type;
-    using _cv_value_t = _no_reference_t;
+struct _cv_iterator_traits {
+  // Assertions
+ private:
+  using _traits_t = std::iterator_traits<Iterator>;
+  using _difference_t = typename _traits_t::difference_type;
+  using _value_t = typename _traits_t::value_type;
+  using _pointer_t = typename _traits_t::pointer;
+  using _reference_t = typename _traits_t::reference;
+  using _category_t = typename _traits_t::iterator_category;
+  using _no_pointer_t = typename std::remove_pointer<_pointer_t>::type;
+  using _no_reference_t = typename std::remove_reference<_reference_t>::type;
+  using _raw_value_t = typename std::remove_cv<_value_t>::type;
+  using _raw_pointer_t = typename std::remove_cv<_no_pointer_t>::type;
+  using _raw_reference_t = typename std::remove_cv<_no_reference_t>::type;
+  using _cv_value_t = _no_reference_t;
 
-    //    static_assert(std::is_same<_raw_pointer_t, _raw_value_t>::value, "");
-    //    static_assert(std::is_same<_raw_reference_t, _raw_value_t>::value, "");
+  //    static_assert(std::is_same<_raw_pointer_t, _raw_value_t>::value, "");
+  //    static_assert(std::is_same<_raw_reference_t, _raw_value_t>::value, "");
 
-    // Types
-    public:
-    using difference_type = _difference_t;
-    using value_type = _cv_value_t;
-    using pointer = _pointer_t;
-    using reference = _reference_t;
-    using iterator_category = _category_t;
+  // Types
+ public:
+  using difference_type = _difference_t;
+  using value_type = _cv_value_t;
+  using pointer = _pointer_t;
+  using reference = _reference_t;
+  using iterator_category = _category_t;
 };
 /* ************************************************************************** */
 
@@ -944,5 +944,5 @@ struct container_size_storage<size_type, resizeable, std::dynamic_extent> {
 
 // ========================================================================== //
 }  // namespace bit
-#endif // _BIT_DETAILS_HPP_INCLUDED
-       // ========================================================================== //
+#endif  // _BIT_DETAILS_HPP_INCLUDED
+// ========================================================================== //

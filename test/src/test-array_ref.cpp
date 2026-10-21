@@ -1,7 +1,22 @@
+#include <array>
+#include <cstdint>
 #include <limits>
 
 #include "bitlib/bitlib.hpp"
 #include "gtest/gtest.h"
+
+struct WideBitValue {
+  static constexpr std::size_t bits = 96;
+  std::array<bit::bit_value, bits> data{};
+
+  bool bit_at(std::size_t index) const {
+    return static_cast<bool>(data[index]);
+  }
+  bit::bit_value& operator[](std::size_t index) { return data[index]; }
+  const bit::bit_value& operator[](std::size_t index) const {
+    return data[index];
+  }
+};
 
 TEST(BitArrayRef, ConstructorAndAssignment) {
   // Prepare original bit array
@@ -220,4 +235,85 @@ TEST(BitArrayRef, Throws) {
   bit::bit_array_ref<> ref2(&original[31], 33);
   EXPECT_THROW(ref = ref2, std::invalid_argument);
   EXPECT_THROW(ref.swap(ref2), std::invalid_argument);
+}
+
+TEST(BitReference, MultiWordChunkCopy) {
+  struct storage {
+    std::uint64_t words[2];
+  } bits{{0x0123456789abcdefULL, 0xfedcba9876543210ULL}};
+  using value_type = bit::primitive<64>;
+  using reference_type = bit::reference<storage&, value_type>;
+
+  const auto read_field = [](const storage& source, std::size_t pos) {
+    std::uint64_t value = 0;
+    for (std::size_t i = 0; i < value_type::bits; ++i) {
+      const std::uint64_t bit =
+          (source.words[(pos + i) / 64] >> ((pos + i) % 64)) & 1;
+      value |= bit << i;
+    }
+    return value;
+  };
+
+  auto before = bits;
+  reference_type source(bits, 3);
+  reference_type destination(bits, 19);
+  const auto expected_forward = read_field(before, 3);
+  destination = source;
+  EXPECT_EQ(read_field(bits, 19), expected_forward);
+
+  before = bits;
+  reference_type source_backward(bits, 21);
+  reference_type destination_backward(bits, 4);
+  const auto expected_backward = read_field(before, 21);
+  destination_backward = source_backward;
+  EXPECT_EQ(read_field(bits, 4), expected_backward);
+
+  std::uint64_t single_word = 0xd00df00d12345678ULL;
+  bit::reference<std::uint64_t&, value_type> single_source(single_word);
+  reference_type cross_word_destination(bits, 57);
+  cross_word_destination = single_source;
+  EXPECT_EQ(read_field(bits, 57), single_word);
+
+  std::uint64_t single_destination = 0;
+  bit::reference<std::uint64_t&, value_type> single_word_destination(
+      single_destination);
+  reference_type wide_source(bits, 37);
+  const auto expected_single = read_field(bits, 37);
+  single_word_destination = wide_source;
+  EXPECT_EQ(single_destination, expected_single);
+}
+
+TEST(BitReference, ValueTypeWiderThanSizeType) {
+  struct storage {
+    std::uint64_t words[2]{};
+  } bits;
+  using reference_type = bit::reference<storage&, WideBitValue>;
+
+  WideBitValue value;
+  for (std::size_t i = 0; i < WideBitValue::bits; ++i) {
+    value[i] = bit::bit_value((i % 3) == 0 || i > 70);
+  }
+
+  reference_type first(bits, 5);
+  reference_type second(bits, 21);
+  first = value;
+  const WideBitValue initial_round_trip = static_cast<WideBitValue>(first);
+  for (std::size_t i = 0; i < WideBitValue::bits; ++i) {
+    EXPECT_EQ(initial_round_trip.bit_at(i), value.bit_at(i)) << i;
+  }
+  second = first;
+  const WideBitValue copied = static_cast<WideBitValue>(second);
+  for (std::size_t i = 0; i < WideBitValue::bits; ++i) {
+    EXPECT_EQ(copied.bit_at(i), value.bit_at(i)) << i;
+  }
+
+  const WideBitValue round_trip = copied;
+  for (std::size_t i = 0; i < WideBitValue::bits; ++i) {
+    EXPECT_EQ(round_trip.bit_at(i), value.bit_at(i));
+  }
+
+  const WideBitValue inverted = ~second;
+  for (std::size_t i = 0; i < WideBitValue::bits; ++i) {
+    EXPECT_EQ(inverted.bit_at(i), !value.bit_at(i));
+  }
 }

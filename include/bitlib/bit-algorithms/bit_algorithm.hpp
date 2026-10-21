@@ -10,12 +10,13 @@
 // ========================================================================== //
 #ifndef _BIT_ALGORITHM_HPP_INCLUDED
 #define _BIT_ALGORITHM_HPP_INCLUDED
-#define _Bit_Algorithm_VERSION_MAJOR @Bit_Algorithm_VERSION_MAJOR@
-#define _Bit_Algorithm_VERSION_MINOR @Bit_Algorithm_VERSION_MINOR@
+#define _Bit_Algorithm_VERSION_MAJOR @Bit_Algorithm_VERSION_MAJOR @
+#define _Bit_Algorithm_VERSION_MINOR @Bit_Algorithm_VERSION_MINOR @
 // ========================================================================== //
 
 // ================================ PREAMBLE ================================ //
 #include "bit_algorithm_details.hpp"
+#include "bit_algorithm_forward.hpp"
 // <algorithm> overloads
 #include "addition.hpp"
 #include "bit_algorithm_details.hpp"
@@ -39,5 +40,5 @@
 // ========================================================================== //
 
 // ========================================================================== //
-#endif // _BIT_ALGORITHM_HPP_INCLUDED
+#endif  // _BIT_ALGORITHM_HPP_INCLUDED
 // ========================================================================== //
