@@ -303,9 +303,7 @@ namespace detail {
 template <typename WordType, size_t Extent, size_t Alignment>
 class reference_field_span_state {
  private:
-  using span_type = bit_span<
-      WordType, Extent,
-      policy::typical<std::remove_cv_t<WordType>>>;
+  using span_type = bit_span<WordType, Extent, Alignment, policy::typical<std::remove_cv_t<WordType>>>;
   span_type span_;
 
  public:
@@ -376,11 +374,8 @@ class reference<StorageRef, ValueType, Alignment>
   }
 
   using value_word_type = ceil_integral<alignof(value_type) * 8>;
-  using const_value_span_type = bit_span<
-      const value_word_type, ValueType::bits,
-      policy::typical<value_word_type>>;
-  using value_span_type = bit_span<
-      value_word_type, ValueType::bits, policy::typical<value_word_type>>;
+  using const_value_span_type = bit_span<const value_word_type, ValueType::bits, Alignment, policy::typical<value_word_type>>;
+  using value_span_type = bit_span<value_word_type, ValueType::bits, Alignment, policy::typical<value_word_type>>;
 
   static constexpr const_value_span_type value_span(
       const value_type& value) noexcept {
@@ -403,12 +398,10 @@ class reference<StorageRef, ValueType, Alignment>
   constexpr void copy_from(
       const reference<OtherStorage, ValueType, OtherAlignment>& other) const noexcept {
     const auto destination = field_span();
-    using source_reference =
-        reference<OtherStorage, ValueType, OtherAlignment>;
+    using source_reference = reference<OtherStorage, ValueType, OtherAlignment>;
     if constexpr (source_reference::num_words == 1) {
       using source_word_type = typename source_reference::word_type;
-      using source_span_type = bit_span<
-          const source_word_type, ValueType::bits,
+      using source_span_type = bit_span<const source_word_type, ValueType::bits, OtherAlignment,
           policy::typical<source_word_type>>;
       copy_spans(source_span_type(&other), destination);
     } else {

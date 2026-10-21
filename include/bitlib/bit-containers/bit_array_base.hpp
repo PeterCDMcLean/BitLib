@@ -28,7 +28,7 @@
 
 namespace bit {
 
-template <typename T, size_t N, typename W, typename Policy>
+template <typename T, size_t N, typename W, std::size_t A, typename Policy>
 class array_ref;
 
 template <typename T,
@@ -69,8 +69,8 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
   using difference_type = std::ptrdiff_t;
   using reference = typename std::conditional<std::is_same_v<T, bit_value>, ::bit::reference<word_type&>, T&>::type;
   using const_reference = typename std::conditional<std::is_same_v<T, bit_value>, const ::bit::reference<const word_type&>, const T&>::type;
-  using pointer = typename std::conditional<std::is_same_v<T, bit_value>, bit_pointer<word_type>, T&>::type;
-  using const_pointer = const pointer;
+  using value_pointer = pointer<word_type, value_type>;
+  using const_value_pointer = const value_pointer;
   using iterator = Iterators::iterator;
   using const_iterator = Iterators::const_iterator;
 
@@ -169,14 +169,14 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
    * @brief Slice operations - returns a array_ref
    */
   constexpr auto operator()(size_type offset, size_type right) const noexcept {
-    return array_ref<value_type, std::dynamic_extent, const word_type, Policy>(&this->at(offset), right - offset);
+    return array_ref<value_type, std::dynamic_extent, const word_type, std::dynamic_extent, Policy>(&this->at(offset), right - offset);
   }
 
   /**
    * @brief Slice operations - returns a array_ref
    */
   constexpr auto operator()(size_type offset, size_type right) noexcept {
-    return array_ref<value_type, std::dynamic_extent, word_type, Policy>(&this->at(offset), right - offset);
+    return array_ref<value_type, std::dynamic_extent, word_type, std::dynamic_extent, Policy>(&this->at(offset), right - offset);
   }
 
   // Common operations

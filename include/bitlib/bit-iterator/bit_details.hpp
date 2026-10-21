@@ -55,18 +55,27 @@
 // Third-party libraries
 // Miscellaneous
 namespace bit {
-template <size_t Bits>
+
+ template <size_t Bits>
 class primitive;
+
 template <typename WordRef = uintptr_t&, primitive_c ValueType = primitive<1>, size_t Alignment = std::dynamic_extent>
 class reference;
+
 template <class Iterator,
           primitive_c ValueType = primitive<1>,
           size_t Alignment = std::dynamic_extent>
 class iterator;
+
 template <class Iterator, std::size_t Alignment = std::dynamic_extent>
 using bit_iterator = iterator<Iterator, primitive<1>, Alignment>;
+
+template <typename WordType, primitive_c ValueType, std::size_t Alignment = std::dynamic_extent>
+using pointer = iterator<WordType*, ValueType, Alignment>;
+
 template <typename WordType, std::size_t Alignment = std::dynamic_extent>
 using bit_pointer = iterator<WordType*, primitive<1>, Alignment>;
+
 template <typename target_word_ptr, typename source_word_ptr>
 class bit_word_pointer_adapter;
 

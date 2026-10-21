@@ -25,10 +25,10 @@
 
 namespace bit {
 
-template <typename T = bit_value, size_t N = std::dynamic_extent, typename W = std::uintptr_t, typename A = std::dynamic_extent, typename Policy = policy::typical<std::remove_cvref_t<W>>>
+template <typename T = bit_value, size_t N = std::dynamic_extent, typename W = std::uintptr_t, size_t A = std::dynamic_extent, typename Policy = policy::typical<std::remove_cvref_t<W>>>
 class array_ref;
 
-template <size_t N = std::dynamic_extent, typename W = std::uintptr_t, typename A = std::dynamic_extent, typename Policy = policy::typical<std::remove_cvref_t<W>>>
+template <size_t N = std::dynamic_extent, typename W = std::uintptr_t, size_t A = std::dynamic_extent, typename Policy = policy::typical<std::remove_cvref_t<W>>>
 using bit_array_ref = array_ref<bit_value, N, W, A, Policy>;
 
 namespace detail {
@@ -48,26 +48,26 @@ struct array_ref_iterator_types {
  * @tparam T The value type (typically bit_value)
  * @tparam W The word type used for storage
  */
-template <typename T, size_t N, typename W, typename A, typename Policy>
+template <typename T, size_t N, typename W, size_t A, typename Policy>
 class array_ref
-    : public array_base<array_ref<T, N, W, Policy>, T, N, W, false, Policy, detail::array_ref_iterator_types<W>> {
+    : public array_base<array_ref<T, N, W, A, Policy>, T, N, W, false, Policy, detail::array_ref_iterator_types<W>> {
  public:
-  using base = array_base<array_ref<T, N, W, Policy>, T, N, W, false, Policy, detail::array_ref_iterator_types<W>>;
+  using base = array_base<array_ref<T, N, W, A, Policy>, T, N, W, false, Policy, detail::array_ref_iterator_types<W>>;
   using base::end;
   using base::size;
   using typename base::const_iterator;
-  using typename base::const_pointer;
+  using typename base::const_value_pointer;
   using typename base::const_reference;
   using typename base::difference_type;
   using typename base::iterator;
-  using typename base::pointer;
+  using typename base::value_pointer;
   using typename base::reference;
   using typename base::size_type;
   using typename base::value_type;
   using typename base::word_type;
 
  private:
-  const bit_pointer<word_type, A> m_storage;
+  const pointer<word_type, value_type, A> m_storage;
 
  public:
   // Constructors

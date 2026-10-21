@@ -74,11 +74,11 @@ class array : public array_base<array<T, N, W, Policy>, T, N, W, false, Policy, 
   using base::end;
   using base::size;
   using typename base::const_iterator;
-  using typename base::const_pointer;
+  using typename base::const_value_pointer;
   using typename base::const_reference;
   using typename base::difference_type;
   using typename base::iterator;
-  using typename base::pointer;
+  using typename base::value_pointer;
   using typename base::reference;
   using typename base::size_type;
   using typename base::value_type;

@@ -15,8 +15,7 @@ struct typical;
 template <typename WordType = std::uintptr_t,
           std::size_t Extent = std::dynamic_extent,
           std::size_t Alignment = std::dynamic_extent,
-          typename Policy =
-              policy::typical<std::remove_cvref_t<WordType>>>
+          typename Policy = policy::typical<std::remove_cvref_t<WordType>>>
 class bit_span;
 }  // namespace bit
 
