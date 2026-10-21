@@ -380,7 +380,7 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
       if (size() > bitsof<U>()) {
         Policy::truncation::template to_integral<U, N>(derived(), integral);
       } else {
-        ::bit::copy(derived().begin(), end(), &integral);
+        ::bit::copy(derived().begin(), end(), &integral);  //TODO use iterator with alignment when possible
       }
       if (size() < bitsof<U>()) {
         Policy::extension::template to_integral<U, N>(detail::uninitialized, derived(), integral);
@@ -389,7 +389,7 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
       if constexpr (N > bitsof<U>()) {
         Policy::truncation::template to_integral<U, N>(derived(), integral);
       } else {
-        ::bit::copy(derived().begin(), end(), &integral);
+        ::bit::copy(derived().begin(), end(), &integral);  //TODO use iterator with alignment when possible
       }
       if constexpr (N < bitsof<U>()) {
         Policy::extension::template to_integral<U, N>(detail::uninitialized, derived(), integral);
