@@ -317,3 +317,113 @@ TEST(BitReference, ValueTypeWiderThanSizeType) {
     EXPECT_EQ(inverted.bit_at(i), !value.bit_at(i));
   }
 }
+
+TEST(BitArrayRef, CompileTimeSlice) {
+  bit::bit_array<> original(64, bit::bit0);
+  original[10] = bit::bit1;
+  original[20] = bit::bit1;
+  original[30] = bit::bit1;
+
+  // Create array_ref with compile-time alignment 0
+  bit::array_ref<bit::bit_value, 64, std::uintptr_t, 0> ref(original.data());
+
+  // Compile-time slice [10, 40) - both Start and End are compile-time constants
+  auto sliced = ref.slice<10, 40>();
+  EXPECT_EQ(sliced.size(), 30);
+  EXPECT_EQ(sliced[0], original[10]);
+  EXPECT_EQ(sliced[10], original[20]);
+  EXPECT_EQ(sliced[20], original[30]);
+
+  // Compile-time Start, runtime End: [0, 32)
+  auto sliced2 = ref.slice<0>(32);
+  EXPECT_EQ(sliced2.size(), 32);
+  EXPECT_EQ(sliced2[0], original[0]);
+  EXPECT_EQ(sliced2[10], original[10]);
+
+  // Compile-time End, runtime Start: [10, 32)
+  auto sliced3 = ref.slice<std::dynamic_extent, 32>(10);
+  EXPECT_EQ(sliced3.size(), 22);
+  EXPECT_EQ(sliced3[0], original[10]);
+}
+
+TEST(BitArrayRef, CompileTimeSliceAlignment) {
+  bit::bit_array<> original(128, bit::bit0);
+  // Set bits at positions 8, 24, 40, 56, 72, 88, 104, 120
+  for (std::size_t i = 0; i < 8; ++i) {
+    original[i * 16 + 8] = bit::bit1;
+  }
+
+  // Create array_ref with compile-time alignment 8
+  bit::array_ref<bit::bit_value, 128, std::uintptr_t, 8> ref(original.data());
+
+  // Slice [0, 64) - position preserved: starts at position 8 within word 0
+  auto sliced = ref.slice<0, 64>();
+  EXPECT_EQ(sliced.size(), 64);
+  // sliced[0] reads position 8 of word 0 = original[8] = 1
+  EXPECT_EQ(sliced[0], original[8]);
+
+  // Slice [8, 72) - position preserved: starts at position 16 within word 0
+  auto sliced2 = ref.slice<8, 72>();
+  EXPECT_EQ(sliced2.size(), 64);
+  // sliced2[0] reads position 16 of word 0 = original[16] = 0
+  EXPECT_EQ(sliced2[0], original[16]);
+}
+
+TEST(BitArrayRef, CompileTimeFrontBackAt) {
+  bit::bit_array<> original(64, bit::bit0);
+  original[0] = bit::bit1;
+  original[10] = bit::bit1;
+  original[63] = bit::bit1;
+
+  // Create array_ref with compile-time alignment 0
+  bit::array_ref<bit::bit_value, 64, std::uintptr_t, 0> ref(original.data());
+
+  // front() at alignment 0
+  EXPECT_EQ(ref.front(), original[0]);
+
+  // back() at last bit
+  EXPECT_EQ(ref.back(), original[63]);
+
+  // operator[] at known positions
+  EXPECT_EQ(ref[0], original[0]);
+  EXPECT_EQ(ref[10], original[10]);
+  EXPECT_EQ(ref[63], original[63]);
+
+  // at() at known positions
+  EXPECT_EQ(ref.at(0), original[0]);
+  EXPECT_EQ(ref.at(10), original[10]);
+  EXPECT_EQ(ref.at(63), original[63]);
+}
+
+TEST(BitArrayRef, CompileTimeFrontBackAlignment) {
+  // 128 bits of storage
+  bit::bit_array<> original(128, bit::bit0);
+  // Set bits at known positions
+  original[0] = bit::bit1;    // bit 0 of word 0
+  original[8] = bit::bit1;    // bit 8 of word 0
+  original[63] = bit::bit1;   // bit 63 of word 0
+  original[64] = bit::bit1;   // bit 0 of word 1
+  original[71] = bit::bit1;   // bit 7 of word 1
+  original[127] = bit::bit1;  // bit 63 of word 1
+
+  // array_ref with alignment 0, 64 bits
+  bit::array_ref<bit::bit_value, 64, std::uintptr_t, 0> ref0(original.data());
+
+  // front() at alignment 0: reads bit 0 of word 0 = original[0]
+  EXPECT_EQ(ref0.front(), original[0]);
+
+  // back() at alignment 0, N=64: last bit position = (0 + 64 - 1) % 64 = 63
+  // reads bit 63 of word 0 = original[63]
+  EXPECT_EQ(ref0.back(), original[63]);
+
+  // array_ref with alignment 8, 64 bits
+  bit::array_ref<bit::bit_value, 64, std::uintptr_t, 8> ref8(original.data());
+
+  // front() at alignment 8: reads bit 8 of word 0 = original[8]
+  EXPECT_EQ(ref8.front(), original[8]);
+
+  // back() at alignment 8, N=64: last bit position = (8 + 64 - 1) % 64 = 7
+  // word index = (8 + 64 - 1) / 64 = 1
+  // reads bit 7 of word 1 = original[64 + 7] = original[71]
+  EXPECT_EQ(ref8.back(), original[71]);
+}

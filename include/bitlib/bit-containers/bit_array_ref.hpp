@@ -46,23 +46,25 @@ struct array_ref_iterator_types {
  * Assignment operations always copy content and can't rebind the pointer/size.
  *
  * @tparam T The value type (typically bit_value)
+ * @tparam N The number of value types
  * @tparam W The word type used for storage
+ * @tparam A The bit alignment of values in storage, std::dynamic_extent for runtime tracked
  */
 template <typename T, size_t N, typename W, size_t A, typename Policy>
 class array_ref
-    : public array_base<array_ref<T, N, W, A, Policy>, T, N, W, false, Policy, detail::array_ref_iterator_types<W>> {
+    : public array_base<array_ref<T, N, W, A, Policy>, T, N, W, A, false, Policy, detail::array_ref_iterator_types<W>> {
  public:
-  using base = array_base<array_ref<T, N, W, A, Policy>, T, N, W, false, Policy, detail::array_ref_iterator_types<W>>;
+  using base = array_base<array_ref<T, N, W, A, Policy>, T, N, W, A, false, Policy, detail::array_ref_iterator_types<W>>;
   using base::end;
   using base::size;
   using typename base::const_iterator;
-  using typename base::const_value_pointer;
   using typename base::const_reference;
+  using typename base::const_value_pointer;
   using typename base::difference_type;
   using typename base::iterator;
-  using typename base::value_pointer;
   using typename base::reference;
   using typename base::size_type;
+  using typename base::value_pointer;
   using typename base::value_type;
   using typename base::word_type;
 
@@ -206,6 +208,17 @@ class array_ref
       throw std::invalid_argument("Cannot swap array_ref of different sizes");
     }
     swap_ranges(begin(), end(), other.begin());
+  }
+
+  /*
+   * Element Access
+   */
+  constexpr word_type* data() noexcept {
+    return m_storage.base();
+  }
+
+  constexpr const word_type* data() const noexcept {
+    return m_storage.base();
   }
 };
 

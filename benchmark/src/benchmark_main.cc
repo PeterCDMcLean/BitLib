@@ -400,6 +400,10 @@ int main(int argc, char** argv) {
             BM_BitCopy, 
             "bit::copy (small) (UU)",
             size_small);
+    register_word_containers<decltype(BM_BitCopyAligned0), std::vector>(
+            BM_BitCopyAligned0, 
+            "bit::copy (small) (UU) aligned0",
+            size_small);
     register_bool_containers<decltype(BM_BoolCopy), std::vector>(
             BM_BoolCopy, 
             "std::copy (small)",
@@ -407,6 +411,10 @@ int main(int argc, char** argv) {
     register_word_containers<decltype(BM_BitCopy), std::vector>(
             BM_BitCopy, 
             "bit::copy (large) (UU)",
+            size_large);
+    register_word_containers<decltype(BM_BitCopyAligned0), std::vector>(
+            BM_BitCopyAligned0, 
+            "bit::copy (large) (UU) aligned0",
             size_large);
     register_bool_containers<decltype(BM_BoolCopy), std::vector>(
             BM_BoolCopy, 

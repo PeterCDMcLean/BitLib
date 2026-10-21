@@ -50,7 +50,7 @@ class array;
  * @tparam Policy The policy for integral conversion (default is typical)
  * @tparam Iterators A struct that provides iterator and const_iterator types
  */
-template <typename Derived, typename T, size_t N, typename W, bool resizable, typename Policy, typename Iterators>
+template <typename Derived, typename T, size_t N, typename W, size_t A, bool resizable, typename Policy, typename Iterators>
 class array_base : public detail::container_size_storage<std::size_t, resizable, N> {
  protected:
   constexpr Derived& derived() noexcept {
@@ -104,20 +104,56 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
     }
   }
 
-  constexpr reference front() {
+  constexpr reference front()
+    requires(A == std::dynamic_extent)
+  {
     return derived().begin()[0];
   }
 
-  constexpr const_reference front() const {
+  constexpr auto front()
+    requires(A != std::dynamic_extent)
+  {
+    return ::bit::reference<word_type&, value_type, A>(*derived().data());
+  }
+
+  constexpr const_reference front() const
+    requires(A == std::dynamic_extent)
+  {
     return derived().begin()[0];
   }
 
-  constexpr reference back() {
+  constexpr const auto front() const
+    requires(A != std::dynamic_extent)
+  {
+    return ::bit::reference<const word_type&, value_type, A>(*derived().data());
+  }
+
+  constexpr reference back()
+    requires(A == std::dynamic_extent || N == std::dynamic_extent)
+  {
     return derived().begin()[size() - 1];
   }
 
-  constexpr const_reference back() const {
+  constexpr auto back()
+    requires(!(A == std::dynamic_extent || N == std::dynamic_extent))
+  {
+    constexpr size_type back_index = (A + N * bitsof<value_type>() - 1) / bitsof<word_type>();
+    constexpr size_type back_pos = (A + N * bitsof<value_type>() - 1) % bitsof<word_type>();
+    return ::bit::reference<word_type&, value_type, back_pos>(derived().data()[back_index]);
+  }
+
+  constexpr const_reference back() const
+    requires(A == std::dynamic_extent || N == std::dynamic_extent)
+  {
     return derived().begin()[size() - 1];
+  }
+
+  constexpr const auto back() const
+    requires(!(A == std::dynamic_extent || N == std::dynamic_extent))
+  {
+    constexpr size_type back_index = (A + N * bitsof<value_type>() - 1) / bitsof<word_type>();
+    constexpr size_type back_pos = (A + N * bitsof<value_type>() - 1) % bitsof<word_type>();
+    return ::bit::reference<const word_type&, value_type, back_pos>(derived().data()[back_index]);
   }
 
   constexpr iterator end() noexcept {
@@ -177,6 +213,154 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
    */
   constexpr auto operator()(size_type offset, size_type right) noexcept {
     return array_ref<value_type, std::dynamic_extent, word_type, std::dynamic_extent, Policy>(&this->at(offset), right - offset);
+  }
+
+  /**
+   * @brief Compile-time slice [Start, End) - returns a array_ref.
+   *
+   * Supports all combinations of Start/End being compile-time constants or
+   * runtime values:
+   *   slice<Start, End>()          - both compile-time constants
+   *   slice<Start>(end)            - Start compile-time, End runtime
+   *   slice<End>(start)            - Start runtime, End compile-time
+   *
+   * @tparam Start Start offset in bits
+   * @tparam End End offset in bits
+   */
+  template <std::size_t Start, std::size_t End>
+  constexpr auto slice() const noexcept
+    requires(N != std::dynamic_extent && Start <= End && End <= N)
+  {
+    return array_ref<value_type, End - Start, const word_type, std::dynamic_extent, Policy>(&this->at(Start));
+  }
+
+  template <std::size_t Start, std::size_t End>
+  constexpr auto slice() noexcept
+    requires(N != std::dynamic_extent && Start <= End && End <= N)
+  {
+    return array_ref<value_type, End - Start, word_type, std::dynamic_extent, Policy>(&this->at(Start));
+  }
+
+  /**
+   * @brief Compile-time Start, runtime End slice [Start, end) - returns a array_ref.
+   *
+   * @tparam Start Start offset in bits (compile-time constant)
+   * @param end End offset in bits (runtime)
+   */
+  template <std::size_t Start>
+  constexpr auto slice(size_t end) const noexcept
+    requires(Start != std::dynamic_extent && N != std::dynamic_extent && Start <= N)
+  {
+    return array_ref<value_type, std::dynamic_extent, const word_type, std::dynamic_extent, Policy>(
+        &this->at(Start), end - Start);
+  }
+
+  template <std::size_t Start>
+  constexpr auto slice(size_t end) noexcept
+    requires(Start != std::dynamic_extent && N != std::dynamic_extent && Start <= N)
+  {
+    return array_ref<value_type, std::dynamic_extent, word_type, std::dynamic_extent, Policy>(
+        &this->at(Start), end - Start);
+  }
+
+  /**
+   * @brief Runtime Start, compile-time End slice [start, End) - returns a array_ref.
+   *
+   * Start=std::dynamic_extent means the start offset is a runtime argument.
+   *
+   * @tparam Start std::dynamic_extent (runtime start sentinel)
+   * @tparam End End offset in bits (compile-time constant)
+   * @param start Start offset in bits (runtime)
+   */
+  template <std::size_t Start = std::dynamic_extent, std::size_t End>
+  constexpr auto slice(size_t start) const noexcept
+    requires(Start == std::dynamic_extent && N != std::dynamic_extent)
+  {
+    return array_ref<value_type, std::dynamic_extent, const word_type, std::dynamic_extent, Policy>(
+        &this->at(start), End - start);
+  }
+
+  template <std::size_t Start = std::dynamic_extent, std::size_t End>
+  constexpr auto slice(size_t start) noexcept
+    requires(Start == std::dynamic_extent && N != std::dynamic_extent)
+  {
+    return array_ref<value_type, std::dynamic_extent, word_type, std::dynamic_extent, Policy>(
+        &this->at(start), End - start);
+  }
+
+  /**
+   * @brief Compile-time slice [Start, End) - returns a array_ref.
+   *
+   * Supports all combinations of Start/End being compile-time constants or
+   * runtime values:
+   *   slice<Start, End>()          - both compile-time constants
+   *   slice<Start>(end)            - Start compile-time, End runtime
+   *
+   * @tparam Start Start offset in bits
+   * @tparam End End offset in bits
+   */
+  template <std::size_t Start, std::size_t End>
+  constexpr auto slice() const noexcept
+    requires(N == std::dynamic_extent && Start <= End)
+  {
+    return array_ref<value_type, std::dynamic_extent, const word_type, std::dynamic_extent, Policy>(
+        &this->at(Start), End - Start);
+  }
+
+  template <std::size_t Start, std::size_t End>
+  constexpr auto slice() noexcept
+    requires(N == std::dynamic_extent && Start <= End)
+  {
+    return array_ref<value_type, std::dynamic_extent, word_type, std::dynamic_extent, Policy>(
+        &this->at(Start), End - Start);
+  }
+
+  /**
+   * @brief Compile-time Start, runtime End slice [Start, end) - returns a array_ref.
+   *
+   * @tparam Start Start offset in bits (compile-time constant)
+   * @param end End offset in bits (runtime)
+   */
+  template <std::size_t Start>
+  constexpr auto slice(size_t end) const noexcept
+    requires(N == std::dynamic_extent)
+  {
+    return array_ref<value_type, std::dynamic_extent, const word_type, std::dynamic_extent, Policy>(
+        &this->at(Start), end - Start);
+  }
+
+  template <std::size_t Start>
+  constexpr auto slice(size_t end) noexcept
+    requires(N == std::dynamic_extent)
+  {
+    return array_ref<value_type, std::dynamic_extent, word_type, std::dynamic_extent, Policy>(
+        &this->at(Start), end - Start);
+  }
+
+  /**
+   * @brief Runtime Start, compile-time End slice [start, End) - returns a array_ref.
+   *
+   * Start=std::dynamic_extent means the start offset is a runtime argument.
+   * End is a compile-time constant upper bound.
+   *
+   * @tparam Start std::dynamic_extent (runtime start)
+   * @tparam End End offset in bits (compile-time constant)
+   * @param start Start offset in bits (runtime)
+   */
+  template <std::size_t Start = std::dynamic_extent, std::size_t End>
+  constexpr auto slice(size_t start) const noexcept
+    requires(Start == std::dynamic_extent && N == std::dynamic_extent)
+  {
+    return array_ref<value_type, std::dynamic_extent, const word_type, std::dynamic_extent, Policy>(
+        &this->at(start), End - start);
+  }
+
+  template <std::size_t Start = std::dynamic_extent, std::size_t End>
+  constexpr auto slice(size_t start) noexcept
+    requires(Start == std::dynamic_extent && N == std::dynamic_extent)
+  {
+    return array_ref<value_type, std::dynamic_extent, word_type, std::dynamic_extent, Policy>(
+        &this->at(start), End - start);
   }
 
   // Common operations

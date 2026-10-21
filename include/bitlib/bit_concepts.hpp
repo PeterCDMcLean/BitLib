@@ -76,14 +76,13 @@ concept bit_iterator_c =
 
       // It must provide base(), position(), and mask() with proper return types.
       { it.base() } -> std::same_as<typename It::iterator_type>;
-      { it.position() } -> std::same_as<typename It::size_type>;
+      { it.position() } -> std::convertible_to<typename It::size_type>;
     };
 
 template <typename It>
 concept bit_contiguous_iterator_c = bit_iterator_c<It> &&
                                     std::contiguous_iterator<typename It::iterator_type> &&
                                     std::has_unique_object_representations_v<typename std::iterator_traits<typename It::iterator_type>::value_type>;
-
 
 template <typename R>
 concept bit_range =
