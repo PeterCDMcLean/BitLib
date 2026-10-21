@@ -61,6 +61,52 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
     return static_cast<const Derived&>(*this);
   }
 
+  constexpr auto aligned_begin() noexcept
+    requires(A == std::dynamic_extent)
+  {
+    return derived().begin();
+  }
+  constexpr auto aligned_end() noexcept
+    requires(A == std::dynamic_extent || N == std::dynamic_extent)
+  {
+    return derived().begin() + size();
+  }
+  constexpr auto aligned_begin() noexcept
+    requires(A != std::dynamic_extent)
+  {
+    return ::bit::iterator<word_type*, value_type, A>(derived().data());
+  }
+  constexpr auto aligned_end() noexcept
+    requires(!(A == std::dynamic_extent || N == std::dynamic_extent))
+  {
+    constexpr size_type end_index = (A + N * bitsof<value_type>()) / bitsof<word_type>();
+    constexpr size_type end_pos = (A + N * bitsof<value_type>()) % bitsof<word_type>();
+    return ::bit::iterator<word_type*, value_type, end_pos>(derived().data()[end_index]);
+  }
+
+  constexpr const auto aligned_begin() const noexcept
+    requires(A == std::dynamic_extent)
+  {
+    return const_iterator(derived().begin());
+  }
+  constexpr const auto aligned_end() const noexcept
+    requires(A == std::dynamic_extent || N == std::dynamic_extent)
+  {
+    return const_iterator(derived().begin() + size());
+  }
+  constexpr const auto aligned_begin() const noexcept
+    requires(A != std::dynamic_extent)
+  {
+    return ::bit::iterator<const word_type*, value_type, A>(derived().data());
+  }
+  constexpr const auto aligned_end() const noexcept
+    requires(!(A == std::dynamic_extent || N == std::dynamic_extent))
+  {
+    constexpr size_type end_index = (A + N * bitsof<value_type>()) / bitsof<word_type>();
+    constexpr size_type end_pos = (A + N * bitsof<value_type>()) % bitsof<word_type>();
+    return ::bit::iterator<const word_type*, value_type, end_pos>(derived().data()[end_index]);
+  }
+
  public:
   using detail::container_size_storage<std::size_t, resizable, N>::size;
   using word_type = W;
@@ -380,7 +426,7 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
       if (size() > bitsof<U>()) {
         Policy::truncation::template to_integral<U, N>(derived(), integral);
       } else {
-        ::bit::copy(derived().begin(), end(), &integral);  //TODO use iterator with alignment when possible
+        ::bit::copy(this->aligned_begin(), aligned_end(), &integral);  //TODO use iterator with alignment when possible
       }
       if (size() < bitsof<U>()) {
         Policy::extension::template to_integral<U, N>(detail::uninitialized, derived(), integral);
@@ -389,7 +435,7 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
       if constexpr (N > bitsof<U>()) {
         Policy::truncation::template to_integral<U, N>(derived(), integral);
       } else {
-        ::bit::copy(derived().begin(), end(), &integral);  //TODO use iterator with alignment when possible
+        ::bit::copy(this->aligned_begin(), aligned_end(), &integral);  //TODO use iterator with alignment when possible
       }
       if constexpr (N < bitsof<U>()) {
         Policy::extension::template to_integral<U, N>(detail::uninitialized, derived(), integral);
@@ -500,7 +546,7 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
       if ((size() * bitsof<value_type>()) < bitsof<U>()) {
         Policy::truncation::template from_integral<U, N>(integral, derived());
       } else {
-        ::bit::copy(&integral, &integral + 1, derived().begin());
+        ::bit::copy(&integral, &integral + 1, aligned_begin());
       }
       if (bitsof<U>() < (size() * bitsof<value_type>())) {
         Policy::extension::template from_integral<U, N>(detail::uninitialized, integral, derived());
@@ -509,7 +555,7 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
       if constexpr ((N * bitsof<value_type>()) < bitsof<U>()) {
         Policy::truncation::template from_integral<U, N>(integral, derived());
       } else {
-        ::bit::copy(&integral, &integral + 1, derived().begin());
+        ::bit::copy(&integral, &integral + 1, aligned_begin());
       }
       if constexpr (bitsof<U>() < (N * bitsof<value_type>())) {
         Policy::extension::template from_integral<U, N>(detail::uninitialized, integral, derived());

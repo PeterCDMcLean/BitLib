@@ -24,6 +24,32 @@ namespace bit {
 
 struct copy_impl;
 
+// Helper to extract the underlying pointer type from either bit::iterator
+// or a raw pointer.
+template <typename T>
+struct copy_iterator_type {
+    using type = typename T::iterator_type;
+};
+template <typename T>
+struct copy_iterator_type<T*> {
+    using type = T*;
+};
+template <typename T>
+using copy_iterator_type_t = typename copy_iterator_type<T>::type;
+
+// Convert any iterator-like (bit::iterator or raw pointer) to a mutable
+// dynamic_extent bit::iterator.
+template <typename T>
+constexpr auto copy_to_mutable_iterator(const T& it) {
+    using T_decayed = std::decay_t<T>;
+    if constexpr (requires { it.base(); }) {
+        return iterator<typename T_decayed::iterator_type, primitive<1>, std::dynamic_extent>(
+            it.base(), it.position());
+    } else {
+        return iterator<T_decayed, primitive<1>, std::dynamic_extent>(it, 0);
+    }
+}
+
 template <typename It1, typename It2>
 constexpr bit_iterator<It2> copy(
     const bit_iterator<It1>& first,
@@ -74,6 +100,7 @@ struct copy_impl {
 
     // This checks for differing word types and uses an unoptimized copy in that event
     static_assert(std::is_same<dst_word_type, src_word_type>::value, "Both types must be the same");
+    //static_assert(SrcAlign != std::dynamic_extent, "SrcAlign must be zero for compile-time alignment optimization");
 
     using word_type = dst_word_type;
     using size_type = typename bit_iterator<RandomAccessIt2>::size_type;
@@ -158,22 +185,22 @@ struct copy_impl {
 // When word types match, alignment hints are passed to impl for if constexpr
 // optimization. When word types differ, falls back to with_bit_iterator_adapter
 // for cross-width word adaptation (alignment hints are lost in that case).
-template <typename SrcIt, typename DstIt>
+template <typename SrcIt1, typename SrcIt2, typename DstIt>
 constexpr iterator<typename DstIt::iterator_type, primitive<1>, std::dynamic_extent> copy(
-    const SrcIt& first,
-    const SrcIt& last,
+    const SrcIt1& first,
+    const SrcIt2& last,
     const DstIt& d_first)
-  requires(iterator_alignment_v<SrcIt> != std::dynamic_extent || iterator_alignment_v<DstIt> != std::dynamic_extent)
+  requires(iterator_alignment_v<SrcIt1> != std::dynamic_extent
+        || iterator_alignment_v<SrcIt2> != std::dynamic_extent
+        || iterator_alignment_v<DstIt> != std::dynamic_extent)
 {
-  constexpr std::size_t SrcAlign = iterator_alignment_v<SrcIt>;
+  constexpr std::size_t SrcAlign = iterator_alignment_v<SrcIt1>;
   constexpr std::size_t DstAlign = iterator_alignment_v<DstIt>;
-  // Convert immutable iterators to mutable dynamic_extent iterators
-  using mutable_src_it = iterator<typename SrcIt::iterator_type, primitive<1>, std::dynamic_extent>;
-  using mutable_dst_it = iterator<typename DstIt::iterator_type, primitive<1>, std::dynamic_extent>;
-  auto mutable_first = mutable_src_it(first.base(), first.position());
-  auto mutable_last = mutable_src_it(last.base(), last.position());
-  auto mutable_d_first = mutable_dst_it(d_first.base(), d_first.position());
-  if constexpr (std::is_same_v<typename SrcIt::word_type, typename DstIt::word_type>) {
+  // Convert all inputs to mutable dynamic_extent iterators
+  auto mutable_first = copy_to_mutable_iterator(first);
+  auto mutable_last = copy_to_mutable_iterator(last);
+  auto mutable_d_first = copy_to_mutable_iterator(d_first);
+  if constexpr (std::is_same_v<copy_iterator_type_t<SrcIt1>, copy_iterator_type_t<DstIt>>) {
     // Same word type: no width adaptation needed, use alignment hints
     return copy_impl::run<SrcAlign, DstAlign>(
         mutable_first, mutable_last, mutable_d_first);
