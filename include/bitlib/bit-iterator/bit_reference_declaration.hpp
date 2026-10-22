@@ -11,12 +11,24 @@
 
 #include "bitlib/bit-algorithms/bit_algorithm_forward.hpp"
 #include "bitlib/bit-containers/bit_bitsof.hpp"
-#include "bitlib/bit-containers/bit_span_declaration.hpp"
 #include "bitlib/bit-iterator/bit_details.hpp"
 #include "bitlib/bit-iterator/bit_integral.hpp"
 #include "bitlib/bit-iterator/bit_iterator_forward.hpp"
 
 namespace bit {
+
+// Storage that requires the array-backed reference implementation: either the
+// referenced field is wider than one bit, the storage is not a single integral
+// word, or the storage is wider than a pointer.
+template <typename StorageRef, typename ValueType>
+concept array_ref_storage =
+    primitive_c<ValueType> &&
+    !std::is_pointer_v<std::remove_reference_t<StorageRef>> &&
+    (ValueType::bits > 1 ||
+     !std::is_integral_v<
+         std::remove_cv_t<std::remove_reference_t<StorageRef>>> ||
+     sizeof(std::remove_cv_t<std::remove_reference_t<StorageRef>>) >
+         sizeof(std::uintptr_t));
 
 namespace detail {
 template <class StorageRef, bool SingleWord>
@@ -36,11 +48,11 @@ template <class StorageRef>
 struct reference_word_type<StorageRef, false> {
   using storage_type =
       std::remove_cv_t<std::remove_reference_t<StorageRef>>;
-  using type = ceil_integral<alignof(storage_type) * 8>;
+  using type = inferred_word_type<storage_type>;
 };
 
 template <class StorageRef>
-using reference_span_word_type = std::conditional_t<
+using reference_field_word_type = std::conditional_t<
     std::is_const_v<std::remove_reference_t<StorageRef>>,
     std::add_const_t<typename reference_word_type<StorageRef, false>::type>,
     typename reference_word_type<StorageRef, false>::type>;
@@ -76,7 +88,7 @@ struct reference_state<StorageRef, std::dynamic_extent> {
 
 /* ********************* SINGLE-WORD, SINGLE-BIT REFERENCE ****************** */
 // The primary template is the mask-based one-bit reference. All multi-bit
-// references use the span-backed specialization below.
+// references use the array-backed specialization below.
 template <typename StorageRef, primitive_c ValueType, size_t Alignment>
 class reference : private detail::reference_state<StorageRef, Alignment> {
  private:
@@ -88,9 +100,6 @@ class reference : private detail::reference_state<StorageRef, Alignment> {
       !std::is_const_v<std::remove_reference_t<StorageRef>>;
 
   using word_type_impl = exact_floor_integral_t<storage_type>;
-  using storage_pointer = std::conditional_t<
-      std::is_const_v<std::remove_reference_t<StorageRef>>,
-      const word_type_impl*, word_type_impl*>;
 
  public:
   using WordType = word_type_impl;
@@ -118,7 +127,7 @@ class reference : private detail::reference_state<StorageRef, Alignment> {
       ValueType::bits <= storage_size * 8,
       "reference bit width exceeds the storage capacity");
   static_assert(ValueType::bits == 1,
-                "multi-bit references use the span-backed implementation");
+                "multi-bit references use the array-backed implementation");
   static_assert(
       Alignment == std::dynamic_extent ||
           (Alignment <= num_words * word_bits &&
@@ -130,7 +139,7 @@ class reference : private detail::reference_state<StorageRef, Alignment> {
   friend class reference;
 
  private:
-  storage_pointer _ref;
+  StorageRef _ref;
 
   static constexpr state_type make_state(size_type pos) noexcept;
 
@@ -155,6 +164,8 @@ class reference : private detail::reference_state<StorageRef, Alignment> {
       const reference<OtherStorage, ValueType, OtherAlignment>& other) const noexcept;
 
   constexpr reference& operator=(const value_type& val) const noexcept;
+
+  constexpr reference& operator=(bool bit) const noexcept;
 
   constexpr reference& assign(word_type val) const noexcept;
 
@@ -209,53 +220,57 @@ class reference : private detail::reference_state<StorageRef, Alignment> {
   // Implementation details: function members
  private:
   reference() noexcept = default;
-  explicit constexpr reference(word_type* ptr) noexcept;
-
-  constexpr reference(word_type* ptr, size_type pos) noexcept;
 };
 
 namespace detail {
 template <typename WordType, size_t Extent, size_t Alignment>
-class reference_field_span_state {
+class reference_array_ref_state {
  private:
-  using span_type = bit_span<WordType, Extent, Alignment, policy::typical<std::remove_cv_t<WordType>>>;
-  span_type span_;
+  static constexpr size_t word_bits = bitsof<std::remove_cv_t<WordType>>();
+  static constexpr size_t field_alignment =
+      Alignment == std::dynamic_extent ? std::dynamic_extent
+                                       : Alignment % word_bits;
+  using array_ref_type =
+      array_ref<bit_value, Extent, WordType, field_alignment,
+                policy::typical<std::remove_cv_t<WordType>>>;
+  array_ref_type array_;
+
+  static constexpr array_ref_type make_array(WordType* words,
+                                             size_t position) noexcept {
+    if constexpr (Alignment == std::dynamic_extent) {
+      return array_ref_type(bit_pointer<WordType>(words + position / word_bits,
+                                                  position % word_bits));
+    } else {
+      return array_ref_type(words + Alignment / word_bits);
+    }
+  }
 
  public:
-  constexpr reference_field_span_state(WordType* words,
-                                       size_t position) noexcept;
+  constexpr reference_array_ref_state(WordType* words,
+                                      size_t position) noexcept
+      : array_(make_array(words, position)) {}
 
-  constexpr span_type field_span() const noexcept { return span_; }
+  constexpr array_ref_type _array_ref() const noexcept { return array_; }
 };
 }  // namespace detail
 
-/* *********************** SPAN-BACKED REFERENCE *************************** */
+/* *********************** ARRAY-BACKED REFERENCE ************************** */
 // Every multi-bit field and every multi-word storage object uses this
 // implementation. The word count is inferred from the storage object's size
-// and alignment; the fixed-extent bit_span stores the field start.
+// and alignment; the fixed-extent bit_array_ref stores the field start.
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires(
-      !std::is_pointer_v<std::remove_reference_t<StorageRef>> &&
-      (ValueType::bits > 1 ||
-       !std::is_integral_v<
-           std::remove_cv_t<std::remove_reference_t<StorageRef>>> ||
-       sizeof(std::remove_cv_t<std::remove_reference_t<StorageRef>>) >
-           sizeof(std::uintptr_t)))
+  requires array_ref_storage<StorageRef, ValueType>
 class reference<StorageRef, ValueType, Alignment>
-    : private detail::reference_field_span_state<
-          detail::reference_span_word_type<StorageRef>,
+    : private detail::reference_array_ref_state<
+          detail::reference_field_word_type<StorageRef>,
           ValueType::bits, Alignment> {
  private:
   using storage_type = std::remove_reference_t<StorageRef>;
   using unqualified_storage_type = std::remove_cv_t<storage_type>;
-  using storage_word_type =
-      ceil_integral<alignof(unqualified_storage_type) * 8>;
-  using storage_pointer = std::conditional_t<
-      std::is_const_v<storage_type>, const storage_word_type*,
-      storage_word_type*>;
-  using span_word_type = std::remove_pointer_t<storage_pointer>;
-  using state_type = detail::reference_field_span_state<
-      span_word_type, ValueType::bits, Alignment>;
+  using field_word_type = detail::reference_field_word_type<StorageRef>;
+  using storage_word_type = std::remove_cv_t<field_word_type>;
+  using state_type = detail::reference_array_ref_state<
+      field_word_type, ValueType::bits, Alignment>;
 
  public:
   using WordType = storage_word_type;
@@ -264,12 +279,13 @@ class reference<StorageRef, ValueType, Alignment>
   using value_type = ValueType;
   using size_type = std::size_t;
   using mask_type = std::make_unsigned_t<word_type>;
-  static constexpr size_type num_words = sizeof(unqualified_storage_type) / sizeof(word_type);
+  static constexpr size_type num_words =
+      sizeof(unqualified_storage_type) / sizeof(word_type);
   static constexpr size_type word_bits = sizeof(word_type) * 8;
 
  private:
   static_assert(std::is_integral_v<word_type>,
-                "span-backed storage must use integral words");
+                "array-backed storage must use integral words");
   static_assert(sizeof(unqualified_storage_type) % sizeof(word_type) == 0,
                 "storage size must be a multiple of its inferred word size");
   static_assert(
@@ -281,16 +297,23 @@ class reference<StorageRef, ValueType, Alignment>
   template <class, primitive_c, size_t>
   friend class reference;
 
-  constexpr auto field_span() const noexcept;
+  constexpr auto _array_ref() const noexcept;
 
-  using value_word_type = ceil_integral<alignof(value_type) * 8>;
-  using const_value_span_type = bit_span<const value_word_type, ValueType::bits, Alignment, policy::typical<value_word_type>>;
-  using value_span_type = bit_span<value_word_type, ValueType::bits, Alignment, policy::typical<value_word_type>>;
+  using value_word_type = detail::inferred_word_type<value_type>;
+  using const_value_array_type = array_ref<
+      bit_value, ValueType::bits, const value_word_type, 0,
+      policy::typical<value_word_type>>;
+  using value_array_type = array_ref<
+      bit_value, ValueType::bits, value_word_type, 0,
+      policy::typical<value_word_type>>;
+  static constexpr size_type value_word_bits = bitsof<value_word_type>();
+  static constexpr size_type value_word_count =
+      (ValueType::bits + value_word_bits - 1) / value_word_bits;
 
-  static constexpr const_value_span_type value_span(
+  static constexpr const_value_array_type value_array(
       const value_type& value) noexcept;
 
-  static constexpr value_span_type value_span(value_type& value) noexcept;
+  static constexpr value_array_type value_array(value_type& value) noexcept;
 
   template <class OtherStorage, size_type OtherAlignment>
   constexpr void copy_from(
@@ -298,7 +321,7 @@ class reference<StorageRef, ValueType, Alignment>
 
   template <class SourceSpan, class DestinationSpan>
   constexpr void copy_spans(const SourceSpan& source,
-                            const DestinationSpan& destination) const noexcept;
+                            DestinationSpan& destination) const noexcept;
 
   constexpr bool field_any() const noexcept;
 
@@ -323,17 +346,30 @@ class reference<StorageRef, ValueType, Alignment>
 
   constexpr reference& operator=(const value_type& value) const noexcept;
 
+  constexpr reference& operator=(bool bit) const noexcept
+    requires(ValueType::bits == 1);
+
   constexpr reference& operator&=(const value_type& other) const noexcept;
 
   constexpr reference& operator|=(const value_type& other) const noexcept;
 
   constexpr reference& operator^=(const value_type& other) const noexcept;
 
+  constexpr reference& set(bool bit) const noexcept
+    requires(ValueType::bits == 1);
+  constexpr reference& set() const noexcept
+    requires(ValueType::bits == 1);
+  constexpr reference& reset() const noexcept
+    requires(ValueType::bits == 1);
+  constexpr reference& flip() const noexcept
+    requires(ValueType::bits == 1);
+
   friend constexpr bool operator==(const reference& lhs,
                                    const reference& rhs) noexcept {
-    const auto lhs_span = lhs.field_span();
-    const auto rhs_span = rhs.field_span();
-    return ::bit::equal(lhs_span.begin(), lhs_span.end(), rhs_span.begin());
+    const auto lhs_array = lhs._array_ref();
+    const auto rhs_array = rhs._array_ref();
+    return ::bit::equal(lhs_array.begin(), lhs_array.end(),
+                        rhs_array.begin());
   }
   friend constexpr bool operator!=(const reference& lhs,
                                    const reference& rhs) noexcept {

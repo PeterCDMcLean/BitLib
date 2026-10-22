@@ -21,7 +21,8 @@ class primitive;
 using bit_value = primitive<1>;
 
 // Proxy reference to a bit field. The primary template is the single-word
-// implementation; multi-bit fields use the span-backed specialization.
+// implementation; multi-bit fields and multi-word storage use the array-backed
+// specialization.
 template <typename WordRef = std::uintptr_t&,
           primitive_c ValueType = primitive<1>,
           std::size_t Alignment = std::dynamic_extent>

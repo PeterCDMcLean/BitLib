@@ -13,7 +13,7 @@
 #include "bitlib/bit-containers/bit_array_ref.hpp"
 #include "bitlib/bit-containers/bit_bitsof.hpp"
 #include "bitlib/bit-containers/bit_policy.hpp"
-#include "bitlib/bit-containers/bit_span_definition.hpp"
+#include "bitlib/bit-containers/bit_span_declaration.hpp"
 #include "bitlib/bit-iterator/bit.hpp"
 
 namespace bit {

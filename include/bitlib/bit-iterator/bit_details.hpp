@@ -190,6 +190,17 @@ struct exact_floor_integral {
 template <typename T>
 using exact_floor_integral_t = typename exact_floor_integral<T>::type;
 
+namespace detail {
+// Largest useful integral word for a type, capped at 64 bits. Using the
+// alignment (rather than the size) keeps the inferred word from exceeding the
+// storage's guaranteed alignment. Over-aligned types therefore fall back to a
+// 64-bit word instead of forming an invalid 128-bit integral type.
+template <typename T>
+using inferred_word_type = ceil_integral<
+    (alignof(T) < sizeof(std::uint64_t) ? alignof(T) : sizeof(std::uint64_t)) *
+    8>;
+}  // namespace detail
+
 template <typename From, typename To, typename = void>
 struct is_static_castable : std::false_type {};
 

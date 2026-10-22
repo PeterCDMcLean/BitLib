@@ -71,17 +71,28 @@ class iterator : public detail::iterator_position_storage<std::size_t, Alignment
   // Assertions
  private:
   using _traits_t = _cv_iterator_traits<Iterator>;
-  static_assert(
-      ValueType::bits <= binary_digits<std::iter_value_t<Iterator>>::value,
-      "primitive bit width cannot exceed the underlying word width");
-  static_assert(binary_digits<std::iter_value_t<Iterator>>::value, "");
-  static_assert(Alignment == std::dynamic_extent || Alignment <= bitsof<std::size_t>(),
+  static_assert(Alignment == std::dynamic_extent || Alignment < bitsof<uintptr_t>(),
                 "alignment exceeds the native integer size of the architecture");
 
   // Types
+ private:
+  using underlying_value_type =
+      std::remove_cv_t<std::iter_value_t<Iterator>>;
+
+  // The storage word is the underlying value type when it is already an
+  // integral type (bool is excluded because it has no usable unsigned
+  // counterpart). Otherwise, infer the largest integral type that respects
+  // the value type's alignment, so multi-word objects can still be traversed
+  // with native word operations.
+  using iterator_word_type = std::conditional_t<
+      std::is_integral_v<underlying_value_type> &&
+          !std::is_same_v<underlying_value_type, bool>,
+      underlying_value_type,
+      detail::inferred_word_type<underlying_value_type>>;
+
  public:
   using iterator_type = Iterator;
-  using word_type = std::iter_value_t<Iterator>;
+  using word_type = iterator_word_type;
   using iterator_category = typename _traits_t::iterator_category;
   using value_type = ValueType;
   using difference_type = std::ptrdiff_t;

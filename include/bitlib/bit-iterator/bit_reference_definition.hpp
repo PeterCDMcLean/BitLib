@@ -11,7 +11,6 @@
 #include "bitlib/bit-algorithms/bit_algorithm_details.hpp"
 #include "bitlib/bit-algorithms/bit_algorithm_forward.hpp"
 #include "bitlib/bit-containers/bit_bitsof.hpp"
-#include "bitlib/bit-containers/bit_span_declaration.hpp"
 #include "bitlib/bit-iterator/bit_reference_declaration.hpp"
 #include "bitlib/bit-iterator/bit_value_definition.hpp"
 
@@ -33,15 +32,15 @@ reference<StorageRef, ValueType, Alignment>::make_state(size_type pos) noexcept 
 
 template <typename StorageRef, primitive_c ValueType, size_t Alignment>
 constexpr bool reference<StorageRef, ValueType, Alignment>::value() const noexcept {
-  return (*_ref & this->mask()) != mask_type(0);
+  return (_ref & this->mask()) != mask_type(0);
 }
 
 template <typename StorageRef, primitive_c ValueType, size_t Alignment>
 constexpr void reference<StorageRef, ValueType, Alignment>::assign(bool bit) const noexcept {
   if (bit) {
-    *_ref = static_cast<word_type>(*_ref | this->mask());
+    _ref = static_cast<word_type>(_ref | this->mask());
   } else {
-    *_ref = static_cast<word_type>(*_ref & ~this->mask());
+    _ref = static_cast<word_type>(_ref & ~this->mask());
   }
 }
 
@@ -52,12 +51,12 @@ constexpr reference<StorageRef, ValueType, Alignment>::reference(const reference
 template <typename StorageRef, primitive_c ValueType, size_t Alignment>
 /* explicit */ constexpr reference<StorageRef, ValueType, Alignment>::reference(StorageRef& ref) noexcept
     : state_type(make_state(0)),
-      _ref(reinterpret_cast<storage_pointer>(std::addressof(ref))) {}
+      _ref(ref) {}
 
 template <typename StorageRef, primitive_c ValueType, size_t Alignment>
 constexpr reference<StorageRef, ValueType, Alignment>::reference(StorageRef& ref, size_type pos) noexcept
     : state_type(make_state(pos)),
-      _ref(reinterpret_cast<storage_pointer>(std::addressof(ref))) {
+      _ref(ref) {
   const size_type capacity = bitsof<word_type>();
   assert(pos <= capacity && ValueType::bits <= capacity - pos);
   if constexpr (Alignment != std::dynamic_extent) {
@@ -85,6 +84,13 @@ template <typename StorageRef, primitive_c ValueType, size_t Alignment>
 constexpr reference<StorageRef, ValueType, Alignment>&
 reference<StorageRef, ValueType, Alignment>::operator=(const value_type& val) const noexcept {
   assign(static_cast<bool>(val));
+  return const_cast<reference&>(*this);
+}
+
+template <typename StorageRef, primitive_c ValueType, size_t Alignment>
+constexpr reference<StorageRef, ValueType, Alignment>&
+reference<StorageRef, ValueType, Alignment>::operator=(bool bit) const noexcept {
+  assign(bit);
   return const_cast<reference&>(*this);
 }
 
@@ -156,7 +162,7 @@ reference<StorageRef, ValueType, Alignment>::flip() const noexcept { return set(
 template <typename StorageRef, primitive_c ValueType, size_t Alignment>
 constexpr bit_pointer<typename reference<StorageRef, ValueType, Alignment>::const_word_type>
 reference<StorageRef, ValueType, Alignment>::operator&() const noexcept {
-  return bit_pointer<const_word_type>(_ref, this->position());
+  return bit_pointer<const_word_type>(std::addressof(_ref), this->position());
 }
 
 template <typename StorageRef, primitive_c ValueType, size_t Alignment>
@@ -164,214 +170,143 @@ constexpr bit_pointer<typename reference<StorageRef, ValueType, Alignment>::Word
 reference<StorageRef, ValueType, Alignment>::operator&() noexcept
   requires(writable_storage)
 {
-  return bit_pointer<WordType>(_ref, this->position());
+  return bit_pointer<WordType>(std::addressof(_ref), this->position());
 }
 
-template <typename StorageRef, primitive_c ValueType, size_t Alignment>
-/* explicit */ constexpr reference<StorageRef, ValueType, Alignment>::reference(word_type* ptr) noexcept
-    : state_type(make_state(0)), _ref(ptr) {}
-
-template <typename StorageRef, primitive_c ValueType, size_t Alignment>
-constexpr reference<StorageRef, ValueType, Alignment>::reference(word_type* ptr, size_type pos) noexcept
-    : state_type(make_state(pos)), _ref(ptr) {
-  const size_type capacity = bitsof<word_type>();
-  assert(pos <= capacity && ValueType::bits <= capacity - pos);
-}
-
-/* *********************** SPAN-BACKED REFERENCE *************************** */
-
-namespace detail {
-
-template <typename WordType, size_t Extent, size_t Alignment>
-constexpr reference_field_span_state<WordType, Extent, Alignment>::reference_field_span_state(
-    WordType* words,
-    size_t position) noexcept
-    : span_(bit_pointer<WordType>(
-          words + position / bitsof<WordType>(),
-          position % bitsof<WordType>())) {}
-
-}  // namespace detail
+/* *********************** ARRAY-BACKED REFERENCE ************************** */
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires(
-      !std::is_pointer_v<std::remove_reference_t<StorageRef>> &&
-      (ValueType::bits > 1 ||
-       !std::is_integral_v<
-           std::remove_cv_t<std::remove_reference_t<StorageRef>>> ||
-       sizeof(std::remove_cv_t<std::remove_reference_t<StorageRef>>) >
-           sizeof(std::uintptr_t)))
-constexpr auto reference<StorageRef, ValueType, Alignment>::field_span() const noexcept {
-  return state_type::field_span();
+  requires array_ref_storage<StorageRef, ValueType>
+constexpr auto reference<StorageRef, ValueType, Alignment>::_array_ref() const noexcept {
+  return state_type::_array_ref();
 }
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires(
-      !std::is_pointer_v<std::remove_reference_t<StorageRef>> &&
-      (ValueType::bits > 1 ||
-       !std::is_integral_v<
-           std::remove_cv_t<std::remove_reference_t<StorageRef>>> ||
-       sizeof(std::remove_cv_t<std::remove_reference_t<StorageRef>>) >
-           sizeof(std::uintptr_t)))
-constexpr typename reference<StorageRef, ValueType, Alignment>::const_value_span_type
-reference<StorageRef, ValueType, Alignment>::value_span(
+  requires array_ref_storage<StorageRef, ValueType>
+constexpr typename reference<StorageRef, ValueType, Alignment>::const_value_array_type
+reference<StorageRef, ValueType, Alignment>::value_array(
     const value_type& value) noexcept {
   static_assert(sizeof(value_type) % sizeof(value_word_type) == 0);
   static_assert(ValueType::bits <= sizeof(value_type) * 8);
   const auto* words = reinterpret_cast<const value_word_type*>(
       std::addressof(value));
-  return const_value_span_type(words);
+  return const_value_array_type(words);
 }
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires(
-      !std::is_pointer_v<std::remove_reference_t<StorageRef>> &&
-      (ValueType::bits > 1 ||
-       !std::is_integral_v<
-           std::remove_cv_t<std::remove_reference_t<StorageRef>>> ||
-       sizeof(std::remove_cv_t<std::remove_reference_t<StorageRef>>) >
-           sizeof(std::uintptr_t)))
-constexpr typename reference<StorageRef, ValueType, Alignment>::value_span_type
-reference<StorageRef, ValueType, Alignment>::value_span(value_type& value) noexcept {
+  requires array_ref_storage<StorageRef, ValueType>
+constexpr typename reference<StorageRef, ValueType, Alignment>::value_array_type
+reference<StorageRef, ValueType, Alignment>::value_array(value_type& value) noexcept {
   static_assert(sizeof(value_type) % sizeof(value_word_type) == 0);
   static_assert(ValueType::bits <= sizeof(value_type) * 8);
   auto* words =
       reinterpret_cast<value_word_type*>(std::addressof(value));
-  return value_span_type(words);
+  return value_array_type(words);
 }
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires(
-      !std::is_pointer_v<std::remove_reference_t<StorageRef>> &&
-      (ValueType::bits > 1 ||
-       !std::is_integral_v<
-           std::remove_cv_t<std::remove_reference_t<StorageRef>>> ||
-       sizeof(std::remove_cv_t<std::remove_reference_t<StorageRef>>) >
-           sizeof(std::uintptr_t)))
+  requires array_ref_storage<StorageRef, ValueType>
 template <class OtherStorage, std::size_t OtherAlignment>
 constexpr void reference<StorageRef, ValueType, Alignment>::copy_from(
     const reference<OtherStorage, ValueType, OtherAlignment>& other) const noexcept {
-  const auto destination = field_span();
+  auto destination = _array_ref();
   using source_reference = reference<OtherStorage, ValueType, OtherAlignment>;
-  if constexpr (source_reference::num_words == 1) {
-    using source_word_type = typename source_reference::word_type;
-    using source_span_type = bit_span<const source_word_type, ValueType::bits, OtherAlignment,
-                                      policy::typical<source_word_type>>;
-    copy_spans(source_span_type(&other), destination);
+  if constexpr (ValueType::bits == 1 && source_reference::num_words == 1) {
+    using source_word_type = typename source_reference::const_word_type;
+    using source_array_type = array_ref<
+        bit_value, ValueType::bits, source_word_type, std::dynamic_extent,
+        policy::typical<std::remove_cv_t<source_word_type>>>;
+    copy_spans(source_array_type(&other), destination);
   } else {
-    copy_spans(other.field_span(), destination);
+    copy_spans(other._array_ref(), destination);
   }
 }
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires(
-      !std::is_pointer_v<std::remove_reference_t<StorageRef>> &&
-      (ValueType::bits > 1 ||
-       !std::is_integral_v<
-           std::remove_cv_t<std::remove_reference_t<StorageRef>>> ||
-       sizeof(std::remove_cv_t<std::remove_reference_t<StorageRef>>) >
-           sizeof(std::uintptr_t)))
+  requires array_ref_storage<StorageRef, ValueType>
 template <class SourceSpan, class DestinationSpan>
 constexpr void reference<StorageRef, ValueType, Alignment>::copy_spans(
     const SourceSpan& source,
-    const DestinationSpan& destination) const noexcept {
+    DestinationSpan& destination) const noexcept {
   const auto source_first = source.begin();
+  const auto source_last = source.end();
   const auto destination_first = destination.begin();
+  const auto destination_last = destination.end();
   const auto* source_base = source_first.base();
   const auto* destination_base = destination_first.base();
+  const bool same_base =
+      static_cast<const void*>(source_base) ==
+      static_cast<const void*>(destination_base);
 
-  if (static_cast<const void*>(source_base) ==
-          static_cast<const void*>(destination_base) &&
-      source_first.position() == destination_first.position()) {
+  if (same_base && source_first.position() == destination_first.position()) {
     return;
   }
 
   const bool destination_after_source =
       std::less<const void*>{}(static_cast<const void*>(source_base),
                                static_cast<const void*>(destination_base)) ||
-      (static_cast<const void*>(source_base) ==
-           static_cast<const void*>(destination_base) &&
+      (same_base &&
        destination_first.position() > source_first.position());
   if (destination_after_source) {
-    ::bit::copy_backward(source_first, source.end(), destination.end());
+    ::bit::copy_backward(source_first, source_last, destination_last);
   } else {
-    ::bit::copy(source_first, source.end(), destination_first);
+    ::bit::copy(source_first, source_last, destination_first);
   }
 }
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires(
-      !std::is_pointer_v<std::remove_reference_t<StorageRef>> &&
-      (ValueType::bits > 1 ||
-       !std::is_integral_v<
-           std::remove_cv_t<std::remove_reference_t<StorageRef>>> ||
-       sizeof(std::remove_cv_t<std::remove_reference_t<StorageRef>>) >
-           sizeof(std::uintptr_t)))
+  requires array_ref_storage<StorageRef, ValueType>
 constexpr bool reference<StorageRef, ValueType, Alignment>::field_any() const noexcept {
-  const auto span = field_span();
-  return ::bit::find(span.begin(), span.end(), bit1) != span.end();
+  const auto array = _array_ref();
+  return ::bit::find(array.begin(), array.end(), bit1) != array.end();
 }
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires(
-      !std::is_pointer_v<std::remove_reference_t<StorageRef>> &&
-      (ValueType::bits > 1 ||
-       !std::is_integral_v<
-           std::remove_cv_t<std::remove_reference_t<StorageRef>>> ||
-       sizeof(std::remove_cv_t<std::remove_reference_t<StorageRef>>) >
-           sizeof(std::uintptr_t)))
+  requires array_ref_storage<StorageRef, ValueType>
 template <char operation>
-constexpr void reference<StorageRef, ValueType, Alignment>::combine_with(const value_type& other) const noexcept {
-  if constexpr (ValueType::bits == 1) {
-    const auto field = field_span();
-    const bool lhs = static_cast<bool>(*field.begin());
-    const bool rhs = static_cast<bool>(other);
-    const bool result = operation == '&'   ? lhs && rhs
-                        : operation == '|' ? lhs || rhs
-                                           : lhs != rhs;
-    *field.begin() = result ? bit1 : bit0;
-  } else {
-    const auto field = field_span();
-    const auto value = value_span(other);
-    const auto destination = field.begin();
-    const auto source = value.begin();
-    size_type offset = 0;
-    while (offset < ValueType::bits) {
-      const size_type available = word_bits -
-                                  (destination.position() + offset) % word_bits;
-      const size_type remaining = ValueType::bits - offset;
-      const size_type count = remaining < available ? remaining : available;
-      const mask_type lhs = get_masked_word<mask_type>(destination + offset,
-                                                       count);
-      const mask_type rhs = get_masked_word<mask_type>(source + offset, count);
-      const mask_type result = operation == '&'   ? lhs & rhs
-                               : operation == '|' ? lhs | rhs
-                                                  : lhs ^ rhs;
-      write_word(result, destination + offset, count);
-      offset += count;
-    }
+constexpr void reference<StorageRef, ValueType, Alignment>::combine_with(
+    const value_type& other) const noexcept {
+  // Materialize once, combine the value representations word by word, then
+  // write the result back. This keeps the operation independent of the
+  // possibly different storage and value word sizes.
+  value_type lhs = materialize();
+  auto lhs_array = value_array(lhs);
+  const auto rhs_array = value_array(other);
+  auto* lhs_words = lhs_array.data();
+  const auto* rhs_words = rhs_array.data();
+  for (size_type i = 0; i < value_word_count; ++i) {
+    const auto lhs_word = lhs_words[i];
+    const auto rhs_word = rhs_words[i];
+    lhs_words[i] = static_cast<value_word_type>(
+        operation == '&'   ? lhs_word & rhs_word
+        : operation == '|' ? lhs_word | rhs_word
+                           : lhs_word ^ rhs_word);
   }
+  *this = lhs;
 }
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires(
-      !std::is_pointer_v<std::remove_reference_t<StorageRef>> &&
-      (ValueType::bits > 1 ||
-       !std::is_integral_v<
-           std::remove_cv_t<std::remove_reference_t<StorageRef>>> ||
-       sizeof(std::remove_cv_t<std::remove_reference_t<StorageRef>>) >
-           sizeof(std::uintptr_t)))
+  requires array_ref_storage<StorageRef, ValueType>
 constexpr typename reference<StorageRef, ValueType, Alignment>::value_type
 reference<StorageRef, ValueType, Alignment>::materialize(bool invert) const noexcept {
   if constexpr (ValueType::bits == 1) {
     return value_type(field_any() != invert);
   } else {
     value_type result{};
-    const auto source = field_span();
-    const auto destination = value_span(result);
+    const auto source = _array_ref();
+    auto destination = value_array(result);
     ::bit::copy(source.begin(), source.end(), destination.begin());
     if (invert) {
-      for (size_type i = 0; i < ValueType::bits; ++i) {
-        destination[i] = static_cast<bool>(destination[i]) ? bit0 : bit1;
+      constexpr size_type tail_bits = ValueType::bits % value_word_bits;
+      auto* words = destination.data();
+      for (size_type i = 0; i < value_word_count; ++i) {
+        words[i] = static_cast<value_word_type>(~words[i]);
+      }
+      if constexpr (tail_bits != 0) {
+        constexpr value_word_type tail_mask =
+            static_cast<value_word_type>((value_word_type{1} << tail_bits) - 1);
+        words[value_word_count - 1] = static_cast<value_word_type>(
+            words[value_word_count - 1] & tail_mask);
       }
     }
     return result;
@@ -379,52 +314,28 @@ reference<StorageRef, ValueType, Alignment>::materialize(bool invert) const noex
 }
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires(
-      !std::is_pointer_v<std::remove_reference_t<StorageRef>> &&
-      (ValueType::bits > 1 ||
-       !std::is_integral_v<
-           std::remove_cv_t<std::remove_reference_t<StorageRef>>> ||
-       sizeof(std::remove_cv_t<std::remove_reference_t<StorageRef>>) >
-           sizeof(std::uintptr_t)))
+  requires array_ref_storage<StorageRef, ValueType>
 constexpr reference<StorageRef, ValueType, Alignment>::reference(const reference& other) noexcept
     : state_type(other) {}
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires(
-      !std::is_pointer_v<std::remove_reference_t<StorageRef>> &&
-      (ValueType::bits > 1 ||
-       !std::is_integral_v<
-           std::remove_cv_t<std::remove_reference_t<StorageRef>>> ||
-       sizeof(std::remove_cv_t<std::remove_reference_t<StorageRef>>) >
-           sizeof(std::uintptr_t)))
+  requires array_ref_storage<StorageRef, ValueType>
 /* explicit */ constexpr reference<StorageRef, ValueType, Alignment>::reference(StorageRef& ref) noexcept
-    : state_type(reinterpret_cast<storage_pointer>(std::addressof(ref)),
+    : state_type(reinterpret_cast<field_word_type*>(std::addressof(ref)),
                  Alignment == std::dynamic_extent ? 0 : Alignment) {}
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires(
-      !std::is_pointer_v<std::remove_reference_t<StorageRef>> &&
-      (ValueType::bits > 1 ||
-       !std::is_integral_v<
-           std::remove_cv_t<std::remove_reference_t<StorageRef>>> ||
-       sizeof(std::remove_cv_t<std::remove_reference_t<StorageRef>>) >
-           sizeof(std::uintptr_t)))
+  requires array_ref_storage<StorageRef, ValueType>
 constexpr reference<StorageRef, ValueType, Alignment>::reference(StorageRef& ref, size_type pos) noexcept
   requires(Alignment == std::dynamic_extent)
-    : state_type(reinterpret_cast<storage_pointer>(std::addressof(ref)),
+    : state_type(reinterpret_cast<field_word_type*>(std::addressof(ref)),
                  pos) {
   assert(pos <= num_words * word_bits &&
          ValueType::bits <= num_words * word_bits - pos);
 }
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires(
-      !std::is_pointer_v<std::remove_reference_t<StorageRef>> &&
-      (ValueType::bits > 1 ||
-       !std::is_integral_v<
-           std::remove_cv_t<std::remove_reference_t<StorageRef>>> ||
-       sizeof(std::remove_cv_t<std::remove_reference_t<StorageRef>>) >
-           sizeof(std::uintptr_t)))
+  requires array_ref_storage<StorageRef, ValueType>
 constexpr reference<StorageRef, ValueType, Alignment>&
 reference<StorageRef, ValueType, Alignment>::operator=(const reference& other) const noexcept {
   copy_from(other);
@@ -432,13 +343,7 @@ reference<StorageRef, ValueType, Alignment>::operator=(const reference& other) c
 }
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires(
-      !std::is_pointer_v<std::remove_reference_t<StorageRef>> &&
-      (ValueType::bits > 1 ||
-       !std::is_integral_v<
-           std::remove_cv_t<std::remove_reference_t<StorageRef>>> ||
-       sizeof(std::remove_cv_t<std::remove_reference_t<StorageRef>>) >
-           sizeof(std::uintptr_t)))
+  requires array_ref_storage<StorageRef, ValueType>
 template <class OtherStorage, std::size_t OtherAlignment>
 constexpr reference<StorageRef, ValueType, Alignment>&
 reference<StorageRef, ValueType, Alignment>::operator=(
@@ -448,33 +353,31 @@ reference<StorageRef, ValueType, Alignment>::operator=(
 }
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires(
-      !std::is_pointer_v<std::remove_reference_t<StorageRef>> &&
-      (ValueType::bits > 1 ||
-       !std::is_integral_v<
-           std::remove_cv_t<std::remove_reference_t<StorageRef>>> ||
-       sizeof(std::remove_cv_t<std::remove_reference_t<StorageRef>>) >
-           sizeof(std::uintptr_t)))
+  requires array_ref_storage<StorageRef, ValueType>
 constexpr reference<StorageRef, ValueType, Alignment>&
 reference<StorageRef, ValueType, Alignment>::operator=(const value_type& value) const noexcept {
-  const auto destination = field_span();
+  auto destination = _array_ref();
   if constexpr (ValueType::bits == 1) {
-    *destination.begin() = value;
+    *destination.begin() = static_cast<bool>(value);
   } else {
-    const auto source = value_span(value);
+    const auto source = value_array(value);
     ::bit::copy(source.begin(), source.end(), destination.begin());
   }
   return const_cast<reference&>(*this);
 }
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires(
-      !std::is_pointer_v<std::remove_reference_t<StorageRef>> &&
-      (ValueType::bits > 1 ||
-       !std::is_integral_v<
-           std::remove_cv_t<std::remove_reference_t<StorageRef>>> ||
-       sizeof(std::remove_cv_t<std::remove_reference_t<StorageRef>>) >
-           sizeof(std::uintptr_t)))
+  requires array_ref_storage<StorageRef, ValueType>
+constexpr reference<StorageRef, ValueType, Alignment>&
+reference<StorageRef, ValueType, Alignment>::operator=(bool bit) const noexcept
+  requires(ValueType::bits == 1)
+{
+  _array_ref()[0] = bit;
+  return const_cast<reference&>(*this);
+}
+
+template <class StorageRef, primitive_c ValueType, size_t Alignment>
+  requires array_ref_storage<StorageRef, ValueType>
 constexpr reference<StorageRef, ValueType, Alignment>&
 reference<StorageRef, ValueType, Alignment>::operator&=(const value_type& other) const noexcept {
   combine_with<'&'>(other);
@@ -482,13 +385,7 @@ reference<StorageRef, ValueType, Alignment>::operator&=(const value_type& other)
 }
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires(
-      !std::is_pointer_v<std::remove_reference_t<StorageRef>> &&
-      (ValueType::bits > 1 ||
-       !std::is_integral_v<
-           std::remove_cv_t<std::remove_reference_t<StorageRef>>> ||
-       sizeof(std::remove_cv_t<std::remove_reference_t<StorageRef>>) >
-           sizeof(std::uintptr_t)))
+  requires array_ref_storage<StorageRef, ValueType>
 constexpr reference<StorageRef, ValueType, Alignment>&
 reference<StorageRef, ValueType, Alignment>::operator|=(const value_type& other) const noexcept {
   combine_with<'|'>(other);
@@ -496,13 +393,7 @@ reference<StorageRef, ValueType, Alignment>::operator|=(const value_type& other)
 }
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires(
-      !std::is_pointer_v<std::remove_reference_t<StorageRef>> &&
-      (ValueType::bits > 1 ||
-       !std::is_integral_v<
-           std::remove_cv_t<std::remove_reference_t<StorageRef>>> ||
-       sizeof(std::remove_cv_t<std::remove_reference_t<StorageRef>>) >
-           sizeof(std::uintptr_t)))
+  requires array_ref_storage<StorageRef, ValueType>
 constexpr reference<StorageRef, ValueType, Alignment>&
 reference<StorageRef, ValueType, Alignment>::operator^=(const value_type& other) const noexcept {
   combine_with<'^'>(other);
@@ -510,56 +401,70 @@ reference<StorageRef, ValueType, Alignment>::operator^=(const value_type& other)
 }
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires(
-      !std::is_pointer_v<std::remove_reference_t<StorageRef>> &&
-      (ValueType::bits > 1 ||
-       !std::is_integral_v<
-           std::remove_cv_t<std::remove_reference_t<StorageRef>>> ||
-       sizeof(std::remove_cv_t<std::remove_reference_t<StorageRef>>) >
-           sizeof(std::uintptr_t)))
+  requires array_ref_storage<StorageRef, ValueType>
 constexpr reference<StorageRef, ValueType, Alignment>::operator bool() const noexcept {
   return field_any();
 }
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires(
-      !std::is_pointer_v<std::remove_reference_t<StorageRef>> &&
-      (ValueType::bits > 1 ||
-       !std::is_integral_v<
-           std::remove_cv_t<std::remove_reference_t<StorageRef>>> ||
-       sizeof(std::remove_cv_t<std::remove_reference_t<StorageRef>>) >
-           sizeof(std::uintptr_t)))
+  requires array_ref_storage<StorageRef, ValueType>
 constexpr reference<StorageRef, ValueType, Alignment>::operator value_type() const noexcept {
   return materialize();
 }
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires(
-      !std::is_pointer_v<std::remove_reference_t<StorageRef>> &&
-      (ValueType::bits > 1 ||
-       !std::is_integral_v<
-           std::remove_cv_t<std::remove_reference_t<StorageRef>>> ||
-       sizeof(std::remove_cv_t<std::remove_reference_t<StorageRef>>) >
-           sizeof(std::uintptr_t)))
+  requires array_ref_storage<StorageRef, ValueType>
+constexpr reference<StorageRef, ValueType, Alignment>&
+reference<StorageRef, ValueType, Alignment>::set(bool bit) const noexcept
+  requires(ValueType::bits == 1)
+{
+  return *this = bit;
+}
+
+template <class StorageRef, primitive_c ValueType, size_t Alignment>
+  requires array_ref_storage<StorageRef, ValueType>
+constexpr reference<StorageRef, ValueType, Alignment>&
+reference<StorageRef, ValueType, Alignment>::set() const noexcept
+  requires(ValueType::bits == 1)
+{
+  return set(true);
+}
+
+template <class StorageRef, primitive_c ValueType, size_t Alignment>
+  requires array_ref_storage<StorageRef, ValueType>
+constexpr reference<StorageRef, ValueType, Alignment>&
+reference<StorageRef, ValueType, Alignment>::reset() const noexcept
+  requires(ValueType::bits == 1)
+{
+  return set(false);
+}
+
+template <class StorageRef, primitive_c ValueType, size_t Alignment>
+  requires array_ref_storage<StorageRef, ValueType>
+constexpr reference<StorageRef, ValueType, Alignment>&
+reference<StorageRef, ValueType, Alignment>::flip() const noexcept
+  requires(ValueType::bits == 1)
+{
+  return set(!static_cast<bool>(*this));
+}
+
+template <class StorageRef, primitive_c ValueType, size_t Alignment>
+  requires array_ref_storage<StorageRef, ValueType>
 constexpr bit_pointer<typename reference<StorageRef, ValueType, Alignment>::const_word_type>
 reference<StorageRef, ValueType, Alignment>::operator&() const noexcept {
-  const auto first = field_span().begin();
+  const auto array = _array_ref();
+  const auto first = array.begin();
   return bit_pointer<const_word_type>(first.base(), first.position());
 }
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires(
-      !std::is_pointer_v<std::remove_reference_t<StorageRef>> &&
-      (ValueType::bits > 1 ||
-       !std::is_integral_v<
-           std::remove_cv_t<std::remove_reference_t<StorageRef>>> ||
-       sizeof(std::remove_cv_t<std::remove_reference_t<StorageRef>>) >
-           sizeof(std::uintptr_t)))
+  requires array_ref_storage<StorageRef, ValueType>
 constexpr bit_pointer<typename reference<StorageRef, ValueType, Alignment>::word_type>
 reference<StorageRef, ValueType, Alignment>::operator&() noexcept
   requires(!std::is_const_v<storage_type>)
 {
-  const auto first = field_span().begin();
+  auto array = _array_ref();
+  const auto first = array.begin();
   return bit_pointer<word_type>(first.base(), first.position());
 }
 

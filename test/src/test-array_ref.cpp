@@ -15,6 +15,35 @@ struct WideBitValue {
   auto operator[](std::size_t index) const { return data[index]; }
 };
 
+struct BytePackedValue64 {
+  static constexpr std::size_t bits = 64;
+  std::uint8_t bytes[8]{};
+};
+
+struct BytePackedValue13 {
+  static constexpr std::size_t bits = 13;
+  std::uint8_t bytes[2]{};
+};
+
+struct alignas(16) OverAlignedValue96 {
+  static constexpr std::size_t bits = 96;
+  std::uint8_t bytes[16]{};
+};
+
+namespace {
+std::uint64_t read_word_field(const std::uint64_t* words,
+                              std::size_t position,
+                              std::size_t count = 64) {
+  std::uint64_t value = 0;
+  for (std::size_t i = 0; i < count; ++i) {
+    const std::uint64_t bit =
+        (words[(position + i) / 64] >> ((position + i) % 64)) & 1;
+    value |= bit << i;
+  }
+  return value;
+}
+}  // namespace
+
 TEST(BitArrayRef, ConstructorAndAssignment) {
   // Prepare original bit array
   bit::bit_array<> original(64, bit::bit0);
@@ -313,6 +342,319 @@ TEST(BitReference, ValueTypeWiderThanSizeType) {
   for (std::size_t i = 0; i < WideBitValue::bits; ++i) {
     EXPECT_EQ(inverted.bit_at(i), !value.bit_at(i));
   }
+}
+
+TEST(BitReference, WideValueBitwise) {
+  struct storage {
+    std::uint64_t words[2]{};
+  } bits;
+  using reference_type = bit::reference<storage&, WideBitValue>;
+
+  WideBitValue lhs;
+  WideBitValue rhs;
+  for (std::size_t i = 0; i < WideBitValue::bits; ++i) {
+    lhs[i] = bit::bit_value((i % 3) == 0);
+    rhs[i] = bit::bit_value((i % 5) < 2);
+  }
+
+  reference_type ref(bits, 7);
+
+  ref = lhs;
+  ref &= rhs;
+  const WideBitValue and_result = static_cast<WideBitValue>(ref);
+  for (std::size_t i = 0; i < WideBitValue::bits; ++i) {
+    EXPECT_EQ(and_result.bit_at(i), lhs.bit_at(i) && rhs.bit_at(i)) << i;
+  }
+
+  ref = lhs;
+  ref |= rhs;
+  const WideBitValue or_result = static_cast<WideBitValue>(ref);
+  for (std::size_t i = 0; i < WideBitValue::bits; ++i) {
+    EXPECT_EQ(or_result.bit_at(i), lhs.bit_at(i) || rhs.bit_at(i)) << i;
+  }
+
+  ref = lhs;
+  ref ^= rhs;
+  const WideBitValue xor_result = static_cast<WideBitValue>(ref);
+  for (std::size_t i = 0; i < WideBitValue::bits; ++i) {
+    EXPECT_EQ(xor_result.bit_at(i), lhs.bit_at(i) != rhs.bit_at(i)) << i;
+  }
+}
+
+TEST(BitReference, FixedAlignmentChunkCopy) {
+  struct storage {
+    std::uint64_t words[2];
+  };
+  using value_type = bit::primitive<64>;
+
+  {
+    storage bits{{0x0123456789abcdefULL, 0xfedcba9876543210ULL}};
+    const auto before = bits;
+    bit::reference<storage&, value_type, 3> source(bits);
+    bit::reference<storage&, value_type, 19> destination(bits);
+    destination = source;
+    EXPECT_EQ(read_word_field(bits.words, 19),
+              read_word_field(before.words, 3));
+  }
+
+  {
+    // The field crosses the word boundary at bit 64.
+    storage bits{{0x0f1e2d3c4b5a6978ULL, 0x8877665544332211ULL}};
+    const auto before = bits;
+    bit::reference<storage&, value_type, 57> source(bits);
+    bit::reference<storage&, value_type, 4> destination(bits);
+    destination = source;
+    EXPECT_EQ(read_word_field(bits.words, 4),
+              read_word_field(before.words, 57));
+  }
+
+  {
+    // Fixed alignments are normalized to a word offset and word index.
+    storage bits{{0x1111222233334444ULL, 0x5555666677778888ULL}};
+    const auto before = bits;
+    using narrow_value_type = bit::primitive<32>;
+    bit::reference<storage&, narrow_value_type, 67> source(bits);
+    bit::reference<storage&, narrow_value_type, 64> destination(bits);
+    destination = source;
+    EXPECT_EQ(read_word_field(bits.words, 64, 32),
+              read_word_field(before.words, 67, 32));
+  }
+}
+
+TEST(BitReference, FixedAlignmentValueAndBitwise) {
+  using value_type = bit::primitive<8>;
+  std::uint64_t word = ~std::uint64_t{0};
+  bit::reference<std::uint64_t&, value_type, 5> ref(word);
+
+  ref = value_type(0xA5);
+  EXPECT_EQ((word >> 5) & 0xff, 0xA5u);
+  EXPECT_EQ(word & ~(std::uint64_t{0xff} << 5),
+            ~std::uint64_t{0} & ~(std::uint64_t{0xff} << 5));
+  EXPECT_EQ(static_cast<value_type>(ref).word_value(), 0xA5u);
+
+  ref &= value_type(0x0F);
+  EXPECT_EQ((word >> 5) & 0xff, 0x05u);
+  ref |= value_type(0x30);
+  EXPECT_EQ((word >> 5) & 0xff, 0x35u);
+  ref ^= value_type(0xFF);
+  EXPECT_EQ((word >> 5) & 0xff, 0xCAu);
+
+  const value_type inverted = ~ref;
+  EXPECT_EQ(inverted.word_value(), 0x35u);
+}
+
+TEST(BitReference, FixedAlignmentCrossWordValue) {
+  struct storage {
+    std::uint64_t words[2];
+  } bits{{0x0123456789abcdefULL, 0xfedcba9876543210ULL}};
+  using value_type = bit::primitive<64>;
+
+  bit::reference<storage&, value_type, 57> ref(bits);
+  const value_type value(0xd00df00d12345678ULL);
+  ref = value;
+  EXPECT_EQ(read_word_field(bits.words, 57), value.word_value());
+  EXPECT_EQ(static_cast<value_type>(ref).word_value(), value.word_value());
+
+  const value_type inverted = ~ref;
+  EXPECT_EQ(inverted.word_value(), ~value.word_value());
+}
+
+TEST(BitReference, BitwiseWithNarrowValueWords) {
+  struct storage {
+    std::uint64_t words[4];
+  } bits{{0, 0, 0, 0}};
+
+  const auto read_byte_value = [](const BytePackedValue64& value) {
+    std::uint64_t result = 0;
+    for (std::size_t i = 0; i < 8; ++i) {
+      result |= static_cast<std::uint64_t>(value.bytes[i]) << (8 * i);
+    }
+    return result;
+  };
+
+  BytePackedValue64 lhs;
+  BytePackedValue64 rhs;
+  for (std::size_t i = 0; i < 8; ++i) {
+    lhs.bytes[i] = static_cast<std::uint8_t>(i + 1);
+    rhs.bytes[i] = static_cast<std::uint8_t>(0xF0 + i);
+  }
+
+  // The reference word is 64 bits while the value word is one byte.
+  bit::reference<storage&, BytePackedValue64, 3> ref(bits);
+  ref = lhs;
+  EXPECT_EQ(read_word_field(bits.words, 3), read_byte_value(lhs));
+
+  ref &= rhs;
+  BytePackedValue64 expected_and;
+  for (std::size_t i = 0; i < 8; ++i) {
+    expected_and.bytes[i] = lhs.bytes[i] & rhs.bytes[i];
+  }
+  EXPECT_EQ(read_word_field(bits.words, 3), read_byte_value(expected_and));
+
+  ref = lhs;
+  ref |= rhs;
+  BytePackedValue64 expected_or;
+  for (std::size_t i = 0; i < 8; ++i) {
+    expected_or.bytes[i] = lhs.bytes[i] | rhs.bytes[i];
+  }
+  EXPECT_EQ(read_word_field(bits.words, 3), read_byte_value(expected_or));
+
+  ref = lhs;
+  ref ^= rhs;
+  BytePackedValue64 expected_xor;
+  for (std::size_t i = 0; i < 8; ++i) {
+    expected_xor.bytes[i] = lhs.bytes[i] ^ rhs.bytes[i];
+  }
+  EXPECT_EQ(read_word_field(bits.words, 3), read_byte_value(expected_xor));
+}
+
+TEST(BitReference, InvertTrimsValuePadding) {
+  std::uint64_t word = ~std::uint64_t{0};
+  BytePackedValue13 value;
+  value.bytes[0] = 0x5a;
+  value.bytes[1] = 0x1f;
+
+  bit::reference<std::uint64_t&, BytePackedValue13, 4> ref(word);
+  ref = value;
+  EXPECT_EQ((word >> 4) & 0x1fff,
+            static_cast<std::uint64_t>(0x1f5a) & 0x1fff);
+  EXPECT_EQ(word & ~(std::uint64_t{0x1fff} << 4),
+            ~std::uint64_t{0} & ~(std::uint64_t{0x1fff} << 4));
+
+  const BytePackedValue13 inverted = ~ref;
+  EXPECT_EQ(inverted.bytes[0], static_cast<std::uint8_t>(~value.bytes[0]));
+  EXPECT_EQ(inverted.bytes[1],
+            static_cast<std::uint8_t>(~value.bytes[1] & 0x1f));
+}
+
+TEST(BitReference, OverAlignedValueType) {
+  struct storage {
+    std::uint64_t words[2];
+  } bits{{0, 0}};
+
+  OverAlignedValue96 value;
+  for (std::size_t i = 0; i < 8; ++i) {
+    value.bytes[i] = static_cast<std::uint8_t>(0x10 + i);
+  }
+  std::uint64_t expected = 0;
+  for (std::size_t i = 0; i < 8; ++i) {
+    expected |= static_cast<std::uint64_t>(value.bytes[i]) << (8 * i);
+  }
+
+  bit::reference<storage&, OverAlignedValue96, 3> ref(bits);
+  ref = value;
+  EXPECT_EQ(read_word_field(bits.words, 3), expected);
+  EXPECT_EQ(static_cast<OverAlignedValue96>(ref).bytes[0], value.bytes[0]);
+  EXPECT_EQ(static_cast<OverAlignedValue96>(ref).bytes[7], value.bytes[7]);
+
+  const OverAlignedValue96 inverted = ~ref;
+  EXPECT_EQ(inverted.bytes[0], static_cast<std::uint8_t>(~value.bytes[0]));
+  EXPECT_EQ(inverted.bytes[7], static_cast<std::uint8_t>(~value.bytes[7]));
+}
+
+TEST(BitReference, CopyBetweenDifferentWordSizes) {
+  struct byte_storage {
+    std::uint8_t bytes[2];
+  } bytes{{0xab, 0xcd}};
+  struct word_storage {
+    std::uint64_t words[2]{};
+  } words;
+  using value_type = bit::primitive<16>;
+
+  const std::uint64_t expected = 0xcdab;
+  bit::reference<byte_storage&, value_type> byte_ref(bytes, 0);
+  bit::reference<word_storage&, value_type> word_ref(words, 5);
+  word_ref = byte_ref;
+  EXPECT_EQ((words.words[0] >> 5) & 0xffff, expected);
+
+  bytes.bytes[0] = 0;
+  bytes.bytes[1] = 0;
+  byte_ref = word_ref;
+  EXPECT_EQ(bytes.bytes[0], 0xab);
+  EXPECT_EQ(bytes.bytes[1], 0xcd);
+}
+
+TEST(BitReference, SingleBitMultiWordStorage) {
+  struct storage {
+    std::uint64_t words[2];
+  } bits{{0, 0}};
+  using value_type = bit::primitive<1>;
+
+  bit::reference<storage&, value_type> dynamic_ref(bits, 70);
+  bit::reference<storage&, value_type, 70> fixed_ref(bits);
+  EXPECT_FALSE(dynamic_ref);
+  EXPECT_FALSE(fixed_ref);
+
+  dynamic_ref = true;
+  EXPECT_TRUE(dynamic_ref);
+  EXPECT_TRUE(fixed_ref);
+
+  fixed_ref.reset();
+  EXPECT_FALSE(dynamic_ref);
+  EXPECT_FALSE(fixed_ref);
+
+  dynamic_ref.flip();
+  EXPECT_TRUE(dynamic_ref);
+  EXPECT_TRUE(fixed_ref);
+  EXPECT_TRUE(static_cast<bool>(~dynamic_ref) == false);
+
+  std::uint64_t single_word = 0;
+  bit::reference<std::uint64_t&, value_type> single_source(single_word, 3);
+  single_source = true;
+  dynamic_ref = single_source;
+  EXPECT_TRUE(dynamic_ref);
+
+  std::uint8_t byte_word = 0;
+  bit::reference<std::uint8_t&, value_type> byte_source(byte_word, 3);
+  byte_source = true;
+  dynamic_ref = byte_source;
+  EXPECT_TRUE(dynamic_ref);
+
+  std::uint64_t single_destination = 0;
+  bit::reference<std::uint64_t&, value_type> single_destination_ref(
+      single_destination, 3);
+  single_destination_ref = fixed_ref;
+  EXPECT_TRUE(single_destination_ref);
+  EXPECT_EQ(single_destination, std::uint64_t{1} << 3);
+
+  std::uint8_t byte_destination = 0;
+  bit::reference<std::uint8_t&, value_type> byte_destination_ref(
+      byte_destination, 3);
+  byte_destination_ref = fixed_ref;
+  EXPECT_TRUE(byte_destination_ref);
+  EXPECT_EQ(byte_destination, std::uint8_t{1} << 3);
+}
+
+TEST(BitReference, OverAlignedStorage) {
+  struct alignas(16) storage {
+    std::uint64_t words[2];
+  } bits{{0x0123456789abcdefULL, 0xfedcba9876543210ULL}};
+  using value_type = bit::primitive<32>;
+
+  const auto before = bits;
+  bit::reference<storage&, value_type, 67> source(bits);
+  bit::reference<storage&, value_type, 64> destination(bits);
+  destination = source;
+  EXPECT_EQ(read_word_field(bits.words, 64, 32),
+            read_word_field(before.words, 67, 32));
+
+  const value_type value(0xdeadbeef);
+  source = value;
+  EXPECT_EQ(read_word_field(bits.words, 67, 32), value.word_value());
+  EXPECT_EQ(static_cast<value_type>(source).word_value(), value.word_value());
+}
+
+TEST(BitReference, ConstStorageRead) {
+  struct storage {
+    std::uint64_t words[2];
+  } bits{{0x0123456789abcdefULL, 0xfedcba9876543210ULL}};
+  using value_type = bit::primitive<64>;
+
+  const storage& const_bits = bits;
+  bit::reference<const storage&, value_type> ref(const_bits, 9);
+  EXPECT_EQ(static_cast<value_type>(ref).word_value(),
+            read_word_field(bits.words, 9));
+  EXPECT_EQ(static_cast<bool>(ref), read_word_field(bits.words, 9) != 0);
 }
 
 TEST(BitArrayRef, CompileTimeSlice) {
