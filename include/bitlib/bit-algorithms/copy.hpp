@@ -27,33 +27,40 @@ struct copy_impl;
 // ---------------------------- Copy Algorithms ----------------------------- //
 struct copy_impl {
   // Status: Does not work for Input/Output iterators due to distance call
-  // Backward-compatible entry point used by with_bit_iterator_adapter
+  // Backward-compatible entry point.
   template <typename RandomAccessIt1, typename RandomAccessIt2>
   constexpr bit_iterator<RandomAccessIt2> operator()(
       bit_iterator<RandomAccessIt1> first,
       bit_iterator<RandomAccessIt1> last,
       bit_iterator<RandomAccessIt2> d_first) {
-    return run<std::dynamic_extent, std::dynamic_extent>(
-        first, last, d_first);
+    return run_impl(first, last, d_first);
   }
 
-  // Entry point with compile-time alignment hints
-  template <std::size_t SrcAlign, std::size_t DstAlign,
-            typename RandomAccessIt1, typename RandomAccessIt2>
-  static constexpr iterator<RandomAccessIt2, primitive<1>, std::dynamic_extent> run(
-      iterator<RandomAccessIt1, primitive<1>, std::dynamic_extent> first,
-      iterator<RandomAccessIt1, primitive<1>, std::dynamic_extent> last,
-      iterator<RandomAccessIt2, primitive<1>, std::dynamic_extent> d_first) {
+  // Entry point used by with_bit_iterator_adapter. The compile-time alignment
+  // hints are extracted here, from the iterator types, and the inputs are
+  // converted to mutable dynamic_extent iterators for the implementation.
+  template <typename SrcIt1, typename SrcIt2, typename DstIt>
+  static constexpr auto run_impl(
+      const SrcIt1& first_in,
+      const SrcIt2& last_in,
+      const DstIt& d_first_in) {
+    constexpr std::size_t SrcAlign = iterator_alignment_v<SrcIt1>;
+    constexpr std::size_t DstAlign = iterator_alignment_v<DstIt>;
+
+    auto first = make_mutable_bit_iterator(first_in);
+    auto last = make_mutable_bit_iterator(last_in);
+    auto d_first = make_mutable_bit_iterator(d_first_in);
+
     // Types and constants
-    using dst_word_type = typename bit_iterator<RandomAccessIt2>::word_type;
-    using src_word_type = typename bit_iterator<RandomAccessIt1>::word_type;
+    using dst_word_type = typename decltype(d_first)::word_type;
+    using src_word_type = typename decltype(first)::word_type;
 
     // This checks for differing word types and uses an unoptimized copy in that event
     static_assert(std::is_same<dst_word_type, src_word_type>::value, "Both types must be the same");
     //static_assert(SrcAlign != std::dynamic_extent, "SrcAlign must be zero for compile-time alignment optimization");
 
     using word_type = dst_word_type;
-    using size_type = typename bit_iterator<RandomAccessIt2>::size_type;
+    using size_type = typename decltype(d_first)::size_type;
     constexpr size_type digits = binary_digits<word_type>::value;
 
     // Assertions

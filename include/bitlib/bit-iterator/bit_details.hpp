@@ -76,6 +76,13 @@ using pointer = iterator<WordType*, ValueType, Alignment>;
 template <typename WordType, std::size_t Alignment = std::dynamic_extent>
 using bit_pointer = iterator<WordType*, primitive<1>, Alignment>;
 
+// Defined in bit_iterator.hpp; declared here so with_bit_iterator_adapter can
+// use it before that header is included.
+template <std::size_t N, class Iterator, primitive_c ValueType, size_t Alignment>
+constexpr auto next(const iterator<Iterator, ValueType, Alignment>& it);
+template <class Iterator, primitive_c ValueType, size_t Alignment>
+constexpr auto next(const iterator<Iterator, ValueType, Alignment>& it, std::size_t n);
+
 template <typename target_word_ptr, typename source_word_ptr>
 class bit_word_pointer_adapter;
 
@@ -857,6 +864,17 @@ constexpr T _mulx(T src0, T src1, T* hi, X...) noexcept {
 }
 // -------------------------------------------------------------------------- //
 
+// Dispatch to an algorithm's run_impl() when it provides one (copy does),
+// otherwise fall back to the algorithm's operator() entry point.
+template <typename AlgoFunc, typename First, typename Last, typename Dst>
+constexpr auto invoke_bit_algorithm(First first, Last last, Dst d_first) {
+  if constexpr (requires { AlgoFunc::run_impl(first, last, d_first); }) {
+    return AlgoFunc::run_impl(first, last, d_first);
+  } else {
+    return AlgoFunc{}(first, last, d_first);
+  }
+}
+
 // Adapt source/destination word widths for an algorithm. Alignment is
 // extracted from the iterator types themselves, so fixed-Alignment iterators
 // keep their compile-time hints without extra template arguments.
@@ -866,11 +884,28 @@ constexpr auto with_bit_iterator_adapter(
     const SrcIt2& last,
     const DstIt& d_first) {
   constexpr std::size_t SrcAlign = iterator_alignment_v<SrcIt1>;
+  constexpr std::size_t LastAlign = iterator_alignment_v<SrcIt2>;
   constexpr std::size_t DstAlign = iterator_alignment_v<DstIt>;
 
   auto mutable_first = make_mutable_bit_iterator(first);
   auto mutable_last = make_mutable_bit_iterator(last);
   auto mutable_d_first = make_mutable_bit_iterator(d_first);
+
+  // Build an adapted iterator at the translated bit offset. A compile-time
+  // offset is encoded in the iterator type by bit::next<N>(); a runtime offset
+  // remains dynamic.
+  auto make_adapted = []<std::size_t Alignment>(
+                          auto base,
+                          std::size_t position) {
+    if constexpr (Alignment == std::dynamic_extent) {
+      return iterator<decltype(base), primitive<1>, std::dynamic_extent>(
+          base, position);
+    } else {
+      assert(position == Alignment);
+      return ::bit::next<Alignment>(
+          iterator<decltype(base), primitive<1>, 0>(base));
+    }
+  };
 
   using src_iterator_type = typename decltype(mutable_first)::iterator_type;
   using dst_iterator_type = typename decltype(mutable_d_first)::iterator_type;
@@ -879,36 +914,50 @@ constexpr auto with_bit_iterator_adapter(
   if constexpr (!std::is_same_v<src_word_type, dst_word_type> && bitsof<src_word_type>() != bitsof<dst_word_type>()) {
     constexpr std::size_t src_digits = bitsof<src_word_type>();
     constexpr std::size_t dst_digits = bitsof<dst_word_type>();
-    if constexpr (bitsof<src_word_type>() > bitsof<dst_word_type>()) {
+    if constexpr (src_digits > dst_digits) {
       // The source is re-expressed in destination-sized words. An Alignment
       // hint is a bit offset inside a source word, so translate it to the
       // corresponding offset inside an adapted (destination-sized) word.
       constexpr std::size_t adapted_src_align =
           SrcAlign == std::dynamic_extent ? std::dynamic_extent
                                           : SrcAlign % dst_digits;
-      iterator<bit_word_pointer_adapter<dst_iterator_type, src_iterator_type>> adapted_first(
-          bit_word_pointer_adapter<dst_iterator_type, src_iterator_type>(mutable_first.base(), mutable_first.position() / dst_digits), mutable_first.position() % dst_digits);
-      iterator<bit_word_pointer_adapter<dst_iterator_type, src_iterator_type>> adapted_last(
-          bit_word_pointer_adapter<dst_iterator_type, src_iterator_type>(mutable_last.base(), mutable_last.position() / dst_digits), mutable_last.position() % dst_digits);
-      return AlgoFunc::template run<adapted_src_align, DstAlign>(
-          adapted_first, adapted_last, mutable_d_first);
+      constexpr std::size_t adapted_last_align =
+          LastAlign == std::dynamic_extent ? std::dynamic_extent
+                                           : LastAlign % dst_digits;
+      using adapted_source =
+          bit_word_pointer_adapter<dst_iterator_type, src_iterator_type>;
+      auto adapted_first =
+          make_adapted.template operator()<adapted_src_align>(
+              adapted_source(
+                  mutable_first.base(),
+                  mutable_first.position() / dst_digits),
+              mutable_first.position() % dst_digits);
+      auto adapted_last =
+          make_adapted.template operator()<adapted_last_align>(
+              adapted_source(
+                  mutable_last.base(),
+                  mutable_last.position() / dst_digits),
+              mutable_last.position() % dst_digits);
+      return invoke_bit_algorithm<AlgoFunc>(
+          adapted_first, adapted_last, d_first);
     } else {
       // The destination is re-expressed in source-sized words.
       constexpr std::size_t adapted_dst_align =
           DstAlign == std::dynamic_extent ? std::dynamic_extent
                                           : DstAlign % src_digits;
-      iterator<bit_word_pointer_adapter<src_iterator_type, dst_iterator_type>> adapted_d_first(
-          bit_word_pointer_adapter<src_iterator_type, dst_iterator_type>(mutable_d_first.base(), mutable_d_first.position() / src_digits), mutable_d_first.position() % src_digits);
-      return AlgoFunc::template run<SrcAlign, adapted_dst_align>(
-          mutable_first, mutable_last, adapted_d_first);
+      using adapted_destination =
+          bit_word_pointer_adapter<src_iterator_type, dst_iterator_type>;
+      auto adapted_d_first =
+          make_adapted.template operator()<adapted_dst_align>(
+              adapted_destination(
+                  mutable_d_first.base(),
+                  mutable_d_first.position() / src_digits),
+              mutable_d_first.position() % src_digits);
+      return invoke_bit_algorithm<AlgoFunc>(
+          first, last, adapted_d_first);
     }
   } else {
-    if constexpr (SrcAlign == std::dynamic_extent && DstAlign == std::dynamic_extent) {
-      return AlgoFunc{}(mutable_first, mutable_last, mutable_d_first);
-    } else {
-      return AlgoFunc::template run<SrcAlign, DstAlign>(
-          mutable_first, mutable_last, mutable_d_first);
-    }
+    return invoke_bit_algorithm<AlgoFunc>(first, last, d_first);
   }
 }
 
