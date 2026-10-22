@@ -24,56 +24,6 @@ namespace bit {
 
 struct copy_impl;
 
-// Helper to extract the underlying pointer type from either bit::iterator
-// or a raw pointer.
-template <typename T>
-struct copy_iterator_type {
-    using type = typename T::iterator_type;
-};
-template <typename T>
-struct copy_iterator_type<T*> {
-    using type = T*;
-};
-template <typename T>
-using copy_iterator_type_t = typename copy_iterator_type<T>::type;
-
-// Convert any iterator-like (bit::iterator or raw pointer) to a mutable
-// dynamic_extent bit::iterator.
-template <typename T>
-constexpr auto copy_to_mutable_iterator(const T& it) {
-    using T_decayed = std::decay_t<T>;
-    if constexpr (requires { it.base(); }) {
-        return iterator<typename T_decayed::iterator_type, primitive<1>, std::dynamic_extent>(
-            it.base(), it.position());
-    } else {
-        return iterator<T_decayed, primitive<1>, std::dynamic_extent>(it, 0);
-    }
-}
-
-template <typename It1, typename It2>
-constexpr bit_iterator<It2> copy(
-    const bit_iterator<It1>& first,
-    const bit_iterator<It1>& last,
-    const It2& d_first) {
-  return with_bit_iterator_adapter<copy_impl>(first, last, d_first);
-}
-
-template <typename It1, typename It2>
-constexpr bit_iterator<It2> copy(
-    const It1& first,
-    const It1& last,
-    const bit_iterator<It2>& d_first) {
-  return with_bit_iterator_adapter<copy_impl>(first, last, d_first);
-}
-
-template <typename It1, typename It2>
-constexpr bit_iterator<It2> copy(
-    const bit_iterator<It1>& first,
-    const bit_iterator<It1>& last,
-    const bit_iterator<It2>& d_first) {
-  return with_bit_iterator_adapter<copy_impl>(first, last, d_first);
-}
-
 // ---------------------------- Copy Algorithms ----------------------------- //
 struct copy_impl {
   // Status: Does not work for Input/Output iterators due to distance call
@@ -117,39 +67,58 @@ struct copy_impl {
     size_type remaining_bits_to_copy = total_bits_to_copy;
     auto it = d_first.base();
 
-    size_type d_first_position;
-    if constexpr (DstAlign == std::dynamic_extent) {
-      d_first_position = d_first.position();
+    // If the destination Alignment is known at compile time, skip the
+    // run-time position check entirely. DstAlign == 0 means d_first is already
+    // word-aligned, so there is no prefix to write.
+    bool consumed_source_prefix = false;
+    if constexpr (DstAlign == 0) {
+      // d_first is aligned: nothing to do.
     } else {
-      d_first_position = DstAlign;
-    }
-
-    const bool is_d_first_aligned = (d_first_position == 0);
-    if (!is_d_first_aligned) {
-      size_type partial_bits_to_copy = ::std::min(
-          remaining_bits_to_copy,
-          digits - d_first_position);
-      *it = _bitblend<word_type>(
-          *it,
-          static_cast<word_type>(
-              get_word<word_type>(first, partial_bits_to_copy)
-              << static_cast<word_type>(d_first_position)),
-          d_first_position,
-          partial_bits_to_copy);
-      remaining_bits_to_copy -= partial_bits_to_copy;
-      advance(first, partial_bits_to_copy);
-      it++;
+      size_type d_first_position;
+      if constexpr (DstAlign == std::dynamic_extent) {
+        d_first_position = d_first.position();
+      } else {
+        d_first_position = DstAlign;
+      }
+      if (d_first_position != 0) {
+        size_type partial_bits_to_copy = ::std::min(
+            remaining_bits_to_copy,
+            digits - d_first_position);
+        *it = _bitblend<word_type>(
+            *it,
+            static_cast<word_type>(
+                get_word<word_type>(first, partial_bits_to_copy)
+                << static_cast<word_type>(d_first_position)),
+            d_first_position,
+            partial_bits_to_copy);
+        remaining_bits_to_copy -= partial_bits_to_copy;
+        advance(first, partial_bits_to_copy);
+        consumed_source_prefix = true;
+        it++;
+      }
     }
 
     if (remaining_bits_to_copy > 0) {
-      size_type first_position;
-      if constexpr (SrcAlign == std::dynamic_extent) {
-        first_position = first.position();
+      // Use the compile-time SrcAlign hint where it still applies. If the
+      // partial destination word above advanced the source, the hint may no
+      // longer describe the iterator and the run-time position is consulted.
+      bool is_first_aligned;
+      if constexpr (SrcAlign == 0) {
+        // Aligned on entry. A prefix write advances by less than one word, so
+        // the source is unaligned afterwards.
+        is_first_aligned = !consumed_source_prefix;
+      } else if constexpr (SrcAlign == std::dynamic_extent) {
+        is_first_aligned = (first.position() == 0);
       } else {
-        first_position = SrcAlign;
+        // Known unaligned on entry. It only wraps back to a word boundary when
+        // source and destination share the same fixed Alignment and the prefix
+        // consumed the rest of the destination word.
+        if constexpr (DstAlign == SrcAlign) {
+          is_first_aligned = consumed_source_prefix;
+        } else {
+          is_first_aligned = consumed_source_prefix && (first.position() == 0);
+        }
       }
-
-      const bool is_first_aligned = (first_position == 0);
       // d_first will be aligned at this point
       if (is_first_aligned && remaining_bits_to_copy > digits) {
         auto N = ::std::distance(first.base(), last.base());
@@ -176,39 +145,31 @@ struct copy_impl {
   }
 };
 
-// Front-end for iterators with compile-time Alignment.
-// Fixed-alignment iterators are not incrementable, so they are converted to
-// mutable dynamic_extent iterators before being passed to the implementation.
-// SrcAlign/DstAlign are deduced from the iterator types via iterator_alignment_v
-// and hinted to impl as template parameters for if constexpr optimization.
-// This overload only participates when at least one iterator has fixed Alignment.
-// When word types match, alignment hints are passed to impl for if constexpr
-// optimization. When word types differ, falls back to with_bit_iterator_adapter
-// for cross-width word adaptation (alignment hints are lost in that case).
+// Front-end for bit iterators of any Alignment (including fixed, non-dynamic
+// Alignment) and raw pointers.
+//
+// Fixed-alignment iterators are not incrementable, so the adapter converts
+// every input to a mutable dynamic_extent iterator before dispatching to impl.
+// It extracts SrcAlign/DstAlign from the input types via iterator_alignment_v
+// and hints them to impl as template parameters for if constexpr optimization.
+// Raw pointers denote word-aligned ranges and therefore have Alignment 0.
+//
+// first and last may have different Alignments (e.g. aligned_begin() and
+// aligned_end() of a fixed-size container). When the word types match, the
+// alignment hints are passed to impl. When they differ, the same hints are
+// translated to the adapted word width inside with_bit_iterator_adapter.
 template <typename SrcIt1, typename SrcIt2, typename DstIt>
-constexpr iterator<typename DstIt::iterator_type, primitive<1>, std::dynamic_extent> copy(
+constexpr copy_return_t<DstIt> copy(
     const SrcIt1& first,
     const SrcIt2& last,
-    const DstIt& d_first)
-  requires(iterator_alignment_v<SrcIt1> != std::dynamic_extent
-        || iterator_alignment_v<SrcIt2> != std::dynamic_extent
-        || iterator_alignment_v<DstIt> != std::dynamic_extent)
-{
-  constexpr std::size_t SrcAlign = iterator_alignment_v<SrcIt1>;
-  constexpr std::size_t DstAlign = iterator_alignment_v<DstIt>;
-  // Convert all inputs to mutable dynamic_extent iterators
-  auto mutable_first = copy_to_mutable_iterator(first);
-  auto mutable_last = copy_to_mutable_iterator(last);
-  auto mutable_d_first = copy_to_mutable_iterator(d_first);
-  if constexpr (std::is_same_v<copy_iterator_type_t<SrcIt1>, copy_iterator_type_t<DstIt>>) {
-    // Same word type: no width adaptation needed, use alignment hints
-    return copy_impl::run<SrcAlign, DstAlign>(
-        mutable_first, mutable_last, mutable_d_first);
-  } else {
-    // Different word types: use adapter for width adaptation
-    return with_bit_iterator_adapter<copy_impl>(
-        mutable_first, mutable_last, mutable_d_first);
-  }
+    const DstIt& d_first) {
+  static_assert(copy_iterator_like<SrcIt1> && copy_iterator_like<SrcIt2> &&
+                    copy_iterator_like<DstIt>,
+                "copy() requires bit iterators or raw pointers");
+  static_assert(
+      std::is_same_v<copy_iterator_type_t<SrcIt1>, copy_iterator_type_t<SrcIt2>>,
+      "first and last must have the same underlying iterator type");
+  return with_bit_iterator_adapter<copy_impl>(first, last, d_first);
 }
 // -------------------------------------------------------------------------- //
 

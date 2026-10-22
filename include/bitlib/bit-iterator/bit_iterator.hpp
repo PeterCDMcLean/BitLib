@@ -196,23 +196,6 @@ namespace detail {
         const iterator<V, W, P>& rhs);
   };
 
-  // Extract the Alignment template parameter from a bit::iterator type.
-  // Returns std::dynamic_extent when Alignment is not explicitly known.
-  template <typename T>
-  struct iterator_alignment {
-    static constexpr std::size_t value = std::dynamic_extent;
-  };
-  // Raw pointers always start at bit 0.
-  template <typename T>
-  struct iterator_alignment<T*> {
-    static constexpr std::size_t value = 0;
-  };
-  template <typename Iterator, primitive_c ValueType, std::size_t Alignment>
-  struct iterator_alignment<iterator<Iterator, ValueType, Alignment>> {
-    static constexpr std::size_t value = Alignment;
-  };
-  template <typename T>
-  constexpr std::size_t iterator_alignment_v = iterator_alignment<T>::value;
   /* ************************************************************************** */
 
   // ------------------------ BIT ITERATOR: LIFECYCLE ------------------------- //

@@ -79,6 +79,37 @@ using bit_pointer = iterator<WordType*, primitive<1>, Alignment>;
 template <typename target_word_ptr, typename source_word_ptr>
 class bit_word_pointer_adapter;
 
+// Extract the Alignment template parameter from a bit::iterator type.
+// Raw pointers always start at bit 0. Returns std::dynamic_extent when the
+// Alignment is not explicitly known.
+template <typename T>
+struct iterator_alignment {
+  static constexpr std::size_t value = std::dynamic_extent;
+};
+template <typename T>
+struct iterator_alignment<T*> {
+  static constexpr std::size_t value = 0;
+};
+template <typename Iterator, primitive_c ValueType, std::size_t Alignment>
+struct iterator_alignment<iterator<Iterator, ValueType, Alignment>> {
+  static constexpr std::size_t value = Alignment;
+};
+template <typename T>
+constexpr std::size_t iterator_alignment_v = iterator_alignment<T>::value;
+
+// Convert a bit iterator of any Alignment, or a raw pointer, to a mutable
+// dynamic_extent bit iterator over the same underlying word iterator.
+template <typename T>
+constexpr auto make_mutable_bit_iterator(const T& it) {
+  using T_decayed = std::remove_cvref_t<T>;
+  if constexpr (std::is_pointer_v<T_decayed>) {
+    return iterator<T_decayed, primitive<1>, std::dynamic_extent>(it, 0);
+  } else {
+    return iterator<typename T_decayed::iterator_type, primitive<1>,
+                    std::dynamic_extent>(it.base(), it.position());
+  }
+}
+
 // ========================================================================== //
 
 template <size_t N>
@@ -826,48 +857,59 @@ constexpr T _mulx(T src0, T src1, T* hi, X...) noexcept {
 }
 // -------------------------------------------------------------------------- //
 
-template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
+// Adapt source/destination word widths for an algorithm. Alignment is
+// extracted from the iterator types themselves, so fixed-Alignment iterators
+// keep their compile-time hints without extra template arguments.
+template <typename AlgoFunc, typename SrcIt1, typename SrcIt2, typename DstIt>
 constexpr auto with_bit_iterator_adapter(
-    const iterator<SrcIt>& first,
-    const iterator<SrcIt>& last,
-    const iterator<DstIt>& d_first) {
-  using dst_word_type = typename iterator<DstIt>::word_type;
-  using src_word_type = typename iterator<SrcIt>::word_type;
+    const SrcIt1& first,
+    const SrcIt2& last,
+    const DstIt& d_first) {
+  constexpr std::size_t SrcAlign = iterator_alignment_v<SrcIt1>;
+  constexpr std::size_t DstAlign = iterator_alignment_v<DstIt>;
+
+  auto mutable_first = make_mutable_bit_iterator(first);
+  auto mutable_last = make_mutable_bit_iterator(last);
+  auto mutable_d_first = make_mutable_bit_iterator(d_first);
+
+  using src_iterator_type = typename decltype(mutable_first)::iterator_type;
+  using dst_iterator_type = typename decltype(mutable_d_first)::iterator_type;
+  using src_word_type = typename decltype(mutable_first)::word_type;
+  using dst_word_type = typename decltype(mutable_d_first)::word_type;
   if constexpr (!std::is_same_v<src_word_type, dst_word_type> && bitsof<src_word_type>() != bitsof<dst_word_type>()) {
+    constexpr std::size_t src_digits = bitsof<src_word_type>();
+    constexpr std::size_t dst_digits = bitsof<dst_word_type>();
     if constexpr (bitsof<src_word_type>() > bitsof<dst_word_type>()) {
-      iterator<bit_word_pointer_adapter<DstIt, SrcIt>> adapted_first(
-          bit_word_pointer_adapter<DstIt, SrcIt>(first.base(), first.position() / bitsof<dst_word_type>()), first.position() % bitsof<dst_word_type>());
-      iterator<bit_word_pointer_adapter<DstIt, SrcIt>> adapted_last(
-          bit_word_pointer_adapter<DstIt, SrcIt>(last.base(), last.position() / bitsof<dst_word_type>()), last.position() % bitsof<dst_word_type>());
-      return AlgoFunc{}(adapted_first, adapted_last, d_first);
+      // The source is re-expressed in destination-sized words. An Alignment
+      // hint is a bit offset inside a source word, so translate it to the
+      // corresponding offset inside an adapted (destination-sized) word.
+      constexpr std::size_t adapted_src_align =
+          SrcAlign == std::dynamic_extent ? std::dynamic_extent
+                                          : SrcAlign % dst_digits;
+      iterator<bit_word_pointer_adapter<dst_iterator_type, src_iterator_type>> adapted_first(
+          bit_word_pointer_adapter<dst_iterator_type, src_iterator_type>(mutable_first.base(), mutable_first.position() / dst_digits), mutable_first.position() % dst_digits);
+      iterator<bit_word_pointer_adapter<dst_iterator_type, src_iterator_type>> adapted_last(
+          bit_word_pointer_adapter<dst_iterator_type, src_iterator_type>(mutable_last.base(), mutable_last.position() / dst_digits), mutable_last.position() % dst_digits);
+      return AlgoFunc::template run<adapted_src_align, DstAlign>(
+          adapted_first, adapted_last, mutable_d_first);
     } else {
-      iterator<bit_word_pointer_adapter<SrcIt, DstIt>> adapted_d_first(
-          bit_word_pointer_adapter<SrcIt, DstIt>(d_first.base(), d_first.position() / bitsof<src_word_type>()), d_first.position() % bitsof<src_word_type>());
-      return AlgoFunc{}(first, last, adapted_d_first);
+      // The destination is re-expressed in source-sized words.
+      constexpr std::size_t adapted_dst_align =
+          DstAlign == std::dynamic_extent ? std::dynamic_extent
+                                          : DstAlign % src_digits;
+      iterator<bit_word_pointer_adapter<src_iterator_type, dst_iterator_type>> adapted_d_first(
+          bit_word_pointer_adapter<src_iterator_type, dst_iterator_type>(mutable_d_first.base(), mutable_d_first.position() / src_digits), mutable_d_first.position() % src_digits);
+      return AlgoFunc::template run<SrcAlign, adapted_dst_align>(
+          mutable_first, mutable_last, adapted_d_first);
     }
   } else {
-    return AlgoFunc{}(first, last, d_first);
+    if constexpr (SrcAlign == std::dynamic_extent && DstAlign == std::dynamic_extent) {
+      return AlgoFunc{}(mutable_first, mutable_last, mutable_d_first);
+    } else {
+      return AlgoFunc::template run<SrcAlign, DstAlign>(
+          mutable_first, mutable_last, mutable_d_first);
+    }
   }
-}
-
-// Raw-pointer source range: wrap the pointers into iterators, then delegate.
-template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
-  requires std::is_pointer_v<SrcIt>
-constexpr auto with_bit_iterator_adapter(
-    const SrcIt& first,
-    const SrcIt& last,
-    const iterator<DstIt>& d_first) {
-  return with_bit_iterator_adapter<AlgoFunc>(iterator(first), iterator(last), d_first);
-}
-
-// Raw-pointer destination: wrap it into an iterator, then delegate.
-template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
-  requires std::is_pointer_v<DstIt>
-constexpr auto with_bit_iterator_adapter(
-    const iterator<SrcIt>& first,
-    const iterator<SrcIt>& last,
-    const DstIt& d_first) {
-  return with_bit_iterator_adapter<AlgoFunc>(first, last, iterator(d_first));
 }
 
 template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
