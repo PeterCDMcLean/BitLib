@@ -383,61 +383,61 @@ int main(int argc, char** argv) {
             "std::swap_ranges (small)",
             size_small);
     register_word_containers<decltype(BM_BitSwapRangesAA), std::vector>(
-            BM_BitSwapRangesAA, 
-            "bit::swap_ranges (large) ",
-            size_large);
+        BM_BitSwapRangesAA,
+        "bit::swap_ranges (large) ",
+        size_large);
     register_word_containers<decltype(BM_BitSwapRangesUU), std::vector>(
-            BM_BitSwapRangesUU, 
-            "bit::swap_ranges (large) (UU)",
-            size_large);
+        BM_BitSwapRangesUU,
+        "bit::swap_ranges (large) (UU)",
+        size_large);
     register_bool_containers<decltype(BM_BoolSwapRanges), std::vector>(
-            BM_BoolSwapRanges, 
-            "std::swap_ranges (large)",
-            size_large);
-            
+        BM_BoolSwapRanges,
+        "std::swap_ranges (large)",
+        size_large);
+
     // copy benchmarks
     register_word_containers<decltype(BM_BitCopy), std::vector>(
-            BM_BitCopy, 
-            "bit::copy (small) (UU)",
-            size_small);
+        BM_BitCopy,
+        "bit::copy (small) (UU)",
+        size_small);
     register_word_containers<decltype(BM_BitCopyAligned0), std::vector>(
-            BM_BitCopyAligned0, 
-            "bit::copy (small) (UU) aligned0",
-            size_small);
+        BM_BitCopyAligned0,
+        "bit::copy (small) (UU) aligned0",
+        size_small);
     register_bool_containers<decltype(BM_BoolCopy), std::vector>(
-            BM_BoolCopy, 
-            "std::copy (small)",
-            size_small);
+        BM_BoolCopy,
+        "std::copy (small)",
+        size_small);
     register_word_containers<decltype(BM_BitCopy), std::vector>(
-            BM_BitCopy, 
-            "bit::copy (large) (UU)",
-            size_large);
+        BM_BitCopy,
+        "bit::copy (large) (UU)",
+        size_large);
     register_word_containers<decltype(BM_BitCopyAligned0), std::vector>(
-            BM_BitCopyAligned0, 
-            "bit::copy (large) (UU) aligned0",
-            size_large);
+        BM_BitCopyAligned0,
+        "bit::copy (large) (UU) aligned0",
+        size_large);
     register_bool_containers<decltype(BM_BoolCopy), std::vector>(
-            BM_BoolCopy, 
-            "std::copy (large)",
-            size_large);
+        BM_BoolCopy,
+        "std::copy (large)",
+        size_large);
 
     // Equal benchmarks
     register_word_containers<decltype(BM_BitEqual), std::vector>(
-            BM_BitEqual, 
-            "bit::equal (small) (UU)",
-            size_small);
+        BM_BitEqual,
+        "bit::equal (small) (UU)",
+        size_small);
     register_bool_containers<decltype(BM_BoolEqual), std::vector>(
-            BM_BoolEqual, 
-            "std::equal (small)",
-            size_small);
+        BM_BoolEqual,
+        "std::equal (small)",
+        size_small);
     register_word_containers<decltype(BM_BitEqual), std::vector>(
-            BM_BitEqual, 
-            "bit::equal (large) (UU)",
-            size_large);
+        BM_BitEqual,
+        "bit::equal (large) (UU)",
+        size_large);
     register_bool_containers<decltype(BM_BoolEqual), std::vector>(
-            BM_BoolEqual, 
-            "std::equal (large)",
-            size_large);
+        BM_BoolEqual,
+        "std::equal (large)",
+        size_large);
 
     // move benchmarks 
     register_word_containers<decltype(BM_BitMove), std::vector>(

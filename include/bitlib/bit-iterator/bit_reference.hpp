@@ -402,7 +402,7 @@ class reference<StorageRef, ValueType, Alignment>
     if constexpr (source_reference::num_words == 1) {
       using source_word_type = typename source_reference::word_type;
       using source_span_type = bit_span<const source_word_type, ValueType::bits, OtherAlignment,
-          policy::typical<source_word_type>>;
+                                        policy::typical<source_word_type>>;
       copy_spans(source_span_type(&other), destination);
     } else {
       copy_spans(other.field_span(), destination);

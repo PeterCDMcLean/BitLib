@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <iterator>
 #include <ranges>
+#include <type_traits>
 
 #if (defined(__GLIBCXX__) && (_GLIBCXX_RELEASE < 14))
 namespace std {
@@ -25,7 +26,7 @@ class primitive;
 // Concept: any type with a static constexpr size_t bits member.
 template <typename T>
 concept primitive_c = requires {
-    { T::bits } -> std::convertible_to<std::size_t>;
+  { T::bits } -> std::convertible_to<std::size_t>;
 };
 
 template <typename reference_type, typename value_type>
@@ -79,6 +80,12 @@ concept bit_iterator_c =
       { it.position() } -> std::convertible_to<typename It::size_type>;
     };
 
+// A bit iterator of any Alignment, or a raw pointer denoting a bit range.
+template <typename T>
+concept bit_iterator_like_c =
+    std::is_pointer_v<std::remove_cvref_t<T>> ||
+    requires { typename std::remove_cvref_t<T>::iterator_type; };
+
 template <typename It>
 concept bit_contiguous_iterator_c = bit_iterator_c<It> &&
                                     std::contiguous_iterator<typename It::iterator_type> &&
@@ -106,6 +113,6 @@ concept bit_contiguous_sized_range =
     std::ranges::sized_range<R>;
 #endif
 
-} // namespace bit
+}  // namespace bit
 
 #endif

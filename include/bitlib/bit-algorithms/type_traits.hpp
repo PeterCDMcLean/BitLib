@@ -29,39 +29,29 @@ struct bit
 };
 /* ************************************************************************** */
 
-
-
-
-
-
 /* ***************************** IS ITERATOR ******************************** */
-template<typename T, typename = void>
+template <typename T, typename = void>
 struct is_iterator : std::false_type {};
 
-template<typename T>
+template <typename T>
 struct is_iterator<
     T,
-    std::void_t<typename std::iterator_traits<T>::value_type>
-> : std::true_type {};
+    std::void_t<typename std::iterator_traits<T>::value_type> > : std::true_type {};
 
 template <class T>
 inline constexpr bool is_iterator_v = is_iterator<T>::value;
 /* ************************************************************************** */
 
-
-template<typename T, typename = void>
+template <typename T, typename = void>
 struct is_forward_iterator : std::false_type {};
 
-template<typename T>
+template <typename T>
 struct is_forward_iterator<
     T,
     std::enable_if_t<
         std::is_base_of_v<
             std::forward_iterator_tag,
-            typename std::iterator_traits<T>::iterator_category
-        >
-    >
-> : std::true_type {};
+            typename std::iterator_traits<T>::iterator_category> > > : std::true_type {};
 
 template <class T>
 inline constexpr bool is_forward_iterator_v = is_forward_iterator<T>::value;

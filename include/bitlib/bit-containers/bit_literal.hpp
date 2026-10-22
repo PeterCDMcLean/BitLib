@@ -108,7 +108,7 @@ constexpr std::pair<size_t, uint64_t> _parameter_pack_decode_prefixed_num() {
   return {bits, num};
 }
 
-} // namespace bit
+}  // namespace bit
 
 #ifdef BITLIB_LITERAL_NAMESPACE
 namespace BITLIB_LITERAL_NAMESPACE {

@@ -56,7 +56,7 @@
 // Miscellaneous
 namespace bit {
 
- template <size_t Bits>
+template <size_t Bits>
 class primitive;
 
 template <typename WordRef = uintptr_t&, primitive_c ValueType = primitive<1>, size_t Alignment = std::dynamic_extent>
@@ -85,6 +85,20 @@ constexpr auto next(const iterator<Iterator, ValueType, Alignment>& it, std::siz
 
 template <typename target_word_ptr, typename source_word_ptr>
 class bit_word_pointer_adapter;
+
+// Extract the underlying word iterator type from a bit::iterator, or keep a
+// raw pointer as-is.
+template <typename T>
+struct underlying_iterator {
+  using type = typename T::iterator_type;
+};
+template <typename T>
+struct underlying_iterator<T*> {
+  using type = T*;
+};
+template <typename T>
+using underlying_iterator_t =
+    typename underlying_iterator<std::remove_cvref_t<T>>::type;
 
 // Extract the Alignment template parameter from a bit::iterator type.
 // Raw pointers always start at bit 0. Returns std::dynamic_extent when the

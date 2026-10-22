@@ -24,6 +24,36 @@ namespace bit {
 
 struct copy_impl;
 
+// Front-end for bit iterators of any Alignment (including fixed, non-dynamic
+// Alignment) and raw pointers.
+//
+// Fixed-alignment iterators are not incrementable, so the adapter converts
+// every input to a mutable dynamic_extent iterator before dispatching to impl.
+// It preserves the input Alignments in the adapted iterator types, and run_impl
+// extracts the SrcAlign/DstAlign hints for if constexpr optimization. Raw
+// pointers denote word-aligned ranges and therefore have Alignment 0.
+//
+// first and last may have different Alignments (e.g. aligned_begin() and
+// aligned_end() of a fixed-size container). When the word types match, the
+// alignment hints are passed to impl. When they differ, the same hints are
+// translated to the adapted word width inside with_bit_iterator_adapter.
+template <typename SrcIt1, typename SrcIt2, typename DstIt>
+constexpr iterator<underlying_iterator_t<DstIt>, primitive<1>,
+                   std::dynamic_extent>
+copy(
+    const SrcIt1& first,
+    const SrcIt2& last,
+    const DstIt& d_first) {
+  static_assert(bit_iterator_like_c<SrcIt1> && bit_iterator_like_c<SrcIt2> &&
+                    bit_iterator_like_c<DstIt>,
+                "copy() requires bit iterators or raw pointers");
+  static_assert(
+      std::is_same_v<underlying_iterator_t<SrcIt1>, underlying_iterator_t<SrcIt2>>,
+      "first and last must have the same underlying iterator type");
+  return with_bit_iterator_adapter<copy_impl>(first, last, d_first);
+}
+// -------------------------------------------------------------------------- //
+
 // ---------------------------- Copy Algorithms ----------------------------- //
 struct copy_impl {
   // Status: Does not work for Input/Output iterators due to distance call
@@ -151,34 +181,6 @@ struct copy_impl {
     return d_first + total_bits_to_copy;
   }
 };
-
-// Front-end for bit iterators of any Alignment (including fixed, non-dynamic
-// Alignment) and raw pointers.
-//
-// Fixed-alignment iterators are not incrementable, so the adapter converts
-// every input to a mutable dynamic_extent iterator before dispatching to impl.
-// It extracts SrcAlign/DstAlign from the input types via iterator_alignment_v
-// and hints them to impl as template parameters for if constexpr optimization.
-// Raw pointers denote word-aligned ranges and therefore have Alignment 0.
-//
-// first and last may have different Alignments (e.g. aligned_begin() and
-// aligned_end() of a fixed-size container). When the word types match, the
-// alignment hints are passed to impl. When they differ, the same hints are
-// translated to the adapted word width inside with_bit_iterator_adapter.
-template <typename SrcIt1, typename SrcIt2, typename DstIt>
-constexpr copy_return_t<DstIt> copy(
-    const SrcIt1& first,
-    const SrcIt2& last,
-    const DstIt& d_first) {
-  static_assert(copy_iterator_like<SrcIt1> && copy_iterator_like<SrcIt2> &&
-                    copy_iterator_like<DstIt>,
-                "copy() requires bit iterators or raw pointers");
-  static_assert(
-      std::is_same_v<copy_iterator_type_t<SrcIt1>, copy_iterator_type_t<SrcIt2>>,
-      "first and last must have the same underlying iterator type");
-  return with_bit_iterator_adapter<copy_impl>(first, last, d_first);
-}
-// -------------------------------------------------------------------------- //
 
 // ========================================================================== //
 }  // namespace bit

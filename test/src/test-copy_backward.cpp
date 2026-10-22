@@ -41,25 +41,24 @@ TYPED_TEST(DoubleRangeTest, CopyBackward) {
         auto d = (bitvec1.size() - end1) - start1;
 
         auto bitret = bit::copy_backward(
-                bitvec1.begin() + start1, 
-                bitvec1.end() - end1,
-                bitvec2.begin() + start2 + d); 
+            bitvec1.begin() + start1,
+            bitvec1.end() - end1,
+            bitvec2.begin() + start2 + d);
         auto boolret = std::copy_backward(
-                boolvec1.begin() + start1, 
-                boolvec1.end() - end1, 
-                boolvec2.begin() + start2 + d); 
+            boolvec1.begin() + start1,
+            boolvec1.end() - end1,
+            boolvec2.begin() + start2 + d);
         EXPECT_EQ(
-                bit::distance(bitvec2.begin(), bitret),
-                std::distance(boolvec2.begin(), boolret));
+            bit::distance(bitvec2.begin(), bitret),
+            std::distance(boolvec2.begin(), boolret));
         EXPECT_TRUE(std::equal(
-                    bitvec2.begin(), bitvec2.end(),
-                    boolvec2.begin(), boolvec2.end(), comparator)
-        );
+            bitvec2.begin(), bitvec2.end(),
+            boolvec2.begin(), boolvec2.end(), comparator));
         start2 = generate_random_number(start1, start1 + end1);
         bitret = bit::copy_backward(
-                bitvec1.begin() + start1, 
-                bitvec1.end() - end1,
-                bitvec1.begin() + start2 + d);
+            bitvec1.begin() + start1,
+            bitvec1.end() - end1,
+            bitvec1.begin() + start2 + d);
         boolret = std::copy_backward(
             boolvec1.begin() + start1,
             boolvec1.end() - end1,

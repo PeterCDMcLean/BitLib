@@ -258,252 +258,251 @@ array(word_type*, std::size_t) -> array<word_type, std::dynamic_extent>;
 //   primitive<Bits> (Bits > 1) -> depends on array<bit_value, ...>
 template <size_t Bits>
 class primitive {
-    static_assert(Bits >= 1, "primitive must have at least 1 bit");
-    static_assert(
-        Bits <= bitsof<std::size_t>(),
-        "primitive bit width exceeds the native integer size of the architecture");
-    static_assert(Bits <= bitsof<std::uint64_t>(),
-                  "primitive supports at most 64 bits");
+  static_assert(Bits >= 1, "primitive must have at least 1 bit");
+  static_assert(
+      Bits <= bitsof<std::size_t>(),
+      "primitive bit width exceeds the native integer size of the architecture");
+  static_assert(Bits <= bitsof<std::uint64_t>(),
+                "primitive supports at most 64 bits");
 
-    using word_type = ceil_integral<Bits>;
-    using policy_type = policy::typical<word_type>;
-    using array_type = array<bit_value, Bits, word_type, policy_type>;
+  using word_type = ceil_integral<Bits>;
+  using policy_type = policy::typical<word_type>;
+  using array_type = array<bit_value, Bits, word_type, policy_type>;
 
-    // Friendship
-    template <class, primitive_c, size_t>
-    friend class reference;
+  // Friendship
+  template <class, primitive_c, size_t>
+  friend class reference;
 
-  public:
-    static constexpr std::size_t bits = Bits;
-    using size_type = std::size_t;
-    using storage_type = word_type;
-    using value_type = bit_value;
-    using reference_type = reference<word_type&>;
-    using const_reference_type = const reference<const word_type&>;
+ public:
+  static constexpr std::size_t bits = Bits;
+  using size_type = std::size_t;
+  using storage_type = word_type;
+  using value_type = bit_value;
+  using reference_type = reference<word_type&>;
+  using const_reference_type = const reference<const word_type&>;
 
-  private:
-    array_type _data;
+ private:
+  array_type _data;
 
-  public:
-    // Lifecycle
-    constexpr primitive() noexcept = default;
+ public:
+  // Lifecycle
+  constexpr primitive() noexcept = default;
 
-    constexpr explicit primitive(bool b) noexcept {
-        _data.fill(b ? bit_value(true) : bit_value(false));
+  constexpr explicit primitive(bool b) noexcept {
+    _data.fill(b ? bit_value(true) : bit_value(false));
+  }
+
+  template <class WordType>
+  constexpr explicit primitive(WordType val) noexcept
+    requires std::integral<WordType>
+  {
+    static_assert(binary_digits<WordType>::value, "");
+    for (size_type i = 0; i < Bits; ++i) {
+      _data[i] = bit_value(static_cast<bool>((val >> i) & 1));
     }
+  }
 
-    template <class WordType>
-    constexpr explicit primitive(WordType val) noexcept
-        requires std::integral<WordType> {
-        static_assert(binary_digits<WordType>::value, "");
-        for (size_type i = 0; i < Bits; ++i) {
-            _data[i] = bit_value(static_cast<bool>((val >> i) & 1));
-        }
+  template <class WordType>
+  constexpr primitive(WordType val, size_type pos)
+    requires std::integral<WordType>
+  {
+    static_assert(binary_digits<WordType>::value, "");
+    assert(pos + Bits <= binary_digits<WordType>::value);
+    for (size_type i = 0; i < Bits; ++i) {
+      _data[i] = bit_value(static_cast<bool>((val >> (pos + i)) & 1));
     }
+  }
 
-    template <class WordType>
-    constexpr primitive(WordType val, size_type pos)
-        requires std::integral<WordType> {
-        static_assert(binary_digits<WordType>::value, "");
-        assert(pos + Bits <= binary_digits<WordType>::value);
-        for (size_type i = 0; i < Bits; ++i) {
-            _data[i] = bit_value(static_cast<bool>((val >> (pos + i)) & 1));
-        }
+  // Access
+  constexpr reference<word_type&> operator[](size_type pos) {
+    assert(pos < Bits);
+    return _data[pos];
+  }
+
+  constexpr const reference<const word_type&> operator[](size_type pos) const {
+    assert(pos < Bits);
+    return _data[pos];
+  }
+
+  // Assignment
+  constexpr primitive& operator=(const primitive& other) noexcept {
+    _data = other._data;
+    return *this;
+  }
+
+  template <class T>
+  constexpr primitive& operator=(reference<T> ref) noexcept {
+    // Set bit 0 to ref's value, clear all others
+    _data[0] = bit_value(static_cast<bool>(ref));
+    for (size_type i = 1; i < Bits; ++i) {
+      _data[i] = bit_value(false);
     }
+    return *this;
+  }
 
-    // Access
-    constexpr reference<word_type&> operator[](size_type pos) {
-        assert(pos < Bits);
-        return _data[pos];
+  template <class WordType>
+  constexpr primitive& assign(WordType val) noexcept
+    requires std::integral<WordType>
+  {
+    static_assert(binary_digits<WordType>::value, "");
+    for (size_type i = 0; i < Bits; ++i) {
+      _data[i] = bit_value(static_cast<bool>((val >> i) & 1));
     }
+    return *this;
+  }
 
-    constexpr const reference<const word_type&> operator[](size_type pos) const {
-        assert(pos < Bits);
-        return _data[pos];
+  template <class WordType>
+  constexpr primitive& assign(WordType val, size_type pos)
+    requires std::integral<WordType>
+  {
+    static_assert(binary_digits<WordType>::value, "");
+    assert(pos + Bits <= binary_digits<WordType>::value);
+    for (size_type i = 0; i < Bits; ++i) {
+      _data[i] = bit_value(static_cast<bool>((val >> (pos + i)) & 1));
     }
+    return *this;
+  }
 
-    // Assignment
-    constexpr primitive& operator=(const primitive& other) noexcept {
-        _data = other._data;
-        return *this;
+  // Bitwise assignment operators
+  constexpr primitive& operator&=(const primitive& other) noexcept {
+    for (size_type i = 0; i < Bits; ++i) {
+      _data[i] &= other._data[i];
     }
+    return *this;
+  }
 
-    template <class T>
-    constexpr primitive& operator=(reference<T> ref) noexcept {
-        // Set bit 0 to ref's value, clear all others
-        _data[0] = bit_value(static_cast<bool>(ref));
-        for (size_type i = 1; i < Bits; ++i) {
-            _data[i] = bit_value(false);
-        }
-        return *this;
+  constexpr primitive& operator|=(const primitive& other) noexcept {
+    for (size_type i = 0; i < Bits; ++i) {
+      _data[i] |= other._data[i];
     }
+    return *this;
+  }
 
-    template <class WordType>
-    constexpr primitive& assign(WordType val) noexcept
-        requires std::integral<WordType> {
-        static_assert(binary_digits<WordType>::value, "");
-        for (size_type i = 0; i < Bits; ++i) {
-            _data[i] = bit_value(static_cast<bool>((val >> i) & 1));
-        }
-        return *this;
+  constexpr primitive& operator^=(const primitive& other) noexcept {
+    for (size_type i = 0; i < Bits; ++i) {
+      _data[i] ^= other._data[i];
     }
+    return *this;
+  }
 
-    template <class WordType>
-    constexpr primitive& assign(WordType val, size_type pos)
-        requires std::integral<WordType> {
-        static_assert(binary_digits<WordType>::value, "");
-        assert(pos + Bits <= binary_digits<WordType>::value);
-        for (size_type i = 0; i < Bits; ++i) {
-            _data[i] = bit_value(static_cast<bool>((val >> (pos + i)) & 1));
-        }
-        return *this;
-    }
-
-    // Bitwise assignment operators
-    constexpr primitive& operator&=(const primitive& other) noexcept {
-        for (size_type i = 0; i < Bits; ++i) {
-            _data[i] &= other._data[i];
-        }
-        return *this;
-    }
-
-    constexpr primitive& operator|=(const primitive& other) noexcept {
-        for (size_type i = 0; i < Bits; ++i) {
-            _data[i] |= other._data[i];
-        }
-        return *this;
-    }
-
-    constexpr primitive& operator^=(const primitive& other) noexcept {
-        for (size_type i = 0; i < Bits; ++i) {
-            _data[i] ^= other._data[i];
-        }
-        return *this;
-    }
-
-    // Conversion
-    explicit constexpr operator bool() const noexcept {
-        for (size_type i = 0; i < Bits; ++i) {
-            if (static_cast<bool>(_data[i])) return true;
-        }
-        return false;
-    }
-
-    constexpr word_type word_value() const noexcept {
-        word_type result = 0;
-        for (size_type i = 0; i < Bits; ++i) {
-            if (static_cast<bool>(_data[i])) {
-                result |= (word_type(1) << i);
-            }
-        }
-        return result;
-    }
-
-    // Swap members
-    void swap(primitive& other) noexcept {
-        _data.swap(other._data);
-    }
-
-    template <class T>
-    void swap(reference<T> other) noexcept {
-        if (static_cast<bool>(_data[0]) != static_cast<bool>(other)) {
-            bit_value temp = static_cast<bit_value>(_data[0]);
-            _data[0] = static_cast<bit_value>(other);
-            other = temp;
-        }
-    }
-
-    // Bitwise operators
-    friend constexpr primitive operator~(
-        primitive rhs
-    ) noexcept {
-        for (size_type i = 0; i < Bits; ++i) {
-            rhs._data[i] = bit_value(!static_cast<bool>(rhs._data[i]));
-        }
-        return rhs;
-    }
-
-    friend constexpr primitive operator&(
-        primitive lhs,
-        const primitive& rhs
-    ) noexcept {
-        for (size_type i = 0; i < Bits; ++i) {
-            lhs._data[i] &= rhs._data[i];
-        }
-        return lhs;
-    }
-
-    friend constexpr primitive operator|(
-        primitive lhs,
-        const primitive& rhs
-    ) noexcept {
-        for (size_type i = 0; i < Bits; ++i) {
-            lhs._data[i] |= rhs._data[i];
-        }
-        return lhs;
-    }
-
-    friend constexpr primitive operator^(
-        primitive lhs,
-        const primitive& rhs
-    ) noexcept {
-        for (size_type i = 0; i < Bits; ++i) {
-            lhs._data[i] ^= rhs._data[i];
-        }
-        return lhs;
-    }
-
-    // Comparison operators
-    friend constexpr bool operator==(
-        const primitive& lhs,
-        const primitive& rhs
-    ) noexcept {
-        for (size_type i = 0; i < Bits; ++i) {
-            if (static_cast<bool>(lhs._data[i]) != static_cast<bool>(rhs._data[i]))
-                return false;
-        }
+  // Conversion
+  explicit constexpr operator bool() const noexcept {
+    for (size_type i = 0; i < Bits; ++i) {
+      if (static_cast<bool>(_data[i])) {
         return true;
+      }
     }
+    return false;
+  }
 
-    friend constexpr bool operator!=(
-        const primitive& lhs,
-        const primitive& rhs
-    ) noexcept {
-        return !(lhs == rhs);
+  constexpr word_type word_value() const noexcept {
+    word_type result = 0;
+    for (size_type i = 0; i < Bits; ++i) {
+      if (static_cast<bool>(_data[i])) {
+        result |= (word_type(1) << i);
+      }
     }
+    return result;
+  }
 
-    friend constexpr bool operator<(
-        const primitive& lhs,
-        const primitive& rhs
-    ) noexcept {
-        for (size_type i = 0; i < Bits; ++i) {
-            bool l = static_cast<bool>(lhs._data[i]);
-            bool r = static_cast<bool>(rhs._data[i]);
-            if (l != r) return l < r;
-        }
+  // Swap members
+  void swap(primitive& other) noexcept {
+    _data.swap(other._data);
+  }
+
+  template <class T>
+  void swap(reference<T> other) noexcept {
+    if (static_cast<bool>(_data[0]) != static_cast<bool>(other)) {
+      bit_value temp = static_cast<bit_value>(_data[0]);
+      _data[0] = static_cast<bit_value>(other);
+      other = temp;
+    }
+  }
+
+  // Bitwise operators
+  friend constexpr primitive operator~(
+      primitive rhs) noexcept {
+    for (size_type i = 0; i < Bits; ++i) {
+      rhs._data[i] = bit_value(!static_cast<bool>(rhs._data[i]));
+    }
+    return rhs;
+  }
+
+  friend constexpr primitive operator&(
+      primitive lhs,
+      const primitive& rhs) noexcept {
+    for (size_type i = 0; i < Bits; ++i) {
+      lhs._data[i] &= rhs._data[i];
+    }
+    return lhs;
+  }
+
+  friend constexpr primitive operator|(
+      primitive lhs,
+      const primitive& rhs) noexcept {
+    for (size_type i = 0; i < Bits; ++i) {
+      lhs._data[i] |= rhs._data[i];
+    }
+    return lhs;
+  }
+
+  friend constexpr primitive operator^(
+      primitive lhs,
+      const primitive& rhs) noexcept {
+    for (size_type i = 0; i < Bits; ++i) {
+      lhs._data[i] ^= rhs._data[i];
+    }
+    return lhs;
+  }
+
+  // Comparison operators
+  friend constexpr bool operator==(
+      const primitive& lhs,
+      const primitive& rhs) noexcept {
+    for (size_type i = 0; i < Bits; ++i) {
+      if (static_cast<bool>(lhs._data[i]) != static_cast<bool>(rhs._data[i])) {
         return false;
+      }
     }
+    return true;
+  }
 
-    friend constexpr bool operator<=(
-        const primitive& lhs,
-        const primitive& rhs
-    ) noexcept {
-        return !(rhs < lhs);
-    }
+  friend constexpr bool operator!=(
+      const primitive& lhs,
+      const primitive& rhs) noexcept {
+    return !(lhs == rhs);
+  }
 
-    friend constexpr bool operator>(
-        const primitive& lhs,
-        const primitive& rhs
-    ) noexcept {
-        return rhs < lhs;
+  friend constexpr bool operator<(
+      const primitive& lhs,
+      const primitive& rhs) noexcept {
+    for (size_type i = 0; i < Bits; ++i) {
+      bool l = static_cast<bool>(lhs._data[i]);
+      bool r = static_cast<bool>(rhs._data[i]);
+      if (l != r) {
+        return l < r;
+      }
     }
+    return false;
+  }
 
-    friend constexpr bool operator>=(
-        const primitive& lhs,
-        const primitive& rhs
-    ) noexcept {
-        return !(lhs < rhs);
-    }
+  friend constexpr bool operator<=(
+      const primitive& lhs,
+      const primitive& rhs) noexcept {
+    return !(rhs < lhs);
+  }
+
+  friend constexpr bool operator>(
+      const primitive& lhs,
+      const primitive& rhs) noexcept {
+    return rhs < lhs;
+  }
+
+  friend constexpr bool operator>=(
+      const primitive& lhs,
+      const primitive& rhs) noexcept {
+    return !(lhs < rhs);
+  }
 };
 
 }  // namespace bit
