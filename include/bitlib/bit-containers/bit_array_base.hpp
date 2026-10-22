@@ -24,18 +24,10 @@
 #include "bitlib/bit-algorithms/bit_algorithm.hpp"
 #include "bitlib/bit-containers/bit_bitsof.hpp"
 #include "bitlib/bit-containers/bit_policy.hpp"
+#include "bitlib/bit-containers/bit_containers_forward.hpp"
 #include "bitlib/bit-iterator/bit.hpp"
 
 namespace bit {
-
-template <typename T, size_t N, typename W, std::size_t A, typename Policy>
-class array_ref;
-
-template <typename T,
-          std::size_t N,
-          typename W,
-          typename Policy>
-class array;
 
 /**
  * @brief Base class template for array implementations

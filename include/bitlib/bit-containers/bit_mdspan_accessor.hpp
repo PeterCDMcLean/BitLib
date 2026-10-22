@@ -9,12 +9,13 @@
 #ifndef _BIT_MDSPAN_ACCESSOR_HPP_INCLUDED
 #define _BIT_MDSPAN_ACCESSOR_HPP_INCLUDED
 
+#include "bitlib/bit-containers/bit_containers_forward.hpp"
 #include "bitlib/bit-iterator/bit_details.hpp"
 #include "bitlib/bit-iterator/bit_reference.hpp"
 #include "bitlib/bit-iterator/bit_value.hpp"
 
 namespace bit {
-template <typename WordType = uintptr_t>
+template <typename WordType>
 struct bit_default_accessor {
   using element_type = bit_value;
   using data_handle_type = bit_pointer<WordType>;
@@ -28,7 +29,7 @@ struct bit_default_accessor {
   }
 };
 
-template <size_t N = std::dynamic_extent, typename WordType = uintptr_t>
+template <size_t N, typename WordType>
 struct bit_word_accessor : private detail::container_size_storage<size_t, false, N> {
   using element_type = bit_array<N, WordType>;
   using data_handle_type = bit_pointer<WordType>;

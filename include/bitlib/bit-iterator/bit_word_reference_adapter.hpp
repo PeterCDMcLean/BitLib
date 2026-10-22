@@ -1,6 +1,8 @@
 #ifndef _BIT_WORD_REFERENCE_ADAPTER_HPP_
 #define _BIT_WORD_REFERENCE_ADAPTER_HPP_
 
+#include "bitlib/bit-iterator/bit_iterator_forward.hpp"
+
 namespace bit {
 
 template <typename target_word_ptr, typename source_word_ptr>

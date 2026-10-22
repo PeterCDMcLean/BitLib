@@ -25,30 +25,12 @@
 #include "bitlib/bit-containers/bit_array_base.hpp"
 #include "bitlib/bit-containers/bit_bitsof.hpp"
 #include "bitlib/bit-containers/bit_policy.hpp"
+#include "bitlib/bit-containers/bit_containers_forward.hpp"
+#include "bitlib/bit-iterator/bit_integral.hpp"
 #include "bitlib/bit-iterator/bit.hpp"
 #include "bitlib/bit_concepts.hpp"
 
 namespace bit {
-
-template <typename T = bit_value,
-          std::size_t N = std::dynamic_extent,
-          typename W = std::conditional_t<
-              std::is_same_v<T, bit_value>,
-              std::conditional_t<
-                  (N == std::dynamic_extent),
-                  std::uintptr_t,
-                  ceil_integral<N>>,
-              T>,
-          typename Policy = policy::typical<std::remove_cvref_t<W>>>
-class array;
-
-template <std::size_t N = std::dynamic_extent,
-          typename W = std::conditional_t<
-              (N == std::dynamic_extent),
-              std::uintptr_t,
-              ceil_integral<N>>,
-          typename Policy = policy::typical<std::remove_cvref_t<W>>>
-using bit_array = array<bit_value, N, W, Policy>;
 
 namespace detail {
 

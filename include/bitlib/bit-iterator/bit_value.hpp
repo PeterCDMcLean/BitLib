@@ -16,21 +16,13 @@
 // C++ standard library
 // Project sources
 #include "bit_details.hpp"
+#include "bitlib/bit-iterator/bit_iterator_forward.hpp"
 // Third-party libraries
 // Miscellaneous
 namespace bit {
 // ========================================================================== //
 
 /* ******************************* BIT VALUE ******************************** */
-// Forward declaration of the generic N-bit primitive class.
-// The primary template (Bits > 1) is defined in bit_array.hpp after the
-// array class is available, breaking the recursive dependency:
-//   primitive<1> (bit_value) does not depend on array
-//   array<bit_value, ...> depends on bit_value (= primitive<1>)
-//   primitive<Bits> (Bits > 1) depends on array<bit_value, ...>
-template <size_t Bits>
-class primitive;
-
 // primitive<1> is the fundamental bit type, i.e. bit_value.
 // It stores a single bool and does not depend on array.
 template <>
@@ -175,9 +167,6 @@ class primitive<1> {
     return lhs._value >= rhs._value;
   }
 };
-
-// Alias: bit_value is a single bit, i.e. primitive<1>.
-using bit_value = primitive<1>;
 
 // Forward declaration of the array class template.
 // Defined in bit_array.hpp.

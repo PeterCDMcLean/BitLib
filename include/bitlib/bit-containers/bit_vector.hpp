@@ -24,6 +24,7 @@
 #include "bitlib/bit-algorithms/bit_algorithm.hpp"
 #include "bitlib/bit_concepts.hpp"
 #include "bitlib/bit-containers/bit_array_ref.hpp"
+#include "bitlib/bit-containers/bit_containers_forward.hpp"
 #include "bitlib/bit-iterator/bit.hpp"
 
 // Third-party libraries
@@ -33,7 +34,7 @@ namespace bit {
 
 /* ****************************** BIT VECTOR ****************************** */
 //! A bit-vector with a similar interface to std::vector<bool>
-template <class WordType = uint8_t, class Allocator = std::allocator<WordType>>
+template <class WordType, class Allocator>
 class bit_vector {
  private:
   static constexpr size_t digits = binary_digits<WordType>::value;

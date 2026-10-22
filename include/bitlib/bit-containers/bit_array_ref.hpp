@@ -20,16 +20,11 @@
 #include "bitlib/bit-containers/bit_array_base.hpp"
 #include "bitlib/bit-containers/bit_bitsof.hpp"
 #include "bitlib/bit-containers/bit_policy.hpp"
+#include "bitlib/bit-containers/bit_containers_forward.hpp"
 #include "bitlib/bit-iterator/bit.hpp"
 #include "bitlib/bit_concepts.hpp"
 
 namespace bit {
-
-template <typename T = bit_value, size_t N = std::dynamic_extent, typename W = std::uintptr_t, size_t A = std::dynamic_extent, typename Policy = policy::typical<std::remove_cvref_t<W>>>
-class array_ref;
-
-template <size_t N = std::dynamic_extent, typename W = std::uintptr_t, size_t A = std::dynamic_extent, typename Policy = policy::typical<std::remove_cvref_t<W>>>
-using bit_array_ref = array_ref<bit_value, N, W, A, Policy>;
 
 namespace detail {
 template <typename word_type>

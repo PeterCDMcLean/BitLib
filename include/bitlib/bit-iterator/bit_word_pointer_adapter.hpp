@@ -2,6 +2,7 @@
 #define _BIT_WORD_POINTER_ADAPTER_HPP_
 
 #include "bit_details.hpp"
+#include "bitlib/bit-iterator/bit_iterator_forward.hpp"
 
 namespace bit {
 

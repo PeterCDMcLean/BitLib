@@ -48,7 +48,8 @@
 #include <utility>
 
 #include "bitlib/bit-containers/bit_bitsof.hpp"
-#include "bitlib/bit-containers/bit_span_forward.hpp"
+#include "bitlib/bit-containers/bit_containers_forward.hpp"
+#include "bitlib/bit-iterator/bit_integral.hpp"
 #include "bitlib/bit_concepts.hpp"
 
 // Project sources
@@ -56,35 +57,12 @@
 // Miscellaneous
 namespace bit {
 
-template <size_t Bits>
-class primitive;
-
-template <typename WordRef = uintptr_t&, primitive_c ValueType = primitive<1>, size_t Alignment = std::dynamic_extent>
-class reference;
-
-template <class Iterator,
-          primitive_c ValueType = primitive<1>,
-          size_t Alignment = std::dynamic_extent>
-class iterator;
-
-template <class Iterator, std::size_t Alignment = std::dynamic_extent>
-using bit_iterator = iterator<Iterator, primitive<1>, Alignment>;
-
-template <typename WordType, primitive_c ValueType, std::size_t Alignment = std::dynamic_extent>
-using pointer = iterator<WordType*, ValueType, Alignment>;
-
-template <typename WordType, std::size_t Alignment = std::dynamic_extent>
-using bit_pointer = iterator<WordType*, primitive<1>, Alignment>;
-
 // Defined in bit_iterator.hpp; declared here so with_bit_iterator_adapter can
 // use it before that header is included.
 template <std::size_t N, class Iterator, primitive_c ValueType, size_t Alignment>
 constexpr auto next(const iterator<Iterator, ValueType, Alignment>& it);
 template <class Iterator, primitive_c ValueType, size_t Alignment>
 constexpr auto next(const iterator<Iterator, ValueType, Alignment>& it, std::size_t n);
-
-template <typename target_word_ptr, typename source_word_ptr>
-class bit_word_pointer_adapter;
 
 // Extract the underlying word iterator type from a bit::iterator, or keep a
 // raw pointer as-is.
@@ -132,21 +110,6 @@ constexpr auto make_mutable_bit_iterator(const T& it) {
 }
 
 // ========================================================================== //
-
-template <size_t N>
-using ceil_integral = std::conditional_t<
-    (N <= bitsof<std::uint8_t>()),
-    std::uint8_t,
-    std::conditional_t<
-        (N <= bitsof<std::uint16_t>()),
-        std::uint16_t,
-        std::conditional_t<
-            (N <= bitsof<std::uint32_t>()),
-            std::uint32_t,
-            std::conditional_t<
-                (N <= bitsof<std::uint64_t>()),
-                std::uint64_t,
-                std::uint64_t>>>>;
 
 /* *************** IMPLEMENTATION DETAILS: CV ITERATOR TRAITS *************** */
 // Cv iterator traits structure definition

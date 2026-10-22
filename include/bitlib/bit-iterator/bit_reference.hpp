@@ -25,6 +25,7 @@
 #include "bitlib/bit-algorithms/bit_algorithm_details.hpp"
 #include "bitlib/bit-algorithms/bit_algorithm_forward.hpp"
 #include "bitlib/bit-containers/bit_span_declaration.hpp"
+#include "bitlib/bit-iterator/bit_integral.hpp"
 // Third-party libraries
 // Miscellaneous
 namespace bit {
@@ -581,7 +582,8 @@ class reference<StorageRef, ValueType, Alignment>
 };
 
 // Alias: bit_reference remains as an alias to the current form, i.e. a
-// single-bit reference with the default storage reference type.
+// single-bit reference with the default storage reference type. It is defined
+// here because forming reference<> requires primitive<1> to be complete.
 using bit_reference = reference<>;
 
 static_assert(bit_reference_c<reference<uint8_t&>>,

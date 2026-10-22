@@ -30,9 +30,6 @@ namespace bit {
 
 /* ****************************** BIT ITERATOR ****************************** */
 
-template <typename target_word_ptr, typename source_word_ptr>
-class bit_word_pointer_adapter;
-
 namespace detail {
 template <typename size_type, size_t Alignment>
 struct iterator_position_storage;
