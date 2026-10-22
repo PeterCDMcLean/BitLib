@@ -3,6 +3,7 @@
 
 #include <span>
 #include <concepts>
+#include <limits>
 
 /*
 A bitsof() template function that resembles sizeof() as much as possible.

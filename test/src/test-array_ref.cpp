@@ -1,4 +1,3 @@
-#include <array>
 #include <cstdint>
 #include <limits>
 
@@ -7,15 +6,13 @@
 
 struct WideBitValue {
   static constexpr std::size_t bits = 96;
-  std::array<bit::bit_value, bits> data{};
+  bit::bit_array<bits> data{};
 
   bool bit_at(std::size_t index) const {
     return static_cast<bool>(data[index]);
   }
-  bit::bit_value& operator[](std::size_t index) { return data[index]; }
-  const bit::bit_value& operator[](std::size_t index) const {
-    return data[index];
-  }
+  auto operator[](std::size_t index) { return data[index]; }
+  auto operator[](std::size_t index) const { return data[index]; }
 };
 
 TEST(BitArrayRef, ConstructorAndAssignment) {
@@ -283,8 +280,7 @@ TEST(BitReference, MultiWordChunkCopy) {
   EXPECT_EQ(single_destination, expected_single);
 }
 
-// Disabled: pre-existing failure unrelated to copy/alignment work.
-TEST(BitReference, DISABLED_ValueTypeWiderThanSizeType) {
+TEST(BitReference, ValueTypeWiderThanSizeType) {
   struct storage {
     std::uint64_t words[2]{};
   } bits;

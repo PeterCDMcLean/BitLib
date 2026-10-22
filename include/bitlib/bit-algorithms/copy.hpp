@@ -104,35 +104,32 @@ struct copy_impl {
     size_type remaining_bits_to_copy = total_bits_to_copy;
     auto it = d_first.base();
 
-    // If the destination Alignment is known at compile time, skip the
-    // run-time position check entirely. DstAlign == 0 means d_first is already
-    // word-aligned, so there is no prefix to write.
-    bool consumed_source_prefix = false;
+    size_type d_first_position;
     if constexpr (DstAlign == 0) {
       // d_first is aligned: nothing to do.
+      d_first_position = 0;
     } else {
-      size_type d_first_position;
       if constexpr (DstAlign == std::dynamic_extent) {
         d_first_position = d_first.position();
       } else {
         d_first_position = DstAlign;
       }
-      if (d_first_position != 0) {
-        size_type partial_bits_to_copy = ::std::min(
-            remaining_bits_to_copy,
-            digits - d_first_position);
-        *it = _bitblend<word_type>(
-            *it,
-            static_cast<word_type>(
-                get_word<word_type>(first, partial_bits_to_copy)
-                << static_cast<word_type>(d_first_position)),
-            d_first_position,
-            partial_bits_to_copy);
-        remaining_bits_to_copy -= partial_bits_to_copy;
-        advance(first, partial_bits_to_copy);
-        consumed_source_prefix = true;
-        it++;
-      }
+    }
+
+    if (d_first_position != 0) {
+      size_type partial_bits_to_copy = ::std::min(
+          remaining_bits_to_copy,
+          digits - d_first_position);
+      *it = _bitblend<word_type>(
+          *it,
+          static_cast<word_type>(
+              get_word<word_type>(first, partial_bits_to_copy)
+              << static_cast<word_type>(d_first_position)),
+          d_first_position,
+          partial_bits_to_copy);
+      remaining_bits_to_copy -= partial_bits_to_copy;
+      advance(first, partial_bits_to_copy);
+      it++;
     }
 
     if (remaining_bits_to_copy > 0) {
@@ -140,21 +137,16 @@ struct copy_impl {
       // partial destination word above advanced the source, the hint may no
       // longer describe the iterator and the run-time position is consulted.
       bool is_first_aligned;
-      if constexpr (SrcAlign == 0) {
-        // Aligned on entry. A prefix write advances by less than one word, so
-        // the source is unaligned afterwards.
-        is_first_aligned = !consumed_source_prefix;
-      } else if constexpr (SrcAlign == std::dynamic_extent) {
-        is_first_aligned = (first.position() == 0);
-      } else {
-        // Known unaligned on entry. It only wraps back to a word boundary when
-        // source and destination share the same fixed Alignment and the prefix
-        // consumed the rest of the destination word.
+      if constexpr (SrcAlign != std::dynamic_extent) {
         if constexpr (DstAlign == SrcAlign) {
-          is_first_aligned = consumed_source_prefix;
+          is_first_aligned = true;
         } else {
-          is_first_aligned = consumed_source_prefix && (first.position() == 0);
+          is_first_aligned = (SrcAlign == d_first_position);
         }
+      } else {
+        // The destination is word-aligned after the prefix write, so the
+        // source must also be at bit offset 0 for the word-copy fast path.
+        is_first_aligned = (first.position() == 0);
       }
       // d_first will be aligned at this point
       if (is_first_aligned && remaining_bits_to_copy > digits) {

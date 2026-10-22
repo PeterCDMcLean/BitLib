@@ -23,11 +23,17 @@ namespace bit {
 template <size_t Bits>
 class primitive;
 
-// Concept: any type with a static constexpr size_t bits member.
+// Concept: any type with a static constexpr size_t bits member whose declared
+// bit width fits its object representation with at most one word of padding.
 template <typename T>
-concept primitive_c = requires {
-  { T::bits } -> std::convertible_to<std::size_t>;
-};
+concept primitive_c =
+    requires {
+      { T::bits } -> std::convertible_to<std::size_t>;
+    } &&
+    requires {
+      requires static_cast<std::size_t>(T::bits) <= sizeof(T) * 8;
+      requires sizeof(T) * 8 <= static_cast<std::size_t>(T::bits) + sizeof(std::uintptr_t) * 8 - 1;
+    };
 
 template <typename reference_type, typename value_type>
 concept reference_like =
