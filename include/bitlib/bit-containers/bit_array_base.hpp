@@ -104,7 +104,7 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
   {
     constexpr size_type end_index = (A + N * bitsof<value_type>()) / bitsof<word_type>();
     constexpr size_type end_pos = (A + N * bitsof<value_type>()) % bitsof<word_type>();
-    return ::bit::iterator<const word_type*, value_type, end_pos>(derived().data()[end_index]);
+    return ::bit::iterator<const word_type*, value_type, end_pos>(&derived().data()[end_index]);
   }
 
  public:
@@ -426,7 +426,7 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
       if (size() > bitsof<U>()) {
         Policy::truncation::template to_integral<U, N>(derived(), integral);
       } else {
-        ::bit::copy(this->aligned_begin(), aligned_end(), &integral);  //TODO use iterator with alignment when possible
+        ::bit::copy(aligned_begin(), aligned_end(), &integral);  //TODO use iterator with alignment when possible
       }
       if (size() < bitsof<U>()) {
         Policy::extension::template to_integral<U, N>(detail::uninitialized, derived(), integral);
@@ -435,7 +435,7 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
       if constexpr (N > bitsof<U>()) {
         Policy::truncation::template to_integral<U, N>(derived(), integral);
       } else {
-        ::bit::copy(this->aligned_begin(), aligned_end(), &integral);  //TODO use iterator with alignment when possible
+        ::bit::copy(aligned_begin(), aligned_end(), &integral);  //TODO use iterator with alignment when possible
       }
       if constexpr (N < bitsof<U>()) {
         Policy::extension::template to_integral<U, N>(detail::uninitialized, derived(), integral);

@@ -29,7 +29,7 @@ struct truncate {
   template <std::integral U, std::size_t N, typename RandomAccessIt>
   constexpr static void to_integral(const bit_iterator<RandomAccessIt>& first, U& integral) noexcept {
     bit_pointer<U, 0> integral_begin(&integral);
-    ::bit::copy(first, first.template next<bitsof<U>()>(), integral_begin);
+    ::bit::copy(first, ::bit::next<bitsof<U>()>(first), integral_begin);
   }
 
   template <std::integral U, std::size_t N>

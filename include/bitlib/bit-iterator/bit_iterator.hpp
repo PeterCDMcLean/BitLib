@@ -16,6 +16,7 @@
 #include <concepts>
 #include <cstddef>
 #include <iterator>
+#include <limits>
 #include <type_traits>
 
 #include "bitlib/bit-containers/bit_bitsof.hpp"
@@ -551,6 +552,47 @@ iterator<Iterator, ValueType, Alignment>::position() const noexcept {
                                      (static_cast<difference_type>(lhs.position()) -
                                       static_cast<difference_type>(rhs.position()));
     return bit_diff / step;
+  }
+
+  // ------------------------- BIT ITERATOR: NEXT ----------------------------- //
+  // Free-function counterparts of iterator::next<N>(). They exist so that an
+  // iterator whose type is still dependent (e.g. a bit_iterator<It> deduced
+  // inside a function template) can be advanced without writing the
+  // `.template` disambiguator:
+  //
+  //     ::bit::next<bitsof<U>()>(first)   // compile-time offset
+  //     ::bit::next(first, n)             // run-time offset
+  //
+  // Advancing by a compile-time offset preserves a fixed Alignment, exactly
+  // like iterator::next<N>(); a run-time offset cannot, so it yields a
+  // std::dynamic_extent iterator. N is unsigned: it only expresses forward
+  // offsets (use operator- for backwards offsets).
+
+  // Compile-time offset. N == std::dynamic_extent (the default) means no
+  // offset was supplied, so the one-argument form is rejected at compile time
+  // instead of silently doing nothing.
+  template <
+      std::size_t N = std::dynamic_extent,
+      class Iterator,
+      primitive_c ValueType,
+      size_t Alignment>
+  constexpr auto next(const iterator<Iterator, ValueType, Alignment>& it) {
+    using difference_type = typename iterator<Iterator, ValueType, Alignment>::difference_type;
+    static_assert(N != std::dynamic_extent,
+                  "bit::next(it) needs a compile-time offset; use bit::next(it, n) for a run-time offset");
+    if constexpr (N == std::dynamic_extent) {
+      return it;  // unreachable: rejected by the assertion above
+    } else {
+      static_assert(N <= static_cast<std::size_t>((std::numeric_limits<difference_type>::max)()),
+                    "compile-time offset does not fit in the iterator difference_type");
+      return it.template next<static_cast<difference_type>(N)>();
+    }
+  }
+
+  // Run-time offset.
+  template <class Iterator, primitive_c ValueType, size_t Alignment>
+  constexpr auto next(const iterator<Iterator, ValueType, Alignment>& it, std::size_t n) {
+    return it + static_cast<typename iterator<Iterator, ValueType, Alignment>::difference_type>(n);
   }
 
   // Alias: bit_pointer is a bit iterator over a word pointer (defined in
