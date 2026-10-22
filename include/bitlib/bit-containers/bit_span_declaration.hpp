@@ -5,7 +5,7 @@
 #include <span>
 #include <type_traits>
 
-#include "bitlib/bit-containers/bit_span_forward.hpp"
+#include "bitlib/bit-containers/bit_containers_forward.hpp"
 #include "bitlib/bit-iterator/bit_details.hpp"
 
 namespace bit {
