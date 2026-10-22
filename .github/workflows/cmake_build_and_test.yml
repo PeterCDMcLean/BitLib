@@ -200,10 +200,23 @@ jobs:
           echo "::remove-matcher owner=${{ inputs.compiler}}::"
         fi
 
+    - name: Compute artifact refs
+      id: artifact_refs
+      shell: bash
+      env:
+        REF_NAME: ${{ github.head_ref || github.ref_name }}
+        BASE_REF: ${{ github.event.pull_request.base.ref }}
+      run: |
+        # Artifact names cannot contain '/', which is common in branch names
+        # (e.g. feature/my-branch). Git refs cannot contain the other characters
+        # rejected by upload-artifact, so replacing '/' is sufficient.
+        echo "ref=${REF_NAME//\//-}" >> "$GITHUB_OUTPUT"
+        echo "base_ref=${BASE_REF//\//-}" >> "$GITHUB_OUTPUT"
+
     - name: Upload build dir
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ inputs.preset }}_${{ inputs.test_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}_${{ inputs.build_type }}_${{ github.head_ref || github.ref_name }}
+        name: ${{ inputs.preset }}_${{ inputs.test_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}_${{ inputs.build_type }}_${{ steps.artifact_refs.outputs.ref }}
         path: '${{ steps.strings.outputs.build-output-dir }}'
 
   test:
@@ -231,10 +244,21 @@ jobs:
         # Install libc++ and libc++abi for Clang 19
         sudo apt-get install -y libc++-19-dev libc++abi-19-dev
 
+    - name: Compute artifact refs
+      id: artifact_refs
+      shell: bash
+      env:
+        REF_NAME: ${{ github.head_ref || github.ref_name }}
+        BASE_REF: ${{ github.event.pull_request.base.ref }}
+      run: |
+        # Must match the sanitization used by the build job.
+        echo "ref=${REF_NAME//\//-}" >> "$GITHUB_OUTPUT"
+        echo "base_ref=${BASE_REF//\//-}" >> "$GITHUB_OUTPUT"
+
     - name: Download build dir
       uses: actions/download-artifact@v4
       with:
-        name: ${{ inputs.preset }}_${{ inputs.test_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}_${{ inputs.build_type }}_${{ github.head_ref || github.ref_name }}
+        name: ${{ inputs.preset }}_${{ inputs.test_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}_${{ inputs.build_type }}_${{ steps.artifact_refs.outputs.ref }}
         path: '${{ github.workspace }}/../build'
 
     - name: Set reusable strings
@@ -282,7 +306,7 @@ jobs:
       uses: dawidd6/action-download-artifact@v6
       with:
         branch: ${{ github.event.pull_request.base.ref }}
-        name: ${{ inputs.preset }}_${{ inputs.test_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}_${{ inputs.build_type }}_${{ github.event.pull_request.base.ref }}
+        name: ${{ inputs.preset }}_${{ inputs.test_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}_${{ inputs.build_type }}_${{ steps.artifact_refs.outputs.base_ref }}
         workflow_conclusion: success   # only successful runs
         path: ${{ steps.strings.outputs.build-output-dir }}/base_ref_build
         if_no_artifact_found: 'warn'
@@ -317,6 +341,6 @@ jobs:
       if: inputs.preset == 'benchmark'
       uses: actions/upload-artifact@v4
       with:
-        name: benchmark_${{ inputs.test_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}_${{ inputs.build_type }}_${{ github.head_ref || github.ref_name }}_json
+        name: benchmark_${{ inputs.test_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}_${{ inputs.build_type }}_${{ steps.artifact_refs.outputs.ref }}_json
         path: |
           ${{ steps.strings.outputs.build-output-dir }}/benchmark/benchmark_result.json
