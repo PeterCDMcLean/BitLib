@@ -157,9 +157,11 @@ namespace detail {
     constexpr iterator<Iterator, ValueType, std::dynamic_extent> operator+(difference_type n) const;
     constexpr iterator<Iterator, ValueType, std::dynamic_extent> operator-(difference_type n) const;
     template <difference_type N>
-    constexpr iterator<Iterator, ValueType, std::dynamic_extent> operator+() const;
+    constexpr iterator<Iterator, ValueType, std::dynamic_extent> next() const
+      requires(Alignment == std::dynamic_extent);
     template <difference_type N>
-    constexpr iterator<Iterator, ValueType, std::dynamic_extent> operator-() const;
+    constexpr auto next() const
+      requires(Alignment != std::dynamic_extent);
     constexpr iterator& operator+=(difference_type n)
       requires(Alignment == std::dynamic_extent);
     constexpr iterator& operator-=(difference_type n)
@@ -418,32 +420,40 @@ namespace detail {
     const difference_type sum = static_cast<difference_type>(position()) +
                                 n * static_cast<difference_type>(step);
     const difference_type diff = (sum - (n < 0) * (digits - 1)) / digits;
-    if constexpr (Alignment != std::dynamic_extent) {
-      // Fixed alignment: position stays at Alignment, just advance base pointer
-      return iterator<Iterator, ValueType, std::dynamic_extent>(std::next(_current, diff));
-    } else {
-      const size_type new_pos = static_cast<size_t>(sum) % static_cast<size_t>(digits);
-      return iterator(std::next(_current, diff), new_pos);
-    }
+    const size_type new_pos = static_cast<size_t>(sum) % static_cast<size_t>(digits);
+    return iterator<Iterator, ValueType, std::dynamic_extent>(std::next(_current, diff), new_pos);
   }
 
   // Looks forward several elements and gets an iterator at this position
   template <class Iterator, primitive_c ValueType, size_t Alignment>
   template <iterator<Iterator, ValueType, Alignment>::difference_type N>
   constexpr iterator<Iterator, ValueType, std::dynamic_extent>
-  iterator<Iterator, ValueType, Alignment>::operator+() const {
+  iterator<Iterator, ValueType, Alignment>::next() const
+    requires(Alignment == std::dynamic_extent)
+  {
     constexpr difference_type digits = binary_digits<word_type>::value;
     constexpr difference_type step = ValueType::bits;
     const difference_type sum = static_cast<difference_type>(position()) +
                                 N * static_cast<difference_type>(step);
     const difference_type diff = (sum - (N < 0) * (digits - 1)) / digits;
-    if constexpr (Alignment != std::dynamic_extent) {
-      // Fixed alignment: position stays at Alignment, just advance base pointer
-      return iterator<Iterator, ValueType, std::dynamic_extent>(std::next(_current, diff));
-    } else {
-      const size_type new_pos = static_cast<size_t>(sum) % static_cast<size_t>(digits);
-      return iterator(std::next(_current, diff), new_pos);
-    }
+    const size_type new_pos = static_cast<size_t>(sum) % static_cast<size_t>(digits);
+    return iterator(std::next(_current, diff), new_pos);
+  }
+
+  template <class Iterator, primitive_c ValueType, size_t Alignment>
+  template <iterator<Iterator, ValueType, Alignment>::difference_type N>
+  constexpr auto iterator<Iterator, ValueType, Alignment>::next() const
+    requires(Alignment != std::dynamic_extent)
+  {
+    constexpr difference_type digits = binary_digits<word_type>::value;
+    constexpr difference_type step = ValueType::bits;
+    constexpr difference_type sum = static_cast<difference_type>(Alignment) +
+                                    N * static_cast<difference_type>(step);
+    constexpr difference_type diff = (sum - (N < 0) * (digits - 1)) / digits;
+    constexpr size_type new_pos = static_cast<size_t>(sum) % static_cast<size_t>(digits);
+
+    // Fixed alignment: position stays at Alignment, just advance base pointer
+    return iterator<Iterator, ValueType, new_pos>(std::next(_current, diff));
   }
 
   // Looks backward several elements and gets an iterator at this position
@@ -451,14 +461,6 @@ namespace detail {
   constexpr iterator<Iterator, ValueType, std::dynamic_extent>
   iterator<Iterator, ValueType, Alignment>::operator-(difference_type n) const {
     return *this + (-n);
-  }
-
-  // Looks backward several elements and gets an iterator at this position
-  template <class Iterator, primitive_c ValueType, size_t Alignment>
-  template <iterator<Iterator, ValueType, Alignment>::difference_type N>
-  constexpr iterator<Iterator, ValueType, std::dynamic_extent>
-  iterator<Iterator, ValueType, Alignment>::operator-() const {
-    return this->template operator+ <-N>();
   }
 
   // Increments the iterator by several elements and returns it
