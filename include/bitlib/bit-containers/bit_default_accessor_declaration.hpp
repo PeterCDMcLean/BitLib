@@ -11,7 +11,7 @@ template <typename WordType>
 struct bit_default_accessor {
   using element_type = bit_value;
   using data_handle_type = bit_pointer<WordType>;
-  using reference = reference<WordType&>;
+  using reference = ::bit::reference<WordType&>;
   using offset_policy = bit_default_accessor<WordType>;
 
   constexpr reference access(data_handle_type p, std::size_t i) const noexcept;

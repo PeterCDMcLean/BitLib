@@ -21,7 +21,8 @@ auto BM_PrimitiveReadWrite = [](benchmark::State& state, auto input) {
   auto container_size = total_bits / bit::binary_digits<WordType>() + 1;
   auto bitvec = get_random_vec<WordType>(container_size);
 
-  using It = bit::iterator<typename container_type::iterator, PrimitiveBits>;
+  using It = bit::iterator<typename container_type::iterator,
+                           bit::primitive<PrimitiveBits>>;
   auto first = It(bitvec.begin(), 0);
 
   for (auto _ : state) {
@@ -29,7 +30,7 @@ auto BM_PrimitiveReadWrite = [](benchmark::State& state, auto input) {
       auto val = *first;
       benchmark::DoNotOptimize(val);
       *first = val;
-      std::advance(first, PrimitiveBits);
+      std::advance(first, 1);
     }
     benchmark::ClobberMemory();
   }
@@ -43,7 +44,8 @@ auto BM_PrimitiveCopy = [](benchmark::State& state, auto input) {
   auto src = get_random_vec<WordType>(container_size);
   auto dst = get_random_vec<WordType>(container_size);
 
-  using It = bit::iterator<typename container_type::iterator, PrimitiveBits>;
+  using It = bit::iterator<typename container_type::iterator,
+                           bit::primitive<PrimitiveBits>>;
   auto src_first = It(src.begin(), 0);
   auto dst_first = It(dst.begin(), 0);
 
@@ -55,8 +57,8 @@ auto BM_PrimitiveCopy = [](benchmark::State& state, auto input) {
       auto d = dst_first;
       for (unsigned int i = 0; i < total_bits / PrimitiveBits; ++i) {
         *d = *s;
-        std::advance(s, PrimitiveBits);
-        std::advance(d, PrimitiveBits);
+        std::advance(s, 1);
+        std::advance(d, 1);
       }
     }
     benchmark::ClobberMemory();

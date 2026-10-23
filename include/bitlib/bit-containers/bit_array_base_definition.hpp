@@ -494,7 +494,7 @@ template <typename Derived, typename T, size_t N, typename W, size_t A, bool res
 constexpr typename array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::compatible_bitarray
 array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::operator~() {
   compatible_bitarray result(detail::uninitialized, size());
-  transform(derived().begin(), derived().end(), result.begin(), [](const word_type& bits) -> word_type { return ~bits; });
+  ::bit::transform(derived().begin(), derived().end(), result.begin(), [](const word_type& bits) -> word_type { return ~bits; });
   return result;
 }
 
@@ -503,8 +503,8 @@ constexpr typename array_base<Derived, T, N, W, A, resizable, Policy, Iterators>
 array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::operator|(const bit_sized_range auto& other) const {
   assert(other.size() == size());
   compatible_bitarray result(detail::uninitialized, size());
-  transform(derived().begin(), derived().end(), other.begin(), result.begin(),
-            [](const word_type& a, const word_type& b) -> word_type { return a | b; });
+  ::bit::transform(derived().begin(), derived().end(), other.begin(), result.begin(),
+                   [](const word_type& a, const word_type& b) -> word_type { return a | b; });
   return result;
 }
 
@@ -512,8 +512,8 @@ template <typename Derived, typename T, size_t N, typename W, size_t A, bool res
 constexpr Derived&
 array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::operator|=(const bit_sized_range auto& other) {
   assert(other.size() == size());
-  transform(derived().cbegin(), derived().cend(), other.begin(), derived().begin(),
-            [](const word_type& a, const word_type& b) -> word_type { return a | b; });
+  ::bit::transform(derived().cbegin(), derived().cend(), other.begin(), derived().begin(),
+                   [](const word_type& a, const word_type& b) -> word_type { return a | b; });
   return derived();
 }
 
@@ -522,8 +522,8 @@ constexpr typename array_base<Derived, T, N, W, A, resizable, Policy, Iterators>
 array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::operator&(const bit_sized_range auto& other) const {
   assert(other.size() == size());
   compatible_bitarray result(detail::uninitialized, size());
-  transform(derived().begin(), derived().end(), other.begin(), result.begin(),
-            [](const word_type& a, const word_type& b) -> word_type { return a & b; });
+  ::bit::transform(derived().begin(), derived().end(), other.begin(), result.begin(),
+                   [](const word_type& a, const word_type& b) -> word_type { return a & b; });
   return result;
 }
 
@@ -531,8 +531,8 @@ template <typename Derived, typename T, size_t N, typename W, size_t A, bool res
 constexpr Derived&
 array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::operator&=(const bit_sized_range auto& other) {
   assert(other.size() == size());
-  transform(derived().cbegin(), derived().cend(), other.begin(), derived().begin(),
-            [](const word_type& a, const word_type& b) -> word_type { return a & b; });
+  ::bit::transform(derived().cbegin(), derived().cend(), other.begin(), derived().begin(),
+                   [](const word_type& a, const word_type& b) -> word_type { return a & b; });
   return derived();
 }
 
@@ -541,8 +541,8 @@ constexpr typename array_base<Derived, T, N, W, A, resizable, Policy, Iterators>
 array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::operator^(const bit_sized_range auto& other) const {
   assert(other.size() == size());
   compatible_bitarray result(detail::uninitialized, size());
-  transform(derived().begin(), derived().end(), other.begin(), result.begin(),
-            [](const word_type& a, const word_type& b) -> word_type { return a ^ b; });
+  ::bit::transform(derived().begin(), derived().end(), other.begin(), result.begin(),
+                   [](const word_type& a, const word_type& b) -> word_type { return a ^ b; });
   return result;
 }
 
@@ -550,8 +550,8 @@ template <typename Derived, typename T, size_t N, typename W, size_t A, bool res
 constexpr Derived&
 array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::operator^=(const bit_sized_range auto& other) {
   assert(other.size() == size());
-  transform(derived().cbegin(), derived().cend(), other.begin(), derived().begin(),
-            [](const word_type& a, const word_type& b) -> word_type { return a ^ b; });
+  ::bit::transform(derived().cbegin(), derived().cend(), other.begin(), derived().begin(),
+                   [](const word_type& a, const word_type& b) -> word_type { return a ^ b; });
   return derived();
 }
 
@@ -571,9 +571,9 @@ constexpr Derived&
 array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::operator|=(const P& other) {
   const auto view = array_ref(other);
   assert(view.size() == size());
-  transform(derived().cbegin(), derived().cend(), view.begin(),
-            derived().begin(),
-            [](auto lhs, auto rhs) { return lhs | rhs; });
+  ::bit::transform(derived().cbegin(), derived().cend(), view.begin(),
+                   derived().begin(),
+                   [](auto lhs, auto rhs) { return lhs | rhs; });
   return derived();
 }
 
@@ -593,9 +593,9 @@ constexpr Derived&
 array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::operator&=(const P& other) {
   const auto view = array_ref(other);
   assert(view.size() == size());
-  transform(derived().cbegin(), derived().cend(), view.begin(),
-            derived().begin(),
-            [](auto lhs, auto rhs) { return lhs & rhs; });
+  ::bit::transform(derived().cbegin(), derived().cend(), view.begin(),
+                   derived().begin(),
+                   [](auto lhs, auto rhs) { return lhs & rhs; });
   return derived();
 }
 
@@ -615,9 +615,9 @@ constexpr Derived&
 array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::operator^=(const P& other) {
   const auto view = array_ref(other);
   assert(view.size() == size());
-  transform(derived().cbegin(), derived().cend(), view.begin(),
-            derived().begin(),
-            [](auto lhs, auto rhs) { return lhs ^ rhs; });
+  ::bit::transform(derived().cbegin(), derived().cend(), view.begin(),
+                   derived().begin(),
+                   [](auto lhs, auto rhs) { return lhs ^ rhs; });
   return derived();
 }
 

@@ -87,8 +87,12 @@ constexpr auto next(const iterator<Iterator, ValueType, Alignment>& it, std::siz
 // raw pointer as-is. Pointers to non-integral objects are re-expressed as
 // pointers to their inferred integral word type so multi-word objects can be
 // traversed with native word operations.
-template <typename T>
+template <typename T, typename = void>
 struct underlying_iterator {
+  using type = T;
+};
+template <typename T>
+struct underlying_iterator<T, std::void_t<typename T::iterator_type>> {
   using type = typename T::iterator_type;
 };
 template <typename T>
@@ -143,8 +147,13 @@ constexpr auto make_mutable_bit_iterator(const T& it) {
           reinterpret_cast<word_pointer>(it), 0);
     }
   } else {
-    return iterator<typename T_decayed::iterator_type, primitive<1>,
-                    std::dynamic_extent>(it.base(), it.position());
+    using decoded = std::remove_cvref_t<T>;
+    if constexpr (requires { typename decoded::iterator_type; }) {
+      return iterator<typename decoded::iterator_type, primitive<1>,
+                      std::dynamic_extent>(it.base(), it.position());
+    } else {
+      return iterator<decoded, primitive<1>, std::dynamic_extent>(it, 0);
+    }
   }
 }
 

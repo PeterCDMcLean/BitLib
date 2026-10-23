@@ -11,8 +11,9 @@
 
 // ============================== PREAMBLE ================================== //
 // C++ standard library
-#include <type_traits>
 #include <math.h>
+
+#include <type_traits>
 // Project sources
 #include "bitlib/bit-algorithms/transform.hpp"
 #include "bitlib/bit-containers/bit_bitsof.hpp"
@@ -32,15 +33,15 @@ constexpr unsigned char addition(
     const U& integral_operand) {
   using word_type = typename bit_iterator<It>::word_type;
   unsigned char carry = 0;
-  transform(first, last, d_first,
-            [&carry, integral_operand](auto word, auto bits = bitsof<word_type>()) -> word_type {
-              word_type result_word;
-              carry = add_carry(carry, static_cast<word_type>(integral_operand), word, &result_word);
-              if (bits < bitsof<word_type>()) {
-                carry = carry | (0 != lsr(result_word, bits));
-              }
-              return result_word;
-            });
+  ::bit::transform(first, last, d_first,
+                   [&carry, integral_operand](auto word, auto bits = bitsof<word_type>()) -> word_type {
+                     word_type result_word;
+                     carry = add_carry(carry, static_cast<word_type>(integral_operand), word, &result_word);
+                     if (bits < bitsof<word_type>()) {
+                       carry = carry | (0 != lsr(result_word, bits));
+                     }
+                     return result_word;
+                   });
   return carry;
 }
 
@@ -55,6 +56,6 @@ constexpr unsigned char addition(
   return addition(first, last, first, integral_operand);
 }
 
-} // namespace bit
+}  // namespace bit
 
 #endif  // _ADDITION_HPP_INCLUDED

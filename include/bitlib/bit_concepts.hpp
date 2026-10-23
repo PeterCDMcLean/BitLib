@@ -86,11 +86,15 @@ concept bit_iterator_c =
       { it.position() } -> std::convertible_to<typename It::size_type>;
     };
 
-// A bit iterator of any Alignment, or a raw pointer denoting a bit range.
+// A bit iterator of any Alignment, a raw pointer denoting a bit range, or a
+// random-access iterator over integral words.
 template <typename T>
 concept bit_iterator_like_c =
     std::is_pointer_v<std::remove_cvref_t<T>> ||
-    requires { typename std::remove_cvref_t<T>::iterator_type; };
+    requires { typename std::remove_cvref_t<T>::iterator_type; } ||
+    (std::random_access_iterator<std::remove_cvref_t<T>> &&
+     std::is_integral_v<
+         std::remove_cv_t<std::iter_value_t<std::remove_cvref_t<T>>>>);
 
 template <typename It>
 concept bit_contiguous_iterator_c = bit_iterator_c<It> &&
