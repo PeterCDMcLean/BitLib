@@ -69,7 +69,7 @@ constexpr auto transform_accumulate_impl(
             get_masked_word<word_type>(first, partial_bits_to_op),
             partial_bits_to_op);
         *d_it = _bitblend(
-            *d_it,
+            static_cast<word_type>(*d_it),
             static_cast<word_type>(word << d_first_position),
             d_first_position, partial_bits_to_op);
         total_bits_to_op -= partial_bits_to_op;
@@ -85,7 +85,8 @@ constexpr auto transform_accumulate_impl(
       auto in = first.base();
       for (size_type i = 0; i < whole_words_to_op; ++i) {
         word_type word;
-        std::tie(word, acc) = binary_op(std::move(acc), *in++);
+        std::tie(word, acc) = binary_op(
+            std::move(acc), static_cast<word_type>(*in++));
         *d_it++ = word;
       }
       first = mutable_iterator(in);
@@ -105,7 +106,8 @@ constexpr auto transform_accumulate_impl(
           std::move(acc),
           get_masked_word<word_type>(first, remaining_bits_to_op),
           remaining_bits_to_op);
-      *d_it = _bitblend(*d_it, word, 0, remaining_bits_to_op);
+      *d_it = _bitblend(static_cast<word_type>(*d_it), word, 0,
+                        remaining_bits_to_op);
     }
   } else {
     size_type d_first_position;
@@ -145,7 +147,8 @@ constexpr auto transform_accumulate_impl(
           std::move(acc), get_masked_word<word_type>(last, tail_bits),
           tail_bits);
       *d_it = _bitblend(
-          *d_it, static_cast<word_type>(word << tail_offset), tail_offset,
+          static_cast<word_type>(*d_it),
+          static_cast<word_type>(word << tail_offset), tail_offset,
           tail_bits);
       total_bits_to_op -= tail_bits;
     }
@@ -163,7 +166,8 @@ constexpr auto transform_accumulate_impl(
       --d_it;
       word_type word;
       if (input_aligned) {
-        std::tie(word, acc) = binary_op(std::move(acc), *last.base());
+        std::tie(word, acc) = binary_op(
+            std::move(acc), static_cast<word_type>(*last.base()));
       } else {
         std::tie(word, acc) =
             binary_op(std::move(acc), get_word<word_type>(last));
@@ -180,7 +184,7 @@ constexpr auto transform_accumulate_impl(
           get_masked_word<word_type>(last, remaining_bits_to_op),
           remaining_bits_to_op);
       *d_it = _bitblend(
-          *d_it,
+          static_cast<word_type>(*d_it),
           static_cast<word_type>(word << d_first_position),
           d_first_position, remaining_bits_to_op);
     }
