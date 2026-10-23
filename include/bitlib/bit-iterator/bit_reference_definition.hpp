@@ -206,63 +206,6 @@ reference<StorageRef, ValueType, Alignment>::value_array(value_type& value) noex
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
   requires array_ref_storage<StorageRef, ValueType>
-template <class OtherStorage, std::size_t OtherAlignment>
-constexpr void reference<StorageRef, ValueType, Alignment>::copy_from(
-    const reference<OtherStorage, ValueType, OtherAlignment>& other) const noexcept {
-  auto destination = _array_ref();
-  using source_reference = reference<OtherStorage, ValueType, OtherAlignment>;
-  if constexpr (ValueType::bits == 1 && source_reference::num_words == 1) {
-    using source_word_type = typename source_reference::const_word_type;
-    using source_array_type = array_ref<
-        bit_value, ValueType::bits, source_word_type, std::dynamic_extent,
-        policy::typical<std::remove_cv_t<source_word_type>>>;
-    copy_spans(source_array_type(&other), destination);
-  } else {
-    copy_spans(other._array_ref(), destination);
-  }
-}
-
-template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires array_ref_storage<StorageRef, ValueType>
-template <class SourceSpan, class DestinationSpan>
-constexpr void reference<StorageRef, ValueType, Alignment>::copy_spans(
-    const SourceSpan& source,
-    DestinationSpan& destination) const noexcept {
-  const auto source_first = source.begin();
-  const auto source_last = source.end();
-  const auto destination_first = destination.begin();
-  const auto destination_last = destination.end();
-  const auto* source_base = source_first.base();
-  const auto* destination_base = destination_first.base();
-  const bool same_base =
-      static_cast<const void*>(source_base) ==
-      static_cast<const void*>(destination_base);
-
-  if (same_base && source_first.position() == destination_first.position()) {
-    return;
-  }
-
-  const bool destination_after_source =
-      std::less<const void*>{}(static_cast<const void*>(source_base),
-                               static_cast<const void*>(destination_base)) ||
-      (same_base &&
-       destination_first.position() > source_first.position());
-  if (destination_after_source) {
-    ::bit::copy_backward(source_first, source_last, destination_last);
-  } else {
-    ::bit::copy(source_first, source_last, destination_first);
-  }
-}
-
-template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires array_ref_storage<StorageRef, ValueType>
-constexpr bool reference<StorageRef, ValueType, Alignment>::field_any() const noexcept {
-  const auto array = _array_ref();
-  return ::bit::find(array.begin(), array.end(), bit1) != array.end();
-}
-
-template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires array_ref_storage<StorageRef, ValueType>
 constexpr reference<StorageRef, ValueType, Alignment>::reference(const reference& other) noexcept
     : state_type(other) {}
 
@@ -286,7 +229,7 @@ template <class StorageRef, primitive_c ValueType, size_t Alignment>
   requires array_ref_storage<StorageRef, ValueType>
 constexpr reference<StorageRef, ValueType, Alignment>&
 reference<StorageRef, ValueType, Alignment>::operator=(const reference& other) const noexcept {
-  copy_from(other);
+  *this = static_cast<value_type>(other);
   return const_cast<reference&>(*this);
 }
 
@@ -296,7 +239,7 @@ template <class OtherStorage, std::size_t OtherAlignment>
 constexpr reference<StorageRef, ValueType, Alignment>&
 reference<StorageRef, ValueType, Alignment>::operator=(
     const reference<OtherStorage, ValueType, OtherAlignment>& other) const noexcept {
-  copy_from(other);
+  *this = static_cast<value_type>(other);
   return const_cast<reference&>(*this);
 }
 
