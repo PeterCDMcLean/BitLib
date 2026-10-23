@@ -9,12 +9,11 @@
 #define _COPY_HPP_INCLUDED
 // ========================================================================== //
 
-
-
 // ================================ PREAMBLE ================================ //
 // C++ standard library
-#include <type_traits>
 #include <math.h>
+
+#include <type_traits>
 // Project sources
 #include "bitlib/bit-iterator/bit.hpp"
 // Third-party libraries
@@ -176,5 +175,4 @@ struct copy_impl {
 
 // ========================================================================== //
 }  // namespace bit
-#endif  // _COPY_HPP_INCLUDED \
-        // ========================================================================== //
+#endif  // _COPY_HPP_INCLUDED

@@ -41,13 +41,13 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
   constexpr auto aligned_end() noexcept
     requires(!(A == std::dynamic_extent || N == std::dynamic_extent));
 
-  constexpr const auto aligned_begin() const noexcept
+  constexpr auto aligned_begin() const noexcept
     requires(A == std::dynamic_extent);
-  constexpr const auto aligned_end() const noexcept
+  constexpr auto aligned_end() const noexcept
     requires(A == std::dynamic_extent || N == std::dynamic_extent);
-  constexpr const auto aligned_begin() const noexcept
+  constexpr auto aligned_begin() const noexcept
     requires(A != std::dynamic_extent);
-  constexpr const auto aligned_end() const noexcept
+  constexpr auto aligned_end() const noexcept
     requires(!(A == std::dynamic_extent || N == std::dynamic_extent));
 
  public:
@@ -78,7 +78,7 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
     requires(A != std::dynamic_extent);
   constexpr const_reference front() const
     requires(A == std::dynamic_extent);
-  constexpr const auto front() const
+  constexpr auto front() const
     requires(A != std::dynamic_extent);
   constexpr reference back()
     requires(A == std::dynamic_extent || N == std::dynamic_extent);
@@ -86,7 +86,7 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
     requires(!(A == std::dynamic_extent || N == std::dynamic_extent));
   constexpr const_reference back() const
     requires(A == std::dynamic_extent || N == std::dynamic_extent);
-  constexpr const auto back() const
+  constexpr auto back() const
     requires(!(A == std::dynamic_extent || N == std::dynamic_extent));
 
   constexpr iterator end() noexcept;

@@ -67,7 +67,7 @@ array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::aligned_end() noe
 }
 
 template <typename Derived, typename T, size_t N, typename W, size_t A, bool resizable, typename Policy, typename Iterators>
-constexpr const auto
+constexpr auto
 array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::aligned_begin() const noexcept
   requires(A == std::dynamic_extent)
 {
@@ -75,7 +75,7 @@ array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::aligned_begin() c
 }
 
 template <typename Derived, typename T, size_t N, typename W, size_t A, bool resizable, typename Policy, typename Iterators>
-constexpr const auto
+constexpr auto
 array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::aligned_end() const noexcept
   requires(A == std::dynamic_extent || N == std::dynamic_extent)
 {
@@ -83,7 +83,7 @@ array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::aligned_end() con
 }
 
 template <typename Derived, typename T, size_t N, typename W, size_t A, bool resizable, typename Policy, typename Iterators>
-constexpr const auto
+constexpr auto
 array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::aligned_begin() const noexcept
   requires(A != std::dynamic_extent)
 {
@@ -91,7 +91,7 @@ array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::aligned_begin() c
 }
 
 template <typename Derived, typename T, size_t N, typename W, size_t A, bool resizable, typename Policy, typename Iterators>
-constexpr const auto
+constexpr auto
 array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::aligned_end() const noexcept
   requires(!(A == std::dynamic_extent || N == std::dynamic_extent))
 {
@@ -167,7 +167,7 @@ array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::front() const
 }
 
 template <typename Derived, typename T, size_t N, typename W, size_t A, bool resizable, typename Policy, typename Iterators>
-constexpr const auto
+constexpr auto
 array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::front() const
   requires(A != std::dynamic_extent)
 {
@@ -201,7 +201,7 @@ array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::back() const
 }
 
 template <typename Derived, typename T, size_t N, typename W, size_t A, bool resizable, typename Policy, typename Iterators>
-constexpr const auto
+constexpr auto
 array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::back() const
   requires(!(A == std::dynamic_extent || N == std::dynamic_extent))
 {
