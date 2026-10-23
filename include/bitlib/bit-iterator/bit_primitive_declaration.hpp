@@ -53,6 +53,7 @@ class primitive {
  public:
   // Lifecycle
   constexpr primitive() noexcept = default;
+  constexpr primitive(const primitive&) noexcept = default;
 
   constexpr explicit primitive(bool b) noexcept;
 

@@ -50,7 +50,9 @@ class bit_word_reference_adapter {
 
   void swap(bit_word_reference_adapter& other) noexcept;
 
-  friend void swap(bit_word_reference_adapter a, bit_word_reference_adapter b);
+  template <typename T, typename U>
+  friend void swap(bit_word_reference_adapter<T, U> a,
+                   bit_word_reference_adapter<T, U> b);
 };
 
 }  // namespace bit

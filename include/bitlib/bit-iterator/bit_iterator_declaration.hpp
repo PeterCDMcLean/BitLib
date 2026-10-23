@@ -97,7 +97,7 @@ class iterator : public detail::iterator_position_storage<std::size_t, Alignment
   using value_type = ValueType;
   using difference_type = std::ptrdiff_t;
   using pointer = iterator<word_type*, ValueType, Alignment>;
-  using reference = reference<typename _traits_t::reference, ValueType>;
+  using reference = ::bit::reference<typename _traits_t::reference, ValueType>;
   using size_type = std::size_t;
   using mask_type = std::make_unsigned_t<std::remove_cv_t<word_type>>;
   using detail::iterator_position_storage<size_t, Alignment>::position;
