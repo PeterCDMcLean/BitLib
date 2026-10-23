@@ -57,6 +57,25 @@
 // Miscellaneous
 namespace bit {
 
+namespace detail {
+// Infer an integral word size for a type. The word must respect the type's
+// alignment, and its size must divide the object size so that the storage can
+// be traversed without overrunning the final word. The size component is
+// sizeof(T) modulo sizeof(uintptr_t), with a zero remainder treated as the
+// full pointer width.
+template <typename T>
+constexpr std::size_t inferred_word_bytes() noexcept {
+  constexpr std::size_t pointer_bytes = sizeof(std::uintptr_t);
+  constexpr std::size_t remainder = sizeof(T) % pointer_bytes;
+  constexpr std::size_t size_bytes =
+      remainder == 0 ? pointer_bytes : remainder;
+  return alignof(T) < size_bytes ? alignof(T) : size_bytes;
+}
+
+template <typename T>
+using inferred_word_type = ceil_integral<inferred_word_bytes<T>() * 8>;
+}  // namespace detail
+
 // Defined in bit_iterator.hpp; declared here so with_bit_iterator_adapter can
 // use it before that header is included.
 template <std::size_t N, class Iterator, primitive_c ValueType, size_t Alignment>
@@ -65,14 +84,21 @@ template <class Iterator, primitive_c ValueType, size_t Alignment>
 constexpr auto next(const iterator<Iterator, ValueType, Alignment>& it, std::size_t n);
 
 // Extract the underlying word iterator type from a bit::iterator, or keep a
-// raw pointer as-is.
+// raw pointer as-is. Pointers to non-integral objects are re-expressed as
+// pointers to their inferred integral word type so multi-word objects can be
+// traversed with native word operations.
 template <typename T>
 struct underlying_iterator {
   using type = typename T::iterator_type;
 };
 template <typename T>
 struct underlying_iterator<T*> {
-  using type = T*;
+  using pointee = std::remove_cv_t<T>;
+  using type = std::conditional_t<
+      std::is_integral_v<pointee>, T*,
+      std::conditional_t<std::is_const_v<T>,
+                         const detail::inferred_word_type<pointee>*,
+                         detail::inferred_word_type<pointee>*>>;
 };
 template <typename T>
 using underlying_iterator_t =
@@ -102,7 +128,20 @@ template <typename T>
 constexpr auto make_mutable_bit_iterator(const T& it) {
   using T_decayed = std::remove_cvref_t<T>;
   if constexpr (std::is_pointer_v<T_decayed>) {
-    return iterator<T_decayed, primitive<1>, std::dynamic_extent>(it, 0);
+    using pointee = std::remove_pointer_t<T_decayed>;
+    using value_type = std::remove_cv_t<pointee>;
+    if constexpr (std::is_integral_v<value_type>) {
+      return iterator<T_decayed, primitive<1>, std::dynamic_extent>(it, 0);
+    } else {
+      // Non-integral pointees may be multi-word objects. Reinterpret the
+      // storage as an array of the inferred word type so the bit algorithms
+      // can operate on it word by word.
+      using word_type = detail::inferred_word_type<value_type>;
+      using word_pointer = std::conditional_t<std::is_const_v<pointee>,
+                                              const word_type*, word_type*>;
+      return iterator<word_pointer, primitive<1>, std::dynamic_extent>(
+          reinterpret_cast<word_pointer>(it), 0);
+    }
   } else {
     return iterator<typename T_decayed::iterator_type, primitive<1>,
                     std::dynamic_extent>(it.base(), it.position());
@@ -189,17 +228,6 @@ struct exact_floor_integral {
 // Helper alias
 template <typename T>
 using exact_floor_integral_t = typename exact_floor_integral<T>::type;
-
-namespace detail {
-// Largest useful integral word for a type, capped at 64 bits. Using the
-// alignment (rather than the size) keeps the inferred word from exceeding the
-// storage's guaranteed alignment. Over-aligned types therefore fall back to a
-// 64-bit word instead of forming an invalid 128-bit integral type.
-template <typename T>
-using inferred_word_type = ceil_integral<
-    (alignof(T) < sizeof(std::uint64_t) ? alignof(T) : sizeof(std::uint64_t)) *
-    8>;
-}  // namespace detail
 
 template <typename From, typename To, typename = void>
 struct is_static_castable : std::false_type {};

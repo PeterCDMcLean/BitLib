@@ -263,58 +263,6 @@ constexpr bool reference<StorageRef, ValueType, Alignment>::field_any() const no
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
   requires array_ref_storage<StorageRef, ValueType>
-template <char operation>
-constexpr void reference<StorageRef, ValueType, Alignment>::combine_with(
-    const value_type& other) const noexcept {
-  // Materialize once, combine the value representations word by word, then
-  // write the result back. This keeps the operation independent of the
-  // possibly different storage and value word sizes.
-  value_type lhs = materialize();
-  auto lhs_array = value_array(lhs);
-  const auto rhs_array = value_array(other);
-  auto* lhs_words = lhs_array.data();
-  const auto* rhs_words = rhs_array.data();
-  for (size_type i = 0; i < value_word_count; ++i) {
-    const auto lhs_word = lhs_words[i];
-    const auto rhs_word = rhs_words[i];
-    lhs_words[i] = static_cast<value_word_type>(
-        operation == '&'   ? lhs_word & rhs_word
-        : operation == '|' ? lhs_word | rhs_word
-                           : lhs_word ^ rhs_word);
-  }
-  *this = lhs;
-}
-
-template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires array_ref_storage<StorageRef, ValueType>
-constexpr typename reference<StorageRef, ValueType, Alignment>::value_type
-reference<StorageRef, ValueType, Alignment>::materialize(bool invert) const noexcept {
-  if constexpr (ValueType::bits == 1) {
-    return value_type(field_any() != invert);
-  } else {
-    value_type result{};
-    const auto source = _array_ref();
-    auto destination = value_array(result);
-    ::bit::copy(source.begin(), source.end(), destination.begin());
-    if (invert) {
-      constexpr size_type tail_bits = ValueType::bits % value_word_bits;
-      auto* words = destination.data();
-      for (size_type i = 0; i < value_word_count; ++i) {
-        words[i] = static_cast<value_word_type>(~words[i]);
-      }
-      if constexpr (tail_bits != 0) {
-        constexpr value_word_type tail_mask =
-            static_cast<value_word_type>((value_word_type{1} << tail_bits) - 1);
-        words[value_word_count - 1] = static_cast<value_word_type>(
-            words[value_word_count - 1] & tail_mask);
-      }
-    }
-    return result;
-  }
-}
-
-template <class StorageRef, primitive_c ValueType, size_t Alignment>
-  requires array_ref_storage<StorageRef, ValueType>
 constexpr reference<StorageRef, ValueType, Alignment>::reference(const reference& other) noexcept
     : state_type(other) {}
 
@@ -380,7 +328,7 @@ template <class StorageRef, primitive_c ValueType, size_t Alignment>
   requires array_ref_storage<StorageRef, ValueType>
 constexpr reference<StorageRef, ValueType, Alignment>&
 reference<StorageRef, ValueType, Alignment>::operator&=(const value_type& other) const noexcept {
-  combine_with<'&'>(other);
+  _array_ref() &= other;
   return const_cast<reference&>(*this);
 }
 
@@ -388,7 +336,7 @@ template <class StorageRef, primitive_c ValueType, size_t Alignment>
   requires array_ref_storage<StorageRef, ValueType>
 constexpr reference<StorageRef, ValueType, Alignment>&
 reference<StorageRef, ValueType, Alignment>::operator|=(const value_type& other) const noexcept {
-  combine_with<'|'>(other);
+  _array_ref() |= other;
   return const_cast<reference&>(*this);
 }
 
@@ -396,20 +344,22 @@ template <class StorageRef, primitive_c ValueType, size_t Alignment>
   requires array_ref_storage<StorageRef, ValueType>
 constexpr reference<StorageRef, ValueType, Alignment>&
 reference<StorageRef, ValueType, Alignment>::operator^=(const value_type& other) const noexcept {
-  combine_with<'^'>(other);
+  _array_ref() ^= other;
   return const_cast<reference&>(*this);
 }
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
   requires array_ref_storage<StorageRef, ValueType>
 constexpr reference<StorageRef, ValueType, Alignment>::operator bool() const noexcept {
-  return field_any();
+  return ::bit::find(_array_ref().begin(), _array_ref().end(), bit1) != _array_ref().end();
 }
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
   requires array_ref_storage<StorageRef, ValueType>
 constexpr reference<StorageRef, ValueType, Alignment>::operator value_type() const noexcept {
-  return materialize();
+  value_type value;
+  ::bit::copy(_array_ref().begin(), _array_ref().end(), &value);
+  return value;
 }
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>

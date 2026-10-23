@@ -64,6 +64,44 @@ constexpr array_ref<T, N, W, A, Policy>::array_ref(const bit_range auto& other)
 }
 
 template <typename T, size_t N, typename W, size_t A, typename Policy>
+template <primitive_c P>
+  requires detail::primitive_array_ref_compatible<T, W, N, A, P> &&
+           (!std::is_const_v<W>) && (!std::is_const_v<P>)
+                                  constexpr array_ref<T, N, W, A, Policy>::array_ref(P& value)
+             requires(N == std::dynamic_extent)
+    : base(static_cast<size_type>(std::remove_cv_t<P>::bits)),
+      m_storage(reinterpret_cast<word_type*>(std::addressof(value))) {
+}
+
+template <typename T, size_t N, typename W, size_t A, typename Policy>
+template <primitive_c P>
+  requires detail::primitive_array_ref_compatible<T, W, N, A, P> &&
+           (!std::is_const_v<W>) && (!std::is_const_v<P>)
+                                  constexpr array_ref<T, N, W, A, Policy>::array_ref(P& value)
+             requires(N != std::dynamic_extent)
+    : base(), m_storage(reinterpret_cast<word_type*>(std::addressof(value))) {
+}
+
+template <typename T, size_t N, typename W, size_t A, typename Policy>
+template <primitive_c P>
+  requires detail::primitive_array_ref_compatible<T, W, N, A, P> &&
+           std::is_const_v<W>
+           constexpr array_ref<T, N, W, A, Policy>::array_ref(const P& value)
+             requires(N == std::dynamic_extent)
+    : base(static_cast<size_type>(std::remove_cv_t<P>::bits)),
+      m_storage(reinterpret_cast<word_type*>(std::addressof(value))) {
+}
+
+template <typename T, size_t N, typename W, size_t A, typename Policy>
+template <primitive_c P>
+  requires detail::primitive_array_ref_compatible<T, W, N, A, P> &&
+           std::is_const_v<W>
+           constexpr array_ref<T, N, W, A, Policy>::array_ref(const P& value)
+             requires(N != std::dynamic_extent)
+    : base(), m_storage(reinterpret_cast<word_type*>(std::addressof(value))) {
+}
+
+template <typename T, size_t N, typename W, size_t A, typename Policy>
 constexpr array_ref<T, N, W, A, Policy>&
 array_ref<T, N, W, A, Policy>::operator=(const bit_sized_range auto& other) {
   if (size() != other.size()) {

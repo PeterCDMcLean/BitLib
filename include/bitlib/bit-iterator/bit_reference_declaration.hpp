@@ -315,21 +315,6 @@ class reference<StorageRef, ValueType, Alignment>
 
   static constexpr value_array_type value_array(value_type& value) noexcept;
 
-  template <class OtherStorage, size_type OtherAlignment>
-  constexpr void copy_from(
-      const reference<OtherStorage, ValueType, OtherAlignment>& other) const noexcept;
-
-  template <class SourceSpan, class DestinationSpan>
-  constexpr void copy_spans(const SourceSpan& source,
-                            DestinationSpan& destination) const noexcept;
-
-  constexpr bool field_any() const noexcept;
-
-  template <char operation>
-  constexpr void combine_with(const value_type& other) const noexcept;
-
-  constexpr value_type materialize(bool invert = false) const noexcept;
-
  public:
   constexpr reference(const reference& other) noexcept;
 
@@ -376,7 +361,11 @@ class reference<StorageRef, ValueType, Alignment>
     return !(lhs == rhs);
   }
   friend constexpr value_type operator~(const reference& ref) noexcept {
-    return ref.materialize(true);
+    value_type result{};
+    const auto source = ref._array_ref();
+    transform(source.begin(), source.end(), &result,
+              [](auto bits) { return ~bits; });
+    return result;
   }
 
   explicit constexpr operator bool() const noexcept;

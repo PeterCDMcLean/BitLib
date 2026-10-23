@@ -167,6 +167,28 @@ class array_base : public detail::container_size_storage<std::size_t, resizable,
   constexpr compatible_bitarray operator^(const bit_sized_range auto& other) const;
   constexpr Derived& operator^=(const bit_sized_range auto& other);
 
+  // Primitive values are not ranges, so accept them separately by viewing
+  // their object representation as a bit array. Types that are already bit
+  // sized ranges use the range overloads above.
+  template <primitive_c P>
+    requires(std::is_same_v<value_type, bit_value> && !bit_sized_range<P>)
+  constexpr compatible_bitarray operator|(const P& other) const;
+  template <primitive_c P>
+    requires(std::is_same_v<value_type, bit_value> && !bit_sized_range<P>)
+  constexpr Derived& operator|=(const P& other);
+  template <primitive_c P>
+    requires(std::is_same_v<value_type, bit_value> && !bit_sized_range<P>)
+  constexpr compatible_bitarray operator&(const P& other) const;
+  template <primitive_c P>
+    requires(std::is_same_v<value_type, bit_value> && !bit_sized_range<P>)
+  constexpr Derived& operator&=(const P& other);
+  template <primitive_c P>
+    requires(std::is_same_v<value_type, bit_value> && !bit_sized_range<P>)
+  constexpr compatible_bitarray operator^(const P& other) const;
+  template <primitive_c P>
+    requires(std::is_same_v<value_type, bit_value> && !bit_sized_range<P>)
+  constexpr Derived& operator^=(const P& other);
+
   friend std::ostream& operator<<(std::ostream& os, const array_base& cv) {
     // Save stream formatting settings
     std::ios_base::fmtflags flags = os.flags();

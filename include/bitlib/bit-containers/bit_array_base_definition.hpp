@@ -5,6 +5,7 @@
 #include <bit>
 #include <cassert>
 #include <cmath>
+#include <memory>
 #include <ostream>
 #include <span>
 #include <stdexcept>
@@ -551,6 +552,72 @@ array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::operator^=(const 
   assert(other.size() == size());
   transform(derived().cbegin(), derived().cend(), other.begin(), derived().begin(),
             [](const word_type& a, const word_type& b) -> word_type { return a ^ b; });
+  return derived();
+}
+
+template <typename Derived, typename T, size_t N, typename W, size_t A, bool resizable, typename Policy, typename Iterators>
+template <primitive_c P>
+  requires(std::is_same_v<T, bit_value> && !bit_sized_range<P>)
+constexpr typename array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::compatible_bitarray
+array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::operator|(const P& other) const {
+  const auto view = array_ref(other);
+  return derived() | view;
+}
+
+template <typename Derived, typename T, size_t N, typename W, size_t A, bool resizable, typename Policy, typename Iterators>
+template <primitive_c P>
+  requires(std::is_same_v<T, bit_value> && !bit_sized_range<P>)
+constexpr Derived&
+array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::operator|=(const P& other) {
+  const auto view = array_ref(other);
+  assert(view.size() == size());
+  transform(derived().cbegin(), derived().cend(), view.begin(),
+            derived().begin(),
+            [](auto lhs, auto rhs) { return lhs | rhs; });
+  return derived();
+}
+
+template <typename Derived, typename T, size_t N, typename W, size_t A, bool resizable, typename Policy, typename Iterators>
+template <primitive_c P>
+  requires(std::is_same_v<T, bit_value> && !bit_sized_range<P>)
+constexpr typename array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::compatible_bitarray
+array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::operator&(const P& other) const {
+  const auto view = array_ref(other);
+  return derived() & view;
+}
+
+template <typename Derived, typename T, size_t N, typename W, size_t A, bool resizable, typename Policy, typename Iterators>
+template <primitive_c P>
+  requires(std::is_same_v<T, bit_value> && !bit_sized_range<P>)
+constexpr Derived&
+array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::operator&=(const P& other) {
+  const auto view = array_ref(other);
+  assert(view.size() == size());
+  transform(derived().cbegin(), derived().cend(), view.begin(),
+            derived().begin(),
+            [](auto lhs, auto rhs) { return lhs & rhs; });
+  return derived();
+}
+
+template <typename Derived, typename T, size_t N, typename W, size_t A, bool resizable, typename Policy, typename Iterators>
+template <primitive_c P>
+  requires(std::is_same_v<T, bit_value> && !bit_sized_range<P>)
+constexpr typename array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::compatible_bitarray
+array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::operator^(const P& other) const {
+  const auto view = array_ref(other);
+  return derived() ^ view;
+}
+
+template <typename Derived, typename T, size_t N, typename W, size_t A, bool resizable, typename Policy, typename Iterators>
+template <primitive_c P>
+  requires(std::is_same_v<T, bit_value> && !bit_sized_range<P>)
+constexpr Derived&
+array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::operator^=(const P& other) {
+  const auto view = array_ref(other);
+  assert(view.size() == size());
+  transform(derived().cbegin(), derived().cend(), view.begin(),
+            derived().begin(),
+            [](auto lhs, auto rhs) { return lhs ^ rhs; });
   return derived();
 }
 

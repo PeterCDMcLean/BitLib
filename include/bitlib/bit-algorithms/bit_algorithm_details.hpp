@@ -24,13 +24,14 @@ namespace bit {
 // -------------------------- Iterator Algorithms --------------------------- //
 // Returns the number of increments needed to get to last from first.
 // May be negative if last comes before first (Only when input is RAI)
-template <class InputIt>
-typename bit_iterator<InputIt>::difference_type
-distance(bit_iterator<InputIt> first,
-         bit_iterator<InputIt> last) {
+template <class InputIt, primitive_c ValueType, size_t Alignment>
+typename iterator<InputIt, ValueType, Alignment>::difference_type
+distance(iterator<InputIt, ValueType, Alignment> first,
+         iterator<InputIt, ValueType, Alignment> last) {
   _assert_range_viability(first, last);
-  using word_type = typename bit_iterator<InputIt>::word_type;
-  using difference_type = typename bit_iterator<InputIt>::difference_type;
+  using word_type = typename iterator<InputIt, ValueType, Alignment>::word_type;
+  using difference_type =
+      typename iterator<InputIt, ValueType, Alignment>::difference_type;
   constexpr difference_type digits = binary_digits<word_type>::value;
   return std::distance(first.base(), last.base()) * digits +
          static_cast<difference_type>(last.position()) -
@@ -38,8 +39,9 @@ distance(bit_iterator<InputIt> first,
 }
 
 // Increments the iterator n times. (If n is negative, the iterator is decremented n times)
-template <class InputIt>
-void advance(bit_iterator<InputIt>& first, typename bit_iterator<InputIt>::difference_type n) {
+template <class InputIt, primitive_c ValueType, size_t Alignment>
+void advance(iterator<InputIt, ValueType, Alignment>& first,
+             typename iterator<InputIt, ValueType, Alignment>::difference_type n) {
   first += n;
 }
 
@@ -90,9 +92,11 @@ constexpr bool is_within(
 }
 
 // Get next len bits beginning at start and store them in a word of type T
-template <class T, class InputIt>
-T get_word(const bit_iterator<InputIt>& first, size_t len = binary_digits<T>::value) {
-  using native_word_type = typename bit_iterator<InputIt>::word_type;
+template <class T, class InputIt, primitive_c ValueType, size_t Alignment>
+T get_word(const iterator<InputIt, ValueType, Alignment>& first,
+           size_t len = binary_digits<T>::value) {
+  using native_word_type =
+      typename iterator<InputIt, ValueType, Alignment>::word_type;
   constexpr size_t digits = binary_digits<native_word_type>::value;
   assert(digits >= len);
   using non_const_T = std::remove_cvref_t<T>;
@@ -127,8 +131,9 @@ T get_word(const bit_iterator<InputIt>& first, size_t len = binary_digits<T>::va
   return ret_word;
 }
 
-template <class T, class InputIt>
-T get_masked_word(const bit_iterator<InputIt>& first, size_t len = binary_digits<T>::value) {
+template <class T, class InputIt, primitive_c ValueType, size_t Alignment>
+T get_masked_word(const iterator<InputIt, ValueType, Alignment>& first,
+                  size_t len = binary_digits<T>::value) {
   return get_word<T>(first, len) & _mask<T>(len);
 }
 

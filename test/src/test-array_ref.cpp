@@ -44,6 +44,30 @@ std::uint64_t read_word_field(const std::uint64_t* words,
 }
 }  // namespace
 
+TEST(BitArrayRef, PrimitiveConstructor) {
+  bit::primitive<16> value(0x00f0u);
+  bit::bit_array_ref<16, std::uint16_t> ref(value);
+  EXPECT_EQ(ref.size(), 16);
+  EXPECT_EQ(ref[4], bit::bit1);
+  EXPECT_EQ(ref[7], bit::bit1);
+  EXPECT_EQ(ref[0], bit::bit0);
+
+  ref[0] = bit::bit1;
+  EXPECT_EQ(value.word_value(), 0x00f1u);
+
+  const bit::primitive<16> const_value(0x8000u);
+  const bit::bit_array_ref<16, const std::uint16_t> cref(const_value);
+  EXPECT_EQ(cref[15], bit::bit1);
+  EXPECT_EQ(cref[14], bit::bit0);
+
+  bit::bit_array_ref deduced(value);
+  static_assert(std::is_same_v<
+                decltype(deduced),
+                bit::array_ref<bit::bit_value, 16, std::uint16_t, 0,
+                               bit::policy::typical<std::uint16_t>>>);
+  EXPECT_EQ(deduced.size(), 16);
+}
+
 TEST(BitArrayRef, ConstructorAndAssignment) {
   // Prepare original bit array
   bit::bit_array<> original(64, bit::bit0);
@@ -96,9 +120,9 @@ TEST(BitArrayRef, SliceOperations) {
 
   // Verify the slice's content
   EXPECT_EQ(slice.size(), 30);
-  EXPECT_EQ(slice[5], bit::bit1);  // original[10]
-  EXPECT_EQ(slice[15], bit::bit1); // original[20]
-  EXPECT_EQ(slice[25], bit::bit1); // original[30]
+  EXPECT_EQ(slice[5], bit::bit1);   // original[10]
+  EXPECT_EQ(slice[15], bit::bit1);  // original[20]
+  EXPECT_EQ(slice[25], bit::bit1);  // original[30]
 
   // Modify through the slice
   slice[10] = bit::bit1;  // original[15]
@@ -111,8 +135,8 @@ TEST(BitArrayRef, SliceOperations) {
 
   // Verify the subslice's content
   EXPECT_EQ(subslice.size(), 10);
-  EXPECT_EQ(subslice[0], bit::bit1); // slice[10], original[15]
-  EXPECT_EQ(subslice[5], bit::bit1); // slice[15], original[20]
+  EXPECT_EQ(subslice[0], bit::bit1);  // slice[10], original[15]
+  EXPECT_EQ(subslice[5], bit::bit1);  // slice[15], original[20]
 
   // Modify through the subslice
   subslice[2] = bit::bit1;  // slice[12], original[17]
@@ -166,21 +190,21 @@ TEST(BitArrayRef, Operations) {
 TEST(BitArrayRef, IntegralConversion) {
   // Test small values
   bit::bit_array<> value16(16);
-  value16[0] = bit::bit1; // 1
-  value16[1] = bit::bit1; // 2
-  value16[2] = bit::bit1; // 4
+  value16[0] = bit::bit1;  // 1
+  value16[1] = bit::bit1;  // 2
+  value16[2] = bit::bit1;  // 4
 
   bit::bit_array_ref<> ref16(value16.data(), value16.size());
 
   // Conversion
   uint16_t int_val = static_cast<uint16_t>(ref16);
-  EXPECT_EQ(int_val, 7u); // 2^0 + 2^1 + 2^2 = 1 + 2 + 4 = 7
+  EXPECT_EQ(int_val, 7u);  // 2^0 + 2^1 + 2^2 = 1 + 2 + 4 = 7
 
   // Test larger values
   bit::bit_array<> value32(32);
-  value32[0] = bit::bit1;  // 1
-  value32[16] = bit::bit1; // 65536
-  value32[31] = bit::bit1; // 2^31
+  value32[0] = bit::bit1;   // 1
+  value32[16] = bit::bit1;  // 65536
+  value32[31] = bit::bit1;  // 2^31
 
   bit::bit_array_ref<> ref32(value32.data(), value32.size());
 
@@ -243,8 +267,8 @@ TEST(BitArrayRef, OffsetBitPointerConstructor) {
 
   // Verify the reference matches the expected content
   EXPECT_EQ(ref.size(), 32);
-  EXPECT_EQ(ref[0], bit::bit1);  // This should be original[3]
-  EXPECT_EQ(ref[10], bit::bit1); // This should be original[13]
+  EXPECT_EQ(ref[0], bit::bit1);   // This should be original[3]
+  EXPECT_EQ(ref[10], bit::bit1);  // This should be original[13]
 
   // Modify through the reference
   ref[5] = bit::bit1;
