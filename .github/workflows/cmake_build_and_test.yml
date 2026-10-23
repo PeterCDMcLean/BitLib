@@ -303,13 +303,14 @@ jobs:
     - name: Download base_ref build
       id: base_ref_build
       if: inputs.preset == 'benchmark' && github.event_name == 'pull_request'
+      continue-on-error: true
       uses: dawidd6/action-download-artifact@v6
       with:
         branch: ${{ github.event.pull_request.base.ref }}
         name: ${{ inputs.preset }}_${{ inputs.test_os }}_${{ inputs.compiler }}_${{ inputs.stdlib }}_${{ inputs.build_type }}_${{ steps.artifact_refs.outputs.base_ref }}
         workflow_conclusion: success   # only successful runs
         path: ${{ steps.strings.outputs.build-output-dir }}/base_ref_build
-        if_no_artifact_found: 'warn'
+        if_no_artifact_found: 'fail'
 
     - name: Run base_ref benchmark
       if: inputs.preset == 'benchmark' && github.event_name == 'pull_request' && steps.base_ref_build.outcome == 'success'
@@ -317,6 +318,7 @@ jobs:
       run: |
         ctest --test-dir ${{ steps.strings.outputs.build-output-dir }}/base_ref_build \
               --build-config ${{ inputs.build_type }} \
+              -R '^BenchmarkTest$' \
               --output-on-failure \
               --parallel
 
