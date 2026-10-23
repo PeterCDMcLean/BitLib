@@ -37,6 +37,7 @@ constexpr void reverse(
     using word_type = typename bit_iterator<RandomAccessIt>::word_type;
     using size_type = typename bit_iterator<RandomAccessIt>::size_type;
     constexpr size_type digits = binary_digits<word_type>::value;
+    // Spell the alias with its argument: MSVC 19.51 ICEs on bit_iterator CTAD.
 
     // Initialization
     const bool is_first_aligned = first.position() == 0;
@@ -68,16 +69,16 @@ constexpr void reverse(
         if (first.position() < gap) {
             gap = gap - first.position();
             shift_left(
-                bit_iterator(first.base()),
-                bit_iterator(std::next(last.base())),
+                bit_iterator<RandomAccessIt>(first.base()),
+                bit_iterator<RandomAccessIt>(std::next(last.base())),
                 gap);
             it = first.base();
         // Shift the underlying sequence to the right
         } else if (first.position() > gap) {
             gap = first.position() - gap;
             shift_right(
-                bit_iterator(first.base()),
-                bit_iterator(std::next(last.base(), !is_last_aligned)),
+                bit_iterator<RandomAccessIt>(first.base()),
+                bit_iterator<RandomAccessIt>(std::next(last.base(), !is_last_aligned)),
                 gap);
             it = first.base();
         }

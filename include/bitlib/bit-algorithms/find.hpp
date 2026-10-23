@@ -41,6 +41,7 @@ constexpr bit_iterator<RandomAccessIt> find(
     using uword_type = std::make_unsigned_t<word_type>;
     using size_type = typename bit_iterator<RandomAccessIt>::size_type;
     const std::size_t digits = binary_digits<word_type>::value;
+    // Spell the alias with its argument: MSVC 19.51 ICEs on bit_iterator CTAD.
 
     // Initialization
     const bool is_first_aligned = first.position() == 0;
@@ -76,7 +77,7 @@ constexpr bit_iterator<RandomAccessIt> find(
         size_type num_trailing_complementary_bits = (bv == bit0)
                                                         ? std::countr_zero(static_cast<uword_type>(~*it))
                                                         : std::countr_zero(static_cast<uword_type>(*it));
-        return bit_iterator(it, (size_type) num_trailing_complementary_bits);
+        return bit_iterator<RandomAccessIt>(it, (size_type)num_trailing_complementary_bits);
     }
 
     // SIMD
@@ -96,7 +97,7 @@ constexpr bit_iterator<RandomAccessIt> find(
             size_type num_trailing_complementary_bits = (bv == bit0)
                                                             ? std::countr_zero(static_cast<uword_type>(~*it))
                                                             : std::countr_zero(static_cast<uword_type>(*it));
-            return bit_iterator(it, (size_type) num_trailing_complementary_bits);
+            return bit_iterator<RandomAccessIt>(it, (size_type)num_trailing_complementary_bits);
         }
     }
 #endif
@@ -111,7 +112,7 @@ constexpr bit_iterator<RandomAccessIt> find(
       size_type num_trailing_complementary_bits = (bv == bit0)
                                                       ? std::countr_zero(static_cast<uword_type>(~*it))
                                                       : std::countr_zero(static_cast<uword_type>(*it));
-      return bit_iterator(it, static_cast<size_type>(num_trailing_complementary_bits));
+      return bit_iterator<RandomAccessIt>(it, static_cast<size_type>(num_trailing_complementary_bits));
     }
 
     // Deal with any unaligned boundaries
@@ -119,7 +120,7 @@ constexpr bit_iterator<RandomAccessIt> find(
       size_type num_trailing_complementary_bits = (bv == bit0)
                                                       ? std::countr_zero(static_cast<uword_type>(~*it))
                                                       : std::countr_zero(static_cast<uword_type>(*it));
-      return bit_iterator(it, static_cast<size_type>(std::min(num_trailing_complementary_bits, last.position())));
+      return bit_iterator<RandomAccessIt>(it, static_cast<size_type>(std::min(num_trailing_complementary_bits, last.position())));
     }
     return last;
 }

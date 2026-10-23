@@ -38,6 +38,7 @@ constexpr bit_iterator<RandomAccessIt2> swap_ranges(
     using iterator_type2 = typename bit_iterator<RandomAccessIt2>::iterator_type;
     constexpr size_type1 digits1 = binary_digits<word_type1>::value;
     constexpr size_type2 digits2 = binary_digits<word_type2>::value;
+    // Spell the alias with its argument: MSVC 19.51 ICEs on bit_iterator CTAD.
 
     // Initialization
     //const bool is_first1_aligned = first1.position() == 0;
@@ -169,7 +170,7 @@ constexpr bit_iterator<RandomAccessIt2> swap_ranges(
                             first2.position(),
                             last1.position()
                     );
-                    return bit_iterator(it2, first2.position()) + last1.position();
+                    return bit_iterator<RandomAccessIt2>(it2, first2.position()) + last1.position();
                 } else {
                     _bitexch<word_type1, size_type1>(
                             *it1,
@@ -185,10 +186,10 @@ constexpr bit_iterator<RandomAccessIt2> swap_ranges(
                             0,
                             last1.position() - partial_digits_to_copy
                     );
-                    return bit_iterator(it2, last1.position() - partial_digits_to_copy);
+                    return bit_iterator<RandomAccessIt2>(it2, last1.position() - partial_digits_to_copy);
                 }
             }
-            return bit_iterator(it2, first2.position());
+            return bit_iterator<RandomAccessIt2>(it2, first2.position());
         }
     }
 }

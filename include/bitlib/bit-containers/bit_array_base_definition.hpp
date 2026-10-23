@@ -573,7 +573,7 @@ array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::operator|=(const 
   assert(view.size() == size());
   ::bit::transform(derived().cbegin(), derived().cend(), view.begin(),
                    derived().begin(),
-                   [](auto lhs, auto rhs) { return lhs | rhs; });
+                   [](auto&& lhs, auto&& rhs) { return lhs | rhs; });
   return derived();
 }
 
@@ -595,7 +595,7 @@ array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::operator&=(const 
   assert(view.size() == size());
   ::bit::transform(derived().cbegin(), derived().cend(), view.begin(),
                    derived().begin(),
-                   [](auto lhs, auto rhs) { return lhs & rhs; });
+                   [](auto&& lhs, auto&& rhs) { return lhs & rhs; });
   return derived();
 }
 
@@ -617,7 +617,7 @@ array_base<Derived, T, N, W, A, resizable, Policy, Iterators>::operator^=(const 
   assert(view.size() == size());
   ::bit::transform(derived().cbegin(), derived().cend(), view.begin(),
                    derived().begin(),
-                   [](auto lhs, auto rhs) { return lhs ^ rhs; });
+                   [](auto&& lhs, auto&& rhs) { return lhs ^ rhs; });
   return derived();
 }
 

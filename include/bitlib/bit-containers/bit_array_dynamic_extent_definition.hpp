@@ -53,10 +53,12 @@ array<T, std::dynamic_extent, W, Policy>::Storage::Storage(size_type words, Stor
   }
 }
 
+// Qualify Storage: MSVC does not find the injected-class-name in this
+// parameter list.
 template <typename T, typename W, typename Policy>
 array<T, std::dynamic_extent, W, Policy>::Storage::Storage(
     size_type words,
-    const Storage& other,
+    const typename array<T, std::dynamic_extent, W, Policy>::Storage& other,
     const Allocator& allocator)
     : m_allocator(allocator) {
   if (words > FixedWords) {

@@ -1,6 +1,7 @@
 #ifndef _BIT_REFERENCE_DECLARATION_HPP_INCLUDED
 #define _BIT_REFERENCE_DECLARATION_HPP_INCLUDED
 
+#include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -306,6 +307,8 @@ using reference_state_for = std::conditional_t<
 // Every multi-bit field and every multi-word storage object uses this
 // implementation. The word count is inferred from the storage object's size
 // and alignment; the fixed-extent bit_array_ref stores the field start.
+// MSVC 19.51 rejects out-of-line definitions of members of constrained
+// partial specializations (C3864), so these members are defined inline.
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
   requires array_ref_storage<StorageRef, ValueType>
 class reference<StorageRef, ValueType, Alignment>
@@ -348,18 +351,6 @@ class reference<StorageRef, ValueType, Alignment>
   template <class, primitive_c, size_t>
   friend class reference;
 
-  static constexpr state_type make_state(const StorageRef& ref,
-                                         size_type pos) noexcept;
-
-  constexpr bool proxy_value() const noexcept
-    requires(proxy_storage);
-  constexpr void proxy_assign(bool bit) const noexcept
-    requires(proxy_storage);
-  constexpr mask_type proxy_mask() const noexcept
-    requires(proxy_storage);
-
-  constexpr auto _array_ref() const noexcept;
-
   using value_word_type = detail::inferred_word_type<value_type>;
   using const_value_array_type = array_ref<
       bit_value, ValueType::bits, const value_word_type, 0,
@@ -371,44 +362,168 @@ class reference<StorageRef, ValueType, Alignment>
   static constexpr size_type value_word_count =
       (ValueType::bits + value_word_bits - 1) / value_word_bits;
 
-  static constexpr const_value_array_type value_array(
-      const value_type& value) noexcept;
+  static constexpr state_type make_state(const StorageRef& ref,
+                                         size_type pos) noexcept {
+    if constexpr (proxy_storage) {
+      return state_type(ref, pos);
+    } else {
+      return state_type(
+          reinterpret_cast<field_word_type*>(std::addressof(ref)), pos);
+    }
+  }
 
-  static constexpr value_array_type value_array(value_type& value) noexcept;
+  constexpr mask_type proxy_mask() const noexcept
+    requires(proxy_storage)
+  {
+    return static_cast<mask_type>(mask_type{1} << (this->position() % word_bits));
+  }
+
+  constexpr bool proxy_value() const noexcept
+    requires(proxy_storage)
+  {
+    return (static_cast<word_type>(this->proxy_) & proxy_mask()) != 0;
+  }
+
+  constexpr void proxy_assign(bool bit) const noexcept
+    requires(proxy_storage)
+  {
+    auto word = static_cast<word_type>(this->proxy_);
+    if (bit) {
+      word = static_cast<word_type>(word | proxy_mask());
+    } else {
+      word = static_cast<word_type>(word & ~proxy_mask());
+    }
+    this->proxy_ = word;
+  }
+
+  constexpr auto _array_ref() const noexcept
+    requires(!proxy_storage)
+  {
+    return state_type::_array_ref();
+  }
+
+  static constexpr const_value_array_type value_array(
+      const value_type& value) noexcept {
+    static_assert(sizeof(value_type) % sizeof(value_word_type) == 0);
+    static_assert(ValueType::bits <= sizeof(value_type) * 8);
+    const auto* words = reinterpret_cast<const value_word_type*>(
+        std::addressof(value));
+    return const_value_array_type(words);
+  }
+
+  static constexpr value_array_type value_array(value_type& value) noexcept {
+    static_assert(sizeof(value_type) % sizeof(value_word_type) == 0);
+    static_assert(ValueType::bits <= sizeof(value_type) * 8);
+    auto* words =
+        reinterpret_cast<value_word_type*>(std::addressof(value));
+    return value_array_type(words);
+  }
 
  public:
-  constexpr reference(const reference& other) noexcept;
+  constexpr reference(const reference& other) noexcept : state_type(other) {}
 
-  explicit constexpr reference(const StorageRef& ref) noexcept;
+  explicit constexpr reference(const StorageRef& ref) noexcept
+      : state_type(make_state(
+            ref, Alignment == std::dynamic_extent ? 0 : Alignment)) {}
 
   constexpr reference(const StorageRef& ref, size_type pos) noexcept
-    requires(Alignment == std::dynamic_extent);
+    requires(Alignment == std::dynamic_extent)
+      : state_type(make_state(ref, pos)) {
+    if constexpr (!proxy_storage) {
+      assert(pos <= num_words * word_bits &&
+             ValueType::bits <= num_words * word_bits - pos);
+    }
+  }
 
-  constexpr reference& operator=(const reference& other) const noexcept;
+  constexpr reference& operator=(const reference& other) const noexcept {
+    *this = static_cast<value_type>(other);
+    return const_cast<reference&>(*this);
+  }
 
   template <class OtherStorage, size_t OtherAlignment>
   constexpr reference& operator=(
-      const reference<OtherStorage, ValueType, OtherAlignment>& other) const noexcept;
+      const reference<OtherStorage, ValueType, OtherAlignment>& other) const
+      noexcept {
+    *this = static_cast<value_type>(other);
+    return const_cast<reference&>(*this);
+  }
 
-  constexpr reference& operator=(const value_type& value) const noexcept;
+  constexpr reference& operator=(const value_type& value) const noexcept {
+    if constexpr (proxy_storage) {
+      proxy_assign(static_cast<bool>(value));
+    } else {
+      auto destination = _array_ref();
+      if constexpr (ValueType::bits == 1) {
+        *destination.begin() = static_cast<bool>(value);
+      } else {
+        const auto source = value_array(value);
+        ::bit::copy(source.begin(), source.end(), destination.begin());
+      }
+    }
+    return const_cast<reference&>(*this);
+  }
 
   constexpr reference& operator=(bool bit) const noexcept
-    requires(ValueType::bits == 1);
+    requires(ValueType::bits == 1)
+  {
+    if constexpr (proxy_storage) {
+      proxy_assign(bit);
+    } else {
+      _array_ref()[0] = bit;
+    }
+    return const_cast<reference&>(*this);
+  }
 
-  constexpr reference& operator&=(const value_type& other) const noexcept;
+  constexpr reference& operator&=(const value_type& other) const noexcept {
+    if constexpr (proxy_storage) {
+      proxy_assign(proxy_value() && static_cast<bool>(other));
+    } else {
+      _array_ref() &= other;
+    }
+    return const_cast<reference&>(*this);
+  }
 
-  constexpr reference& operator|=(const value_type& other) const noexcept;
+  constexpr reference& operator|=(const value_type& other) const noexcept {
+    if constexpr (proxy_storage) {
+      proxy_assign(proxy_value() || static_cast<bool>(other));
+    } else {
+      _array_ref() |= other;
+    }
+    return const_cast<reference&>(*this);
+  }
 
-  constexpr reference& operator^=(const value_type& other) const noexcept;
+  constexpr reference& operator^=(const value_type& other) const noexcept {
+    if constexpr (proxy_storage) {
+      proxy_assign(proxy_value() != static_cast<bool>(other));
+    } else {
+      _array_ref() ^= other;
+    }
+    return const_cast<reference&>(*this);
+  }
 
   constexpr reference& set(bool bit) const noexcept
-    requires(ValueType::bits == 1);
+    requires(ValueType::bits == 1)
+  {
+    return *this = bit;
+  }
+
   constexpr reference& set() const noexcept
-    requires(ValueType::bits == 1);
+    requires(ValueType::bits == 1)
+  {
+    return set(true);
+  }
+
   constexpr reference& reset() const noexcept
-    requires(ValueType::bits == 1);
+    requires(ValueType::bits == 1)
+  {
+    return set(false);
+  }
+
   constexpr reference& flip() const noexcept
-    requires(ValueType::bits == 1);
+    requires(ValueType::bits == 1)
+  {
+    return set(!static_cast<bool>(*this));
+  }
 
   friend constexpr bool operator==(const reference& lhs,
                                    const reference& rhs) noexcept {
@@ -432,20 +547,45 @@ class reference<StorageRef, ValueType, Alignment>
       value_type result{};
       const auto source = ref._array_ref();
       transform(source.begin(), source.end(), &result,
-                [](auto bits) { return ~bits; });
+                [](auto&& bits) { return ~bits; });
       return result;
     }
   }
 
-  explicit constexpr operator bool() const noexcept;
+  explicit constexpr operator bool() const noexcept {
+    if constexpr (proxy_storage) {
+      return proxy_value();
+    } else {
+      return ::bit::find(_array_ref().begin(), _array_ref().end(), bit1) !=
+             _array_ref().end();
+    }
+  }
 
-  constexpr operator value_type() const noexcept;
+  constexpr operator value_type() const noexcept {
+    if constexpr (proxy_storage) {
+      return value_type(proxy_value());
+    } else {
+      value_type value;
+      ::bit::copy(_array_ref().begin(), _array_ref().end(), &value);
+      return value;
+    }
+  }
 
   constexpr bit_pointer<const_word_type> operator&() const noexcept
-    requires(!proxy_storage);
+    requires(!proxy_storage)
+  {
+    const auto array = _array_ref();
+    const auto first = array.begin();
+    return bit_pointer<const_word_type>(first.base(), first.position());
+  }
 
   constexpr bit_pointer<word_type> operator&() noexcept
-    requires(!std::is_const_v<storage_type> && !proxy_storage);
+    requires(!std::is_const_v<storage_type> && !proxy_storage)
+  {
+    auto array = _array_ref();
+    const auto first = array.begin();
+    return bit_pointer<word_type>(first.base(), first.position());
+  }
 };
 
 // Stream functions
