@@ -23,9 +23,7 @@ class bit_word_pointer_adapter {
 
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;
-  static constexpr bool source_is_const = std::is_const_v<source_word>;
-  using reference =
-      std::conditional_t<source_is_const, const target_word&, target_word&>;
+  using reference = bit_word_reference_adapter<target_word_ref, source_word_ref>;
   using pointer = bit_word_pointer_adapter<target_word, source_word_ptr>;
 
   using iterator_type = target_word_ptr;

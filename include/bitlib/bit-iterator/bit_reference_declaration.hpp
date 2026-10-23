@@ -31,6 +31,12 @@ concept array_ref_storage =
          sizeof(std::uintptr_t));
 
 namespace detail {
+template <typename T>
+struct is_word_reference_adapter : std::false_type {};
+template <typename TargetRef, typename SourceRef>
+struct is_word_reference_adapter<
+    bit_word_reference_adapter<TargetRef, SourceRef>> : std::true_type {};
+
 template <class StorageRef, bool SingleWord>
 struct reference_word_type;
 
@@ -44,11 +50,25 @@ struct reference_word_type<StorageRef, true> {
       ceil_integral<storage_size * 8>>;
 };
 
+template <class StorageRef, bool IsAdapter>
+struct reference_nonintegral_word_type {
+  using storage_type =
+      std::remove_cv_t<std::remove_reference_t<StorageRef>>;
+  using type = inferred_word_type<storage_type>;
+};
+
+template <class StorageRef>
+struct reference_nonintegral_word_type<StorageRef, true> {
+  using type = typename std::remove_cv_t<
+      std::remove_reference_t<StorageRef>>::target_word;
+};
+
 template <class StorageRef>
 struct reference_word_type<StorageRef, false> {
   using storage_type =
       std::remove_cv_t<std::remove_reference_t<StorageRef>>;
-  using type = inferred_word_type<storage_type>;
+  using type = typename reference_nonintegral_word_type<
+      StorageRef, is_word_reference_adapter<storage_type>::value>::type;
 };
 
 template <class StorageRef>
@@ -252,6 +272,34 @@ class reference_array_ref_state {
 
   constexpr array_ref_type _array_ref() const noexcept { return array_; }
 };
+
+template <typename Proxy, size_t Extent, size_t Alignment>
+class reference_proxy_state {
+ public:
+  using proxy_type = std::remove_cvref_t<Proxy>;
+  using word_type = typename proxy_type::target_word;
+  using mask_type = std::make_unsigned_t<word_type>;
+  static constexpr size_t word_bits = bitsof<word_type>();
+
+  mutable proxy_type proxy_;
+  size_t position_;
+
+  constexpr reference_proxy_state(const Proxy& proxy, size_t position) noexcept
+      : proxy_(proxy),
+        position_(Alignment == std::dynamic_extent ? position : Alignment) {}
+
+  constexpr size_t position() const noexcept {
+    return Alignment == std::dynamic_extent ? position_ : Alignment;
+  }
+};
+
+template <class StorageRef, class ValueType, size_t Alignment>
+using reference_state_for = std::conditional_t<
+    is_word_reference_adapter<
+        std::remove_cv_t<std::remove_reference_t<StorageRef>>>::value,
+    reference_proxy_state<StorageRef, ValueType::bits, Alignment>,
+    reference_array_ref_state<reference_field_word_type<StorageRef>,
+                              ValueType::bits, Alignment>>;
 }  // namespace detail
 
 /* *********************** ARRAY-BACKED REFERENCE ************************** */
@@ -261,16 +309,16 @@ class reference_array_ref_state {
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
   requires array_ref_storage<StorageRef, ValueType>
 class reference<StorageRef, ValueType, Alignment>
-    : private detail::reference_array_ref_state<
-          detail::reference_field_word_type<StorageRef>,
-          ValueType::bits, Alignment> {
+    : private detail::reference_state_for<StorageRef, ValueType, Alignment> {
  private:
   using storage_type = std::remove_reference_t<StorageRef>;
   using unqualified_storage_type = std::remove_cv_t<storage_type>;
   using field_word_type = detail::reference_field_word_type<StorageRef>;
   using storage_word_type = std::remove_cv_t<field_word_type>;
-  using state_type = detail::reference_array_ref_state<
-      field_word_type, ValueType::bits, Alignment>;
+  static constexpr bool proxy_storage =
+      detail::is_word_reference_adapter<unqualified_storage_type>::value;
+  using state_type =
+      detail::reference_state_for<StorageRef, ValueType, Alignment>;
 
  public:
   using WordType = storage_word_type;
@@ -284,18 +332,31 @@ class reference<StorageRef, ValueType, Alignment>
   static constexpr size_type word_bits = sizeof(word_type) * 8;
 
  private:
+  static_assert(!proxy_storage || ValueType::bits == 1,
+                "proxy-backed references support single-bit values only");
   static_assert(std::is_integral_v<word_type>,
                 "array-backed storage must use integral words");
-  static_assert(sizeof(unqualified_storage_type) % sizeof(word_type) == 0,
+  static_assert(proxy_storage ||
+                    sizeof(unqualified_storage_type) % sizeof(word_type) == 0,
                 "storage size must be a multiple of its inferred word size");
   static_assert(
-      Alignment == std::dynamic_extent ||
+      proxy_storage || Alignment == std::dynamic_extent ||
           (Alignment <= num_words * word_bits &&
            ValueType::bits <= num_words * word_bits - Alignment),
       "reference bit range exceeds the accessible storage");
 
   template <class, primitive_c, size_t>
   friend class reference;
+
+  static constexpr state_type make_state(const StorageRef& ref,
+                                         size_type pos) noexcept;
+
+  constexpr bool proxy_value() const noexcept
+    requires(proxy_storage);
+  constexpr void proxy_assign(bool bit) const noexcept
+    requires(proxy_storage);
+  constexpr mask_type proxy_mask() const noexcept
+    requires(proxy_storage);
 
   constexpr auto _array_ref() const noexcept;
 
@@ -318,9 +379,9 @@ class reference<StorageRef, ValueType, Alignment>
  public:
   constexpr reference(const reference& other) noexcept;
 
-  explicit constexpr reference(StorageRef& ref) noexcept;
+  explicit constexpr reference(const StorageRef& ref) noexcept;
 
-  constexpr reference(StorageRef& ref, size_type pos) noexcept
+  constexpr reference(const StorageRef& ref, size_type pos) noexcept
     requires(Alignment == std::dynamic_extent);
 
   constexpr reference& operator=(const reference& other) const noexcept;
@@ -351,31 +412,40 @@ class reference<StorageRef, ValueType, Alignment>
 
   friend constexpr bool operator==(const reference& lhs,
                                    const reference& rhs) noexcept {
-    const auto lhs_array = lhs._array_ref();
-    const auto rhs_array = rhs._array_ref();
-    return ::bit::equal(lhs_array.begin(), lhs_array.end(),
-                        rhs_array.begin());
+    if constexpr (proxy_storage) {
+      return lhs.proxy_value() == rhs.proxy_value();
+    } else {
+      const auto lhs_array = lhs._array_ref();
+      const auto rhs_array = rhs._array_ref();
+      return ::bit::equal(lhs_array.begin(), lhs_array.end(),
+                          rhs_array.begin());
+    }
   }
   friend constexpr bool operator!=(const reference& lhs,
                                    const reference& rhs) noexcept {
     return !(lhs == rhs);
   }
   friend constexpr value_type operator~(const reference& ref) noexcept {
-    value_type result{};
-    const auto source = ref._array_ref();
-    transform(source.begin(), source.end(), &result,
-              [](auto bits) { return ~bits; });
-    return result;
+    if constexpr (proxy_storage) {
+      return value_type(!ref.proxy_value());
+    } else {
+      value_type result{};
+      const auto source = ref._array_ref();
+      transform(source.begin(), source.end(), &result,
+                [](auto bits) { return ~bits; });
+      return result;
+    }
   }
 
   explicit constexpr operator bool() const noexcept;
 
   constexpr operator value_type() const noexcept;
 
-  constexpr bit_pointer<const_word_type> operator&() const noexcept;
+  constexpr bit_pointer<const_word_type> operator&() const noexcept
+    requires(!proxy_storage);
 
   constexpr bit_pointer<word_type> operator&() noexcept
-    requires(!std::is_const_v<storage_type>);
+    requires(!std::is_const_v<storage_type> && !proxy_storage);
 };
 
 // Stream functions

@@ -10,12 +10,14 @@ namespace bit {
 
 template <typename target_word_ref, typename source_word_ref>
 class bit_word_reference_adapter {
+ public:
+  using target_word = std::remove_cvref_t<target_word_ref>;
+
  private:
   static_assert(std::is_reference_v<source_word_ref>, "source_word_ref must be a reference type");
 
   using source_word = std::remove_reference_t<source_word_ref>;
   using source_word_ptr = std::add_pointer_t<source_word>;
-  using target_word = std::remove_cvref_t<target_word_ref>;
   using target_word_ptr = std::add_pointer_t<target_word>;
   using size_type = std::size_t;
   using difference_type = std::ptrdiff_t;

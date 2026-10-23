@@ -206,23 +206,72 @@ reference<StorageRef, ValueType, Alignment>::value_array(value_type& value) noex
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
   requires array_ref_storage<StorageRef, ValueType>
+constexpr typename reference<StorageRef, ValueType, Alignment>::state_type
+reference<StorageRef, ValueType, Alignment>::make_state(
+    const StorageRef& ref, size_type pos) noexcept {
+  if constexpr (proxy_storage) {
+    return state_type(ref, pos);
+  } else {
+    return state_type(reinterpret_cast<field_word_type*>(std::addressof(ref)),
+                      pos);
+  }
+}
+
+template <class StorageRef, primitive_c ValueType, size_t Alignment>
+  requires array_ref_storage<StorageRef, ValueType>
+constexpr typename reference<StorageRef, ValueType, Alignment>::mask_type
+reference<StorageRef, ValueType, Alignment>::proxy_mask() const noexcept
+  requires(proxy_storage)
+{
+  return static_cast<mask_type>(mask_type{1} << (this->position() % word_bits));
+}
+
+template <class StorageRef, primitive_c ValueType, size_t Alignment>
+  requires array_ref_storage<StorageRef, ValueType>
+constexpr bool
+reference<StorageRef, ValueType, Alignment>::proxy_value() const noexcept
+  requires(proxy_storage)
+{
+  return (static_cast<word_type>(this->proxy_) & proxy_mask()) != 0;
+}
+
+template <class StorageRef, primitive_c ValueType, size_t Alignment>
+  requires array_ref_storage<StorageRef, ValueType>
+constexpr void
+reference<StorageRef, ValueType, Alignment>::proxy_assign(bool bit) const noexcept
+  requires(proxy_storage)
+{
+  auto word = static_cast<word_type>(this->proxy_);
+  if (bit) {
+    word = static_cast<word_type>(word | proxy_mask());
+  } else {
+    word = static_cast<word_type>(word & ~proxy_mask());
+  }
+  this->proxy_ = word;
+}
+
+template <class StorageRef, primitive_c ValueType, size_t Alignment>
+  requires array_ref_storage<StorageRef, ValueType>
 constexpr reference<StorageRef, ValueType, Alignment>::reference(const reference& other) noexcept
     : state_type(other) {}
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
   requires array_ref_storage<StorageRef, ValueType>
-/* explicit */ constexpr reference<StorageRef, ValueType, Alignment>::reference(StorageRef& ref) noexcept
-    : state_type(reinterpret_cast<field_word_type*>(std::addressof(ref)),
-                 Alignment == std::dynamic_extent ? 0 : Alignment) {}
+/* explicit */ constexpr reference<StorageRef, ValueType, Alignment>::reference(
+    const StorageRef& ref) noexcept
+    : state_type(make_state(
+          ref, Alignment == std::dynamic_extent ? 0 : Alignment)) {}
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
   requires array_ref_storage<StorageRef, ValueType>
-constexpr reference<StorageRef, ValueType, Alignment>::reference(StorageRef& ref, size_type pos) noexcept
+constexpr reference<StorageRef, ValueType, Alignment>::reference(
+    const StorageRef& ref, size_type pos) noexcept
   requires(Alignment == std::dynamic_extent)
-    : state_type(reinterpret_cast<field_word_type*>(std::addressof(ref)),
-                 pos) {
-  assert(pos <= num_words * word_bits &&
-         ValueType::bits <= num_words * word_bits - pos);
+    : state_type(make_state(ref, pos)) {
+  if constexpr (!proxy_storage) {
+    assert(pos <= num_words * word_bits &&
+           ValueType::bits <= num_words * word_bits - pos);
+  }
 }
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
@@ -247,12 +296,16 @@ template <class StorageRef, primitive_c ValueType, size_t Alignment>
   requires array_ref_storage<StorageRef, ValueType>
 constexpr reference<StorageRef, ValueType, Alignment>&
 reference<StorageRef, ValueType, Alignment>::operator=(const value_type& value) const noexcept {
-  auto destination = _array_ref();
-  if constexpr (ValueType::bits == 1) {
-    *destination.begin() = static_cast<bool>(value);
+  if constexpr (proxy_storage) {
+    proxy_assign(static_cast<bool>(value));
   } else {
-    const auto source = value_array(value);
-    ::bit::copy(source.begin(), source.end(), destination.begin());
+    auto destination = _array_ref();
+    if constexpr (ValueType::bits == 1) {
+      *destination.begin() = static_cast<bool>(value);
+    } else {
+      const auto source = value_array(value);
+      ::bit::copy(source.begin(), source.end(), destination.begin());
+    }
   }
   return const_cast<reference&>(*this);
 }
@@ -263,7 +316,11 @@ constexpr reference<StorageRef, ValueType, Alignment>&
 reference<StorageRef, ValueType, Alignment>::operator=(bool bit) const noexcept
   requires(ValueType::bits == 1)
 {
-  _array_ref()[0] = bit;
+  if constexpr (proxy_storage) {
+    proxy_assign(bit);
+  } else {
+    _array_ref()[0] = bit;
+  }
   return const_cast<reference&>(*this);
 }
 
@@ -271,7 +328,11 @@ template <class StorageRef, primitive_c ValueType, size_t Alignment>
   requires array_ref_storage<StorageRef, ValueType>
 constexpr reference<StorageRef, ValueType, Alignment>&
 reference<StorageRef, ValueType, Alignment>::operator&=(const value_type& other) const noexcept {
-  _array_ref() &= other;
+  if constexpr (proxy_storage) {
+    proxy_assign(proxy_value() && static_cast<bool>(other));
+  } else {
+    _array_ref() &= other;
+  }
   return const_cast<reference&>(*this);
 }
 
@@ -279,7 +340,11 @@ template <class StorageRef, primitive_c ValueType, size_t Alignment>
   requires array_ref_storage<StorageRef, ValueType>
 constexpr reference<StorageRef, ValueType, Alignment>&
 reference<StorageRef, ValueType, Alignment>::operator|=(const value_type& other) const noexcept {
-  _array_ref() |= other;
+  if constexpr (proxy_storage) {
+    proxy_assign(proxy_value() || static_cast<bool>(other));
+  } else {
+    _array_ref() |= other;
+  }
   return const_cast<reference&>(*this);
 }
 
@@ -287,22 +352,35 @@ template <class StorageRef, primitive_c ValueType, size_t Alignment>
   requires array_ref_storage<StorageRef, ValueType>
 constexpr reference<StorageRef, ValueType, Alignment>&
 reference<StorageRef, ValueType, Alignment>::operator^=(const value_type& other) const noexcept {
-  _array_ref() ^= other;
+  if constexpr (proxy_storage) {
+    proxy_assign(proxy_value() != static_cast<bool>(other));
+  } else {
+    _array_ref() ^= other;
+  }
   return const_cast<reference&>(*this);
 }
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
   requires array_ref_storage<StorageRef, ValueType>
 constexpr reference<StorageRef, ValueType, Alignment>::operator bool() const noexcept {
-  return ::bit::find(_array_ref().begin(), _array_ref().end(), bit1) != _array_ref().end();
+  if constexpr (proxy_storage) {
+    return proxy_value();
+  } else {
+    return ::bit::find(_array_ref().begin(), _array_ref().end(), bit1) !=
+           _array_ref().end();
+  }
 }
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
   requires array_ref_storage<StorageRef, ValueType>
 constexpr reference<StorageRef, ValueType, Alignment>::operator value_type() const noexcept {
-  value_type value;
-  ::bit::copy(_array_ref().begin(), _array_ref().end(), &value);
-  return value;
+  if constexpr (proxy_storage) {
+    return value_type(proxy_value());
+  } else {
+    value_type value;
+    ::bit::copy(_array_ref().begin(), _array_ref().end(), &value);
+    return value;
+  }
 }
 
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
@@ -344,7 +422,9 @@ reference<StorageRef, ValueType, Alignment>::flip() const noexcept
 template <class StorageRef, primitive_c ValueType, size_t Alignment>
   requires array_ref_storage<StorageRef, ValueType>
 constexpr bit_pointer<typename reference<StorageRef, ValueType, Alignment>::const_word_type>
-reference<StorageRef, ValueType, Alignment>::operator&() const noexcept {
+reference<StorageRef, ValueType, Alignment>::operator&() const noexcept
+  requires(!proxy_storage)
+{
   const auto array = _array_ref();
   const auto first = array.begin();
   return bit_pointer<const_word_type>(first.base(), first.position());
@@ -354,7 +434,7 @@ template <class StorageRef, primitive_c ValueType, size_t Alignment>
   requires array_ref_storage<StorageRef, ValueType>
 constexpr bit_pointer<typename reference<StorageRef, ValueType, Alignment>::word_type>
 reference<StorageRef, ValueType, Alignment>::operator&() noexcept
-  requires(!std::is_const_v<storage_type>)
+  requires(!std::is_const_v<storage_type> && !proxy_storage)
 {
   auto array = _array_ref();
   const auto first = array.begin();

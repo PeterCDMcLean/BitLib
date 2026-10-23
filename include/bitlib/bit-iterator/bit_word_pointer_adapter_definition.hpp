@@ -2,7 +2,6 @@
 #define _BIT_WORD_POINTER_ADAPTER_DEFINITION_HPP_INCLUDED
 
 #include <iterator>
-#include <memory>
 #include <type_traits>
 
 #include "bitlib/bit-iterator/bit_word_pointer_adapter_declaration.hpp"
@@ -27,12 +26,10 @@ template <typename target_word_ptr, typename source_word_ptr>
 template <typename target_word_ptr, typename source_word_ptr>
 constexpr typename bit_word_pointer_adapter<target_word_ptr, source_word_ptr>::reference
 bit_word_pointer_adapter<target_word_ptr, source_word_ptr>::operator*() const noexcept {
-  using target_type = std::remove_reference_t<reference>;
-  auto* base = reinterpret_cast<target_type*>(std::addressof(*_source));
   if constexpr (is_small_to_big) {
-    return base[0];
+    return reference(*_source);
   } else {
-    return base[_index];
+    return reference(*_source, _index);
   }
 }
 
@@ -45,18 +42,13 @@ bit_word_pointer_adapter<target_word_ptr, source_word_ptr>::operator->() const n
 template <typename target_word_ptr, typename source_word_ptr>
 constexpr typename bit_word_pointer_adapter<target_word_ptr, source_word_ptr>::reference
 bit_word_pointer_adapter<target_word_ptr, source_word_ptr>::operator[](difference_type n) const noexcept {
-  using target_type = std::remove_reference_t<reference>;
   if constexpr (is_small_to_big) {
-    auto* base = reinterpret_cast<target_type*>(
-        std::addressof(*std::next(_source, n * ratio)));
-    return base[0];
+    return reference(*std::next(_source, n * ratio));
   } else {
     const difference_type sum = _index + n;
     const difference_type src_diff = (sum - (n < 0) * static_cast<difference_type>(ratio - 1)) / static_cast<difference_type>(ratio);
     const size_type new_index = sum % ratio;
-    auto* base = reinterpret_cast<target_type*>(
-        std::addressof(*std::next(_source, src_diff)));
-    return base[new_index];
+    return reference(*std::next(_source, src_diff), new_index);
   }
 }
 
