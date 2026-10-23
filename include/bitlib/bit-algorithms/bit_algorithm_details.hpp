@@ -134,7 +134,9 @@ T get_word(const iterator<InputIt, ValueType, Alignment>& first,
 template <class T, class InputIt, primitive_c ValueType, size_t Alignment>
 T get_masked_word(const iterator<InputIt, ValueType, Alignment>& first,
                   size_t len = binary_digits<T>::value) {
-  return get_word<T>(first, len) & _mask<T>(len);
+  // len can be the full word width when a caller peels a whole prefix word.
+  // Use the run-time mask path, which clamps len >= bitsof<T>() to all ones.
+  return get_word<T>(first, len) & _mask<T, _mask_len::unknown>(len);
 }
 
 // Writes len bits from src beginning at dstIt

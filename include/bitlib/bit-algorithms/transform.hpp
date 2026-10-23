@@ -13,6 +13,7 @@
 #include <functional>
 #include <type_traits>
 // Project sources
+#include "bitlib/bit-algorithms/word_adapter.hpp"
 #include "bitlib/bit-iterator/bit.hpp"
 // Third-party libraries
 // Miscellaneous
@@ -292,60 +293,6 @@ struct transform_impl {
 };
 
 namespace detail {
-// Construct an iterator at a possibly compile-time alignment.
-template <std::size_t Alignment, typename Iterator>
-constexpr auto make_transform_iterator(const Iterator& base,
-                                       std::size_t position) {
-  if constexpr (Alignment == std::dynamic_extent) {
-    return iterator<Iterator, primitive<1>, std::dynamic_extent>(base,
-                                                                 position);
-  } else {
-    assert(position == Alignment);
-    return ::bit::next<Alignment>(iterator<Iterator, primitive<1>, 0>(base));
-  }
-}
-
-// Re-express one input iterator in a smaller target word type. The alignment
-// is unpacked from the iterator itself, and its position is translated from
-// source-word bits into target-word bits.
-template <std::size_t TargetBits, typename TargetWord, typename Iterator>
-constexpr auto adapt_transform_iterator(const Iterator& input) {
-  constexpr std::size_t Alignment = iterator_alignment_v<Iterator>;
-  auto it = make_mutable_bit_iterator(input);
-  using mutable_iterator = decltype(it);
-  constexpr std::size_t source_bits =
-      bitsof<std::remove_cv_t<typename mutable_iterator::word_type>>();
-  constexpr std::size_t adapted_alignment =
-      Alignment == std::dynamic_extent ? std::dynamic_extent
-                                       : Alignment % TargetBits;
-
-  if constexpr (source_bits == TargetBits) {
-    return make_transform_iterator<Alignment>(it.base(), it.position());
-  } else {
-    using source_iterator = typename mutable_iterator::iterator_type;
-    using source_reference = std::iter_reference_t<source_iterator>;
-    constexpr bool source_is_const =
-        std::is_const_v<std::remove_reference_t<source_reference>>;
-    using target_pointer =
-        std::conditional_t<source_is_const, const TargetWord*, TargetWord*>;
-    using adapted_iterator =
-        bit_word_pointer_adapter<target_pointer, source_iterator>;
-    const auto adapted =
-        adapted_iterator(it.base(), it.position() / TargetBits);
-    return make_transform_iterator<adapted_alignment>(
-        adapted, it.position() % TargetBits);
-  }
-}
-
-template <typename... Iterators>
-consteval std::size_t smallest_word_bits() {
-  std::size_t result = std::dynamic_extent;
-  ((result = std::min(result,
-                      bitsof<std::remove_cv_t<typename Iterators::word_type>>())),
-   ...);
-  return result;
-}
-
 template <typename First, typename Last, typename Destination,
           typename UnaryOperation>
 constexpr auto with_transform_adapter(const First& first_in,
@@ -359,11 +306,11 @@ constexpr auto with_transform_adapter(const First& first_in,
   using target_word = ceil_integral<target_bits>;
 
   auto adapted_first =
-      adapt_transform_iterator<target_bits, target_word>(first_in);
+      adapt_word_iterator<target_bits, target_word>(first_in);
   auto adapted_last =
-      adapt_transform_iterator<target_bits, target_word>(last_in);
+      adapt_word_iterator<target_bits, target_word>(last_in);
   auto adapted_d_first =
-      adapt_transform_iterator<target_bits, target_word>(d_first_in);
+      adapt_word_iterator<target_bits, target_word>(d_first_in);
   return transform_impl::run_impl(adapted_first, adapted_last, adapted_d_first,
                                   unary_op);
 }
@@ -384,13 +331,13 @@ constexpr auto with_transform_adapter(const First& first_in,
   using target_word = ceil_integral<target_bits>;
 
   auto adapted_first =
-      adapt_transform_iterator<target_bits, target_word>(first_in);
+      adapt_word_iterator<target_bits, target_word>(first_in);
   auto adapted_last =
-      adapt_transform_iterator<target_bits, target_word>(last_in);
+      adapt_word_iterator<target_bits, target_word>(last_in);
   auto adapted_first2 =
-      adapt_transform_iterator<target_bits, target_word>(first2_in);
+      adapt_word_iterator<target_bits, target_word>(first2_in);
   auto adapted_d_first =
-      adapt_transform_iterator<target_bits, target_word>(d_first_in);
+      adapt_word_iterator<target_bits, target_word>(d_first_in);
   return transform_impl::run_impl(adapted_first, adapted_last, adapted_first2,
                                   adapted_d_first, binary_op);
 }
