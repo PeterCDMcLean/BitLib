@@ -161,41 +161,37 @@ constexpr bit_iterator<RandomAccessIt2> swap_ranges(
             }
             // Exchange last partial words
             if (!is_last1_aligned) {
-                size_type2 partial_digits_to_copy = digits2 - first2.position();
-                if (last1.position() <= partial_digits_to_copy) {
-                    _bitexch<word_type1, size_type1>(
-                            *it1,
-                            *it2,
-                            0,
-                            first2.position(),
-                            last1.position()
-                    );
-                    return bit_iterator<RandomAccessIt2>(it2, first2.position()) + last1.position();
-                } else {
-                    _bitexch<word_type1, size_type1>(
-                            *it1,
-                            *it2++,
-                            0,
-                            first2.position(),
-                            partial_digits_to_copy
-                    );
-                    _bitexch<word_type1, size_type1>(
-                            *it1,
-                            *it2,
-                            partial_digits_to_copy,
-                            0,
-                            last1.position() - partial_digits_to_copy
-                    );
-                    return bit_iterator<RandomAccessIt2>(it2, last1.position() - partial_digits_to_copy);
-                }
+              size_type2 partial_digits_to_copy = digits2 - first2.position();
+              if (last1.position() <= partial_digits_to_copy) {
+                _bitexch<word_type1, size_type1>(
+                    *it1,
+                    *it2,
+                    0,
+                    first2.position(),
+                    last1.position());
+                return bit_iterator<RandomAccessIt2>(it2, first2.position()) + last1.position();
+              } else {
+                _bitexch<word_type1, size_type1>(
+                    *it1,
+                    *it2++,
+                    0,
+                    first2.position(),
+                    partial_digits_to_copy);
+                _bitexch<word_type1, size_type1>(
+                    *it1,
+                    *it2,
+                    partial_digits_to_copy,
+                    0,
+                    last1.position() - partial_digits_to_copy);
+                return bit_iterator<RandomAccessIt2>(it2, last1.position() - partial_digits_to_copy);
+              }
             }
             return bit_iterator<RandomAccessIt2>(it2, first2.position());
         }
     }
 }
 
-
 // ========================================================================== //
-} // namespace bit
-#endif // _SWAP_RANGES_HPP_INCLUDED
+}  // namespace bit
+#endif  // _SWAP_RANGES_HPP_INCLUDED
 // ========================================================================== //
