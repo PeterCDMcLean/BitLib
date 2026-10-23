@@ -24,7 +24,7 @@ constexpr bit_iterator<It2> move(
     const bit_iterator<It1>& first,
     const bit_iterator<It1>& last,
     const It2& d_first) {
-  return copy(first, last, d_first);
+  return ::bit::copy(first, last, d_first);
 }
 
 template <typename It1, typename It2>
@@ -32,7 +32,7 @@ constexpr bit_iterator<It2> move(
     const It1& first,
     const It1& last,
     const bit_iterator<It2>& d_first) {
-  return copy(first, last, d_first);
+  return ::bit::copy(first, last, d_first);
 }
 
 template <typename It1, typename It2>
@@ -40,7 +40,7 @@ constexpr bit_iterator<It2> move(
     const bit_iterator<It1>& first,
     const bit_iterator<It1>& last,
     const bit_iterator<It2>& d_first) {
-  return copy(first, last, d_first);
+  return ::bit::copy(first, last, d_first);
 }
 
 // ========================================================================== //
