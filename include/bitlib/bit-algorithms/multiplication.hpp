@@ -11,8 +11,9 @@
 
 // ============================== PREAMBLE ================================== //
 // C++ standard library
-#include <type_traits>
 #include <math.h>
+
+#include <type_traits>
 // Project sources
 #include "bitlib/bit-algorithms/transform.hpp"
 #include "bitlib/bit-containers/bit_bitsof.hpp"
@@ -31,14 +32,14 @@ constexpr typename bit_iterator<It>::word_type multiplication(
     const U& integral_operand) {
   using word_type = typename bit_iterator<It>::word_type;
   word_type carry = 0;
-  transform(first, last, d_first,
-            [&carry, integral_operand](auto word, auto bits = bitsof<word_type>()) -> word_type {
-              word_type result_word = (carry + _mulx(static_cast<word_type>(integral_operand), word, &carry));
-              if (bits < bitsof<word_type>()) {
-                carry = static_cast<word_type>((carry << (bitsof<word_type>() - bits)) | lsr(result_word, bits));
-              }
-              return result_word;
-            });
+  ::bit::transform(first, last, d_first,
+                   [&carry, integral_operand](auto word, auto bits = bitsof<word_type>()) -> word_type {
+                     word_type result_word = (carry + _mulx(static_cast<word_type>(integral_operand), word, &carry));
+                     if (bits < bitsof<word_type>()) {
+                       carry = static_cast<word_type>((carry << (bitsof<word_type>() - bits)) | lsr(result_word, bits));
+                     }
+                     return result_word;
+                   });
   return carry;
 }
 
@@ -53,6 +54,6 @@ constexpr typename bit_iterator<It>::word_type multiplication(
   return multiplication(first, last, first, integral_operand);
 }
 
-} // namespace bit
+}  // namespace bit
 
 #endif  // _MULTIPLICATION_HPP_INCLUDED

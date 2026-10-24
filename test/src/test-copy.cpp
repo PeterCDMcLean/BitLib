@@ -130,3 +130,139 @@ TEST(Copy, ImplicitConvert) {
   bit::copy(words.begin(), words.begin() + 5, bits.begin() + 4);
   EXPECT_EQ(bits, 0x2C'0E0D0C0B0A0_b);
 }
+
+// Fixed (non-dynamic_extent) Alignment iterators: same aligned source and
+// destination.
+TEST(Copy, AlignedSourceToAlignedDestination) {
+  std::array<uint8_t, 4> src = {0xA5, 0x3C, 0x77, 0xE1};
+  std::array<uint8_t, 4> got{};
+  using aligned_iterator = bit::iterator<uint8_t*, bit::primitive<1>, 0>;
+
+  bit::copy(aligned_iterator(src.data()),
+            aligned_iterator(src.data() + src.size()),
+            aligned_iterator(got.data()));
+
+  EXPECT_EQ(got, src);
+}
+
+// first and last may have different fixed Alignments, and a raw pointer is a
+// valid (word-aligned) destination.
+TEST(Copy, AlignedRangeWithUnalignedEndToRawPointer) {
+  std::array<uint8_t, 4> src = {0xA5, 0x3C, 0x77, 0xE1};
+  std::array<uint8_t, 4> got{};
+  std::array<uint8_t, 4> want{};
+  using begin_iterator = bit::iterator<const uint8_t*, bit::primitive<1>, 0>;
+  using end_iterator = bit::iterator<const uint8_t*, bit::primitive<1>, 4>;
+
+  bit::copy(begin_iterator(src.data()), end_iterator(src.data() + 2),
+            got.data());
+
+  // Dynamic-extent oracle: same range and destination, without hints.
+  bit::iterator<const uint8_t*> first(src.data());
+  bit::iterator<const uint8_t*> last(src.data() + 2, 4);
+  bit::iterator<uint8_t*> d_first(want.data());
+  bit::copy(first, last, d_first);
+
+  EXPECT_EQ(got, want);
+}
+
+// An aligned source that is advanced by the partial first destination word
+// must not keep using the compile-time Alignment hint for the remainder.
+TEST(Copy, AlignedSourceToUnalignedDestination) {
+  std::array<uint8_t, 4> src = {0xB5, 0xCA, 0x73, 0x9D};
+  std::array<uint8_t, 4> got{0x07, 0, 0, 0};
+  std::array<uint8_t, 4> want{0x07, 0, 0, 0};
+  using begin_iterator = bit::iterator<const uint8_t*, bit::primitive<1>, 0>;
+  using end_iterator = bit::iterator<const uint8_t*, bit::primitive<1>, 4>;
+  using dest_iterator = bit::iterator<uint8_t*, bit::primitive<1>, 3>;
+
+  bit::copy(begin_iterator(src.data()), end_iterator(src.data() + 2),
+            dest_iterator(got.data()));
+
+  bit::iterator<const uint8_t*> first(src.data());
+  bit::iterator<const uint8_t*> last(src.data() + 2, 4);
+  bit::iterator<uint8_t*> d_first(want.data(), 3);
+  bit::copy(first, last, d_first);
+
+  EXPECT_EQ(got, want);
+}
+
+// Fixed-Alignment iterators whose word types differ must still work through
+// the cross-width word adapter.
+TEST(Copy, AlignedIteratorsWithWordAdapter) {
+  std::array<uint8_t, 4> narrow = {0xA5, 0x3C, 0x77, 0xE1};
+  std::array<uint16_t, 2> wide_got{};
+  std::array<uint16_t, 2> wide_want{};
+
+  using narrow_iterator = bit::iterator<const uint8_t*, bit::primitive<1>, 0>;
+  using wide_iterator = bit::iterator<uint16_t*, bit::primitive<1>, 0>;
+
+  bit::copy(narrow_iterator(narrow.data()),
+            narrow_iterator(narrow.data() + 3), wide_iterator(wide_got.data()));
+
+  bit::iterator<const uint8_t*> first(narrow.data());
+  bit::iterator<const uint8_t*> last(narrow.data() + 3);
+  bit::iterator<uint16_t*> d_first(wide_want.data());
+  bit::copy(first, last, d_first);
+
+  EXPECT_EQ(wide_got, wide_want);
+
+  std::array<uint16_t, 3> wide = {0xA5C3, 0x1E77, 0x9D4B};
+  std::array<uint8_t, 4> narrow_got{};
+  std::array<uint8_t, 4> narrow_want{};
+
+  using wide_src_iterator = bit::iterator<const uint16_t*, bit::primitive<1>, 0>;
+  using narrow_dst_iterator = bit::iterator<uint8_t*, bit::primitive<1>, 0>;
+
+  bit::copy(wide_src_iterator(wide.data()),
+            wide_src_iterator(wide.data() + 2),
+            narrow_dst_iterator(narrow_got.data()));
+
+  bit::iterator<const uint16_t*> wide_first(wide.data());
+  bit::iterator<const uint16_t*> wide_last(wide.data() + 2);
+  bit::iterator<uint8_t*> narrow_d_first(narrow_want.data());
+  bit::copy(wide_first, wide_last, narrow_d_first);
+
+  EXPECT_EQ(narrow_got, narrow_want);
+}
+
+// Non-zero fixed Alignments must survive translation through the word adapter.
+TEST(Copy, AlignedIteratorsWithWordAdapterAndOffsets) {
+  std::array<uint8_t, 4> narrow = {0xA5, 0x3C, 0x77, 0xE1};
+  std::array<uint16_t, 3> wide_got{};
+  std::array<uint16_t, 3> wide_want{};
+
+  using narrow_begin = bit::iterator<const uint8_t*, bit::primitive<1>, 3>;
+  using narrow_end = bit::iterator<const uint8_t*, bit::primitive<1>, 6>;
+  using wide_dest = bit::iterator<uint16_t*, bit::primitive<1>, 2>;
+
+  // 19 bits: starts at bit 3 of a uint8_t word, ends at bit 6 of word 2.
+  bit::copy(narrow_begin(narrow.data()), narrow_end(narrow.data() + 2),
+            wide_dest(wide_got.data()));
+
+  bit::iterator<const uint8_t*> first(narrow.data(), 3);
+  bit::iterator<const uint8_t*> last(narrow.data() + 2, 6);
+  bit::iterator<uint16_t*> d_first(wide_want.data(), 2);
+  bit::copy(first, last, d_first);
+
+  EXPECT_EQ(wide_got, wide_want);
+
+  std::array<uint16_t, 4> wide = {0xA5C3, 0x1E77, 0x9D4B, 0x62F0};
+  std::array<uint8_t, 6> narrow_got{};
+  std::array<uint8_t, 6> narrow_want{};
+
+  using wide_begin = bit::iterator<const uint16_t*, bit::primitive<1>, 5>;
+  using wide_end = bit::iterator<const uint16_t*, bit::primitive<1>, 10>;
+  using narrow_dest = bit::iterator<uint8_t*, bit::primitive<1>, 1>;
+
+  // 37 bits: starts at bit 5 of a uint16_t word, ends at bit 10 of word 2.
+  bit::copy(wide_begin(wide.data()), wide_end(wide.data() + 2),
+            narrow_dest(narrow_got.data()));
+
+  bit::iterator<const uint16_t*> wide_first(wide.data(), 5);
+  bit::iterator<const uint16_t*> wide_last(wide.data() + 2, 10);
+  bit::iterator<uint8_t*> narrow_d_first(narrow_want.data(), 1);
+  bit::copy(wide_first, wide_last, narrow_d_first);
+
+  EXPECT_EQ(narrow_got, narrow_want);
+}

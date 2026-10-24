@@ -11,8 +11,6 @@
 #define _BIT_DETAILS_HPP_INCLUDED
 // ========================================================================== //
 
-
-
 // ================================ PREAMBLE ================================ //
 // C++ standard library
 // clang-format off
@@ -50,69 +48,146 @@
 #include <utility>
 
 #include "bitlib/bit-containers/bit_bitsof.hpp"
+#include "bitlib/bit-containers/bit_containers_forward.hpp"
+#include "bitlib/bit-iterator/bit_integral.hpp"
 #include "bitlib/bit_concepts.hpp"
 
 // Project sources
 // Third-party libraries
 // Miscellaneous
 namespace bit {
-class bit_value;
-template <class WordType>
-class bit_reference;
-template <class Iterator>
-class bit_iterator;
-template <class WordType>
-using bit_pointer = bit_iterator<WordType*>;
-template <typename target_word_ptr, typename source_word_ptr>
-class bit_word_pointer_adapter;
+
+namespace detail {
+// Infer an integral word size for a type. The word must respect the type's
+// alignment, and its size must divide the object size so that the storage can
+// be traversed without overrunning the final word. The size component is
+// sizeof(T) modulo sizeof(uintptr_t), with a zero remainder treated as the
+// full pointer width.
+template <typename T>
+constexpr std::size_t inferred_word_bytes() noexcept {
+  constexpr std::size_t pointer_bytes = sizeof(std::uintptr_t);
+  constexpr std::size_t remainder = sizeof(T) % pointer_bytes;
+  constexpr std::size_t size_bytes =
+      remainder == 0 ? pointer_bytes : remainder;
+  return alignof(T) < size_bytes ? alignof(T) : size_bytes;
+}
+
+template <typename T>
+using inferred_word_type = ceil_integral<inferred_word_bytes<T>() * 8>;
+}  // namespace detail
+
+// Defined in bit_iterator.hpp; declared here so with_bit_iterator_adapter can
+// use it before that header is included.
+template <std::size_t N, class Iterator, primitive_c ValueType, size_t Alignment>
+constexpr auto next(const iterator<Iterator, ValueType, Alignment>& it);
+template <class Iterator, primitive_c ValueType, size_t Alignment>
+constexpr auto next(const iterator<Iterator, ValueType, Alignment>& it, std::size_t n);
+
+// Extract the underlying word iterator type from a bit::iterator, or keep a
+// raw pointer as-is. Pointers to non-integral objects are re-expressed as
+// pointers to their inferred integral word type so multi-word objects can be
+// traversed with native word operations.
+template <typename T, typename = void>
+struct underlying_iterator {
+  using type = T;
+};
+template <typename T>
+struct underlying_iterator<T, std::void_t<typename T::iterator_type>> {
+  using type = typename T::iterator_type;
+};
+template <typename T>
+struct underlying_iterator<T*> {
+  using pointee = std::remove_cv_t<T>;
+  using type = std::conditional_t<
+      std::is_integral_v<pointee>, T*,
+      std::conditional_t<std::is_const_v<T>,
+                         const detail::inferred_word_type<pointee>*,
+                         detail::inferred_word_type<pointee>*>>;
+};
+template <typename T>
+using underlying_iterator_t =
+    typename underlying_iterator<std::remove_cvref_t<T>>::type;
+
+// Extract the Alignment template parameter from a bit::iterator type.
+// Raw pointers always start at bit 0. Returns std::dynamic_extent when the
+// Alignment is not explicitly known.
+template <typename T>
+struct iterator_alignment {
+  static constexpr std::size_t value = std::dynamic_extent;
+};
+template <typename T>
+struct iterator_alignment<T*> {
+  static constexpr std::size_t value = 0;
+};
+template <typename Iterator, primitive_c ValueType, std::size_t Alignment>
+struct iterator_alignment<iterator<Iterator, ValueType, Alignment>> {
+  static constexpr std::size_t value = Alignment;
+};
+template <typename T>
+constexpr std::size_t iterator_alignment_v = iterator_alignment<T>::value;
+
+// Convert a bit iterator of any Alignment, or a raw pointer, to a mutable
+// dynamic_extent bit iterator over the same underlying word iterator.
+template <typename T>
+constexpr auto make_mutable_bit_iterator(const T& it) {
+  using T_decayed = std::remove_cvref_t<T>;
+  if constexpr (std::is_pointer_v<T_decayed>) {
+    using pointee = std::remove_pointer_t<T_decayed>;
+    using value_type = std::remove_cv_t<pointee>;
+    if constexpr (std::is_integral_v<value_type>) {
+      return iterator<T_decayed, primitive<1>, std::dynamic_extent>(it, 0);
+    } else {
+      // Non-integral pointees may be multi-word objects. Reinterpret the
+      // storage as an array of the inferred word type so the bit algorithms
+      // can operate on it word by word.
+      using word_type = detail::inferred_word_type<value_type>;
+      using word_pointer = std::conditional_t<std::is_const_v<pointee>,
+                                              const word_type*, word_type*>;
+      return iterator<word_pointer, primitive<1>, std::dynamic_extent>(
+          reinterpret_cast<word_pointer>(it), 0);
+    }
+  } else {
+    using decoded = std::remove_cvref_t<T>;
+    if constexpr (requires { typename decoded::iterator_type; }) {
+      return iterator<typename decoded::iterator_type, primitive<1>,
+                      std::dynamic_extent>(it.base(), it.position());
+    } else {
+      return iterator<decoded, primitive<1>, std::dynamic_extent>(it, 0);
+    }
+  }
+}
 
 // ========================================================================== //
-
-template <size_t N>
-using ceil_integral = std::conditional_t<
-    (N <= bitsof<std::uint8_t>()),
-    std::uint8_t,
-    std::conditional_t<
-        (N <= bitsof<std::uint16_t>()),
-        std::uint16_t,
-        std::conditional_t<
-            (N <= bitsof<std::uint32_t>()),
-            std::uint32_t,
-            std::conditional_t<
-                (N <= bitsof<std::uint64_t>()),
-                std::uint64_t,
-                std::uint64_t>>>>;
 
 /* *************** IMPLEMENTATION DETAILS: CV ITERATOR TRAITS *************** */
 // Cv iterator traits structure definition
 template <class Iterator>
-struct _cv_iterator_traits
-{
-    // Assertions
-    private:
-    using _traits_t = std::iterator_traits<Iterator>;
-    using _difference_t = typename _traits_t::difference_type;
-    using _value_t = typename _traits_t::value_type;
-    using _pointer_t = typename _traits_t::pointer;
-    using _reference_t = typename _traits_t::reference;
-    using _category_t =  typename _traits_t::iterator_category;
-    using _no_pointer_t = typename std::remove_pointer<_pointer_t>::type;
-    using _no_reference_t = typename std::remove_reference<_reference_t>::type;
-    using _raw_value_t = typename std::remove_cv<_value_t>::type;
-    using _raw_pointer_t = typename std::remove_cv<_no_pointer_t>::type;
-    using _raw_reference_t = typename std::remove_cv<_no_reference_t>::type;
-    using _cv_value_t = _no_reference_t;
+struct _cv_iterator_traits {
+  // Assertions
+ private:
+  using _traits_t = std::iterator_traits<Iterator>;
+  using _difference_t = typename _traits_t::difference_type;
+  using _value_t = typename _traits_t::value_type;
+  using _pointer_t = typename _traits_t::pointer;
+  using _reference_t = typename _traits_t::reference;
+  using _category_t = typename _traits_t::iterator_category;
+  using _no_pointer_t = typename std::remove_pointer<_pointer_t>::type;
+  using _no_reference_t = typename std::remove_reference<_reference_t>::type;
+  using _raw_value_t = typename std::remove_cv<_value_t>::type;
+  using _raw_pointer_t = typename std::remove_cv<_no_pointer_t>::type;
+  using _raw_reference_t = typename std::remove_cv<_no_reference_t>::type;
+  using _cv_value_t = _no_reference_t;
 
-    //    static_assert(std::is_same<_raw_pointer_t, _raw_value_t>::value, "");
-    //    static_assert(std::is_same<_raw_reference_t, _raw_value_t>::value, "");
+  //    static_assert(std::is_same<_raw_pointer_t, _raw_value_t>::value, "");
+  //    static_assert(std::is_same<_raw_reference_t, _raw_value_t>::value, "");
 
-    // Types
-    public:
-    using difference_type = _difference_t;
-    using value_type = _cv_value_t;
-    using pointer = _pointer_t;
-    using reference = _reference_t;
-    using iterator_category = _category_t;
+  // Types
+ public:
+  using difference_type = _difference_t;
+  using value_type = _cv_value_t;
+  using pointer = _pointer_t;
+  using reference = _reference_t;
+  using iterator_category = _category_t;
 };
 /* ************************************************************************** */
 
@@ -635,8 +710,56 @@ static inline unsigned char add_carry_sub_borrow(unsigned char c_in, U a, U b, U
 #endif  // NO_X86_INTRINSICS
 
 template <std::integral U>
+  requires(std::is_unsigned_v<U>)
 static inline unsigned char add_carry(unsigned char c_in, U a, U b, U* out) noexcept {
   return add_carry_sub_borrow<true, U>(c_in, a, b, out);
+}
+
+// Add a full-width carry to a + b.  Unlike the unsigned char overload above,
+// c_in can be a multi-bit carry (for example, the overflow from a partial
+// word).  Returns the high part of the sum; for a full-width addition this is
+// zero or one.
+template <std::integral C, std::integral U>
+  requires(std::is_unsigned_v<C> && std::is_unsigned_v<U> &&
+           !std::is_same_v<C, bool> &&
+           !std::is_same_v<C, unsigned char> && (sizeof(C) >= sizeof(U)))
+static inline C add_carry(C c_in, U a, U b, U* out) noexcept {
+  const unsigned char carry_ab = add_carry_sub_borrow<true, U>(0, a, b, out);
+  using unsigned_c = std::make_unsigned_t<C>;
+  using unsigned_u = std::make_unsigned_t<U>;
+  const unsigned_u low = static_cast<unsigned_u>(*out);
+  const unsigned_c high_c = static_cast<unsigned_c>(c_in);
+  if constexpr (sizeof(C) > sizeof(U)) {
+    const unsigned_c sum = static_cast<unsigned_c>(low) + high_c;
+    *out = static_cast<U>(sum);
+    return static_cast<C>(static_cast<unsigned_c>(carry_ab) +
+                          (sum >> bitsof<U>()));
+  } else {
+    const unsigned_u sum =
+        static_cast<unsigned_u>(low + static_cast<unsigned_u>(high_c));
+    *out = static_cast<U>(sum);
+    return static_cast<C>(static_cast<unsigned_c>(carry_ab) +
+                          static_cast<unsigned_c>(sum < low));
+  }
+}
+
+// Signed counterpart of the full-width add_carry overload.  The bit pattern
+// is added as unsigned, then converted back to the original signed type.
+template <std::integral C, std::integral U>
+  requires((std::is_signed_v<C> || std::is_signed_v<U>) &&
+           !std::is_same_v<C, bool> && !std::is_same_v<U, bool> &&
+           (sizeof(C) >= sizeof(U)))
+static inline C add_carry(C c_in, U a, U b, U* out) noexcept {
+  using unsigned_c = std::make_unsigned_t<C>;
+  using unsigned_u = std::make_unsigned_t<U>;
+  using wide_c = std::conditional_t<(sizeof(unsigned_c) > 1), unsigned_c,
+                                    unsigned int>;
+  unsigned_u result = 0;
+  const wide_c high = ::bit::add_carry(
+      static_cast<wide_c>(static_cast<unsigned_c>(c_in)),
+      static_cast<unsigned_u>(a), static_cast<unsigned_u>(b), &result);
+  *out = static_cast<U>(result);
+  return static_cast<C>(high);
 }
 
 template <std::integral U>
@@ -814,59 +937,116 @@ constexpr T _mulx(T src0, T src1, T* hi, X...) noexcept {
 }
 // -------------------------------------------------------------------------- //
 
-template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
-constexpr auto with_bit_iterator_adapter(
-    const bit_iterator<SrcIt>& first,
-    const bit_iterator<SrcIt>& last,
-    const bit_iterator<DstIt>& d_first) {
-  using dst_word_type = typename bit_iterator<DstIt>::word_type;
-  using src_word_type = typename bit_iterator<SrcIt>::word_type;
-  if constexpr (!std::is_same_v<src_word_type, dst_word_type> && bitsof<src_word_type>() != bitsof<dst_word_type>()) {
-    if constexpr (bitsof<src_word_type>() > bitsof<dst_word_type>()) {
-      bit_iterator<bit_word_pointer_adapter<DstIt, SrcIt>> adapted_first(
-          bit_word_pointer_adapter<DstIt, SrcIt>(first.base(), first.position() / bitsof<dst_word_type>()), first.position() % bitsof<dst_word_type>());
-      bit_iterator<bit_word_pointer_adapter<DstIt, SrcIt>> adapted_last(
-          bit_word_pointer_adapter<DstIt, SrcIt>(last.base(), last.position() / bitsof<dst_word_type>()), last.position() % bitsof<dst_word_type>());
-      return AlgoFunc{}(adapted_first, adapted_last, d_first);
-    } else {
-      bit_iterator<bit_word_pointer_adapter<SrcIt, DstIt>> adapted_d_first(
-          bit_word_pointer_adapter<SrcIt, DstIt>(d_first.base(), d_first.position() / bitsof<src_word_type>()), d_first.position() % bitsof<src_word_type>());
-      return AlgoFunc{}(first, last, adapted_d_first);
-    }
+// Dispatch to an algorithm's run_impl() when it provides one (copy does),
+// otherwise fall back to the algorithm's operator() entry point.
+template <typename AlgoFunc, typename First, typename Last, typename Dst>
+constexpr auto invoke_bit_algorithm(First first, Last last, Dst d_first) {
+  if constexpr (requires { AlgoFunc::run_impl(first, last, d_first); }) {
+    return AlgoFunc::run_impl(first, last, d_first);
   } else {
     return AlgoFunc{}(first, last, d_first);
   }
 }
 
-template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
+// Adapt source/destination word widths for an algorithm. Alignment is
+// extracted from the iterator types themselves, so fixed-Alignment iterators
+// keep their compile-time hints without extra template arguments.
+template <typename AlgoFunc, typename SrcIt1, typename SrcIt2, typename DstIt>
 constexpr auto with_bit_iterator_adapter(
-    const SrcIt& first,
-    const SrcIt& last,
-    const bit_iterator<DstIt>& d_first) {
-  return with_bit_iterator_adapter<AlgoFunc>(bit_iterator(first), bit_iterator(last), d_first);
-}
-
-template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
-constexpr auto with_bit_iterator_adapter(
-    const bit_iterator<SrcIt>& first,
-    const bit_iterator<SrcIt>& last,
+    const SrcIt1& first,
+    const SrcIt2& last,
     const DstIt& d_first) {
-  return with_bit_iterator_adapter<AlgoFunc>(first, last, bit_iterator(d_first));
+  constexpr std::size_t SrcAlign = iterator_alignment_v<SrcIt1>;
+  constexpr std::size_t LastAlign = iterator_alignment_v<SrcIt2>;
+  constexpr std::size_t DstAlign = iterator_alignment_v<DstIt>;
+
+  auto mutable_first = make_mutable_bit_iterator(first);
+  auto mutable_last = make_mutable_bit_iterator(last);
+  auto mutable_d_first = make_mutable_bit_iterator(d_first);
+
+  // Build an adapted iterator at the translated bit offset. A compile-time
+  // offset is encoded in the iterator type by bit::next<N>(); a runtime offset
+  // remains dynamic.
+  auto make_adapted = []<std::size_t Alignment>(
+                          auto base,
+                          std::size_t position) {
+    if constexpr (Alignment == std::dynamic_extent) {
+      return iterator<decltype(base), primitive<1>, std::dynamic_extent>(
+          base, position);
+    } else {
+      assert(position == Alignment);
+      return ::bit::next<Alignment>(
+          iterator<decltype(base), primitive<1>, 0>(base));
+    }
+  };
+
+  using src_iterator_type = typename decltype(mutable_first)::iterator_type;
+  using dst_iterator_type = typename decltype(mutable_d_first)::iterator_type;
+  using src_word_type = typename decltype(mutable_first)::word_type;
+  using dst_word_type = typename decltype(mutable_d_first)::word_type;
+  if constexpr (!std::is_same_v<src_word_type, dst_word_type> && bitsof<src_word_type>() != bitsof<dst_word_type>()) {
+    constexpr std::size_t src_digits = bitsof<src_word_type>();
+    constexpr std::size_t dst_digits = bitsof<dst_word_type>();
+    if constexpr (src_digits > dst_digits) {
+      // The source is re-expressed in destination-sized words. An Alignment
+      // hint is a bit offset inside a source word, so translate it to the
+      // corresponding offset inside an adapted (destination-sized) word.
+      constexpr std::size_t adapted_src_align =
+          SrcAlign == std::dynamic_extent ? std::dynamic_extent
+                                          : SrcAlign % dst_digits;
+      constexpr std::size_t adapted_last_align =
+          LastAlign == std::dynamic_extent ? std::dynamic_extent
+                                           : LastAlign % dst_digits;
+      using adapted_source =
+          bit_word_pointer_adapter<dst_iterator_type, src_iterator_type>;
+      auto adapted_first =
+          make_adapted.template operator()<adapted_src_align>(
+              adapted_source(
+                  mutable_first.base(),
+                  mutable_first.position() / dst_digits),
+              mutable_first.position() % dst_digits);
+      auto adapted_last =
+          make_adapted.template operator()<adapted_last_align>(
+              adapted_source(
+                  mutable_last.base(),
+                  mutable_last.position() / dst_digits),
+              mutable_last.position() % dst_digits);
+      return invoke_bit_algorithm<AlgoFunc>(
+          adapted_first, adapted_last, d_first);
+    } else {
+      // The destination is re-expressed in source-sized words.
+      constexpr std::size_t adapted_dst_align =
+          DstAlign == std::dynamic_extent ? std::dynamic_extent
+                                          : DstAlign % src_digits;
+      using adapted_destination =
+          bit_word_pointer_adapter<src_iterator_type, dst_iterator_type>;
+      auto adapted_d_first =
+          make_adapted.template operator()<adapted_dst_align>(
+              adapted_destination(
+                  mutable_d_first.base(),
+                  mutable_d_first.position() / src_digits),
+              mutable_d_first.position() % src_digits);
+      return invoke_bit_algorithm<AlgoFunc>(
+          first, last, adapted_d_first);
+    }
+  } else {
+    return invoke_bit_algorithm<AlgoFunc>(first, last, d_first);
+  }
 }
 
 template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
 constexpr auto with_bit_iterator_adapter(
-    const bit_iterator<SrcIt>& first,
-    const bit_iterator<DstIt>& last) {
-  using dst_word_type = typename bit_iterator<DstIt>::word_type;
-  using src_word_type = typename bit_iterator<SrcIt>::word_type;
+    const iterator<SrcIt>& first,
+    const iterator<DstIt>& last) {
+  using dst_word_type = typename iterator<DstIt>::word_type;
+  using src_word_type = typename iterator<SrcIt>::word_type;
   if constexpr (!std::is_same_v<src_word_type, dst_word_type> && bitsof<src_word_type>() != bitsof<dst_word_type>()) {
     if constexpr (bitsof<src_word_type>() > bitsof<dst_word_type>()) {
-      bit_iterator<bit_word_pointer_adapter<DstIt, SrcIt>> adapted_first(
+      iterator<bit_word_pointer_adapter<DstIt, SrcIt>> adapted_first(
           bit_word_pointer_adapter<DstIt, SrcIt>(first.base(), first.position() / bitsof<dst_word_type>()), first.position() % bitsof<dst_word_type>());
       return AlgoFunc{}(adapted_first, last);
     } else {
-      bit_iterator<bit_word_pointer_adapter<SrcIt, DstIt>> adapted_last(
+      iterator<bit_word_pointer_adapter<SrcIt, DstIt>> adapted_last(
           bit_word_pointer_adapter<SrcIt, DstIt>(last.base(), last.position() / bitsof<src_word_type>()), last.position() % bitsof<src_word_type>());
       return AlgoFunc{}(first, adapted_last);
     }
@@ -875,18 +1055,22 @@ constexpr auto with_bit_iterator_adapter(
   }
 }
 
+// Raw-pointer source: wrap into an iterator, then delegate.
 template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
+  requires std::is_pointer_v<SrcIt>
 constexpr auto with_bit_iterator_adapter(
     const SrcIt& first,
-    const bit_iterator<DstIt>& last) {
-  return with_bit_iterator_adapter<AlgoFunc>(bit_iterator(first), last);
+    const iterator<DstIt>& last) {
+  return with_bit_iterator_adapter<AlgoFunc>(iterator(first), last);
 }
 
+// Raw-pointer destination: wrap into an iterator, then delegate.
 template <typename AlgoFunc, std::random_access_iterator SrcIt, std::random_access_iterator DstIt>
+  requires std::is_pointer_v<DstIt>
 constexpr auto with_bit_iterator_adapter(
-    const bit_iterator<SrcIt>& first,
+    const iterator<SrcIt>& first,
     const DstIt& last) {
-  return with_bit_iterator_adapter<AlgoFunc>(first, bit_iterator(last));
+  return with_bit_iterator_adapter<AlgoFunc>(first, iterator(last));
 }
 
 namespace detail {
@@ -933,5 +1117,5 @@ struct container_size_storage<size_type, resizeable, std::dynamic_extent> {
 
 // ========================================================================== //
 }  // namespace bit
-#endif // _BIT_DETAILS_HPP_INCLUDED
-       // ========================================================================== //
+#endif  // _BIT_DETAILS_HPP_INCLUDED
+// ========================================================================== //

@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <iterator>
 #include <ranges>
+#include <type_traits>
 
 #if (defined(__GLIBCXX__) && (_GLIBCXX_RELEASE < 14))
 namespace std {
@@ -17,7 +18,22 @@ inline constexpr from_range_t from_range{};
 
 namespace bit {
 
-class bit_value;
+// Forward declaration of the generic N-bit primitive class.
+// primitive<1> is defined in bit_value.hpp as bit_value.
+template <size_t Bits>
+class primitive;
+
+// Concept: any type with a static constexpr size_t bits member whose declared
+// bit width fits its object representation with at most one word of padding.
+template <typename T>
+concept primitive_c =
+    requires {
+      { T::bits } -> std::convertible_to<std::size_t>;
+    } &&
+    requires {
+      requires static_cast<std::size_t>(T::bits) <= sizeof(T) * 8;
+      requires sizeof(T) * 8 <= static_cast<std::size_t>(T::bits) + sizeof(std::uintptr_t) * 8 - 1;
+    };
 
 template <typename reference_type, typename value_type>
 concept reference_like =
@@ -45,15 +61,15 @@ concept pointer_like = reference_like<reference_type, value_type> && requires(po
 static_assert(pointer_like<uint8_t*, uint8_t&, uint8_t>, "pointer_like does not match native types");
 
 template <typename T>
-concept bit_reference_c = reference_like<T, bit_value>;
+concept bit_reference_c = reference_like<T, primitive<1>>;
 
 template <typename Ptr, typename Ref>
-concept bit_pointer_c = pointer_like<Ptr, Ref, bit_value>;
+concept bit_pointer_c = pointer_like<Ptr, Ref, primitive<1>>;
 
 template <typename It>
 concept bit_iterator_c =
     std::random_access_iterator<It> &&
-    std::same_as<typename std::iterator_traits<It>::value_type, bit_value> &&
+    primitive_c<typename std::iterator_traits<It>::value_type> &&
     bit_reference_c<typename std::iterator_traits<It>::reference> &&
     bit_pointer_c<typename std::iterator_traits<It>::pointer, typename std::iterator_traits<It>::reference> &&
     requires(It it) {
@@ -67,19 +83,28 @@ concept bit_iterator_c =
 
       // It must provide base(), position(), and mask() with proper return types.
       { it.base() } -> std::same_as<typename It::iterator_type>;
-      { it.position() } -> std::same_as<typename It::size_type>;
+      { it.position() } -> std::convertible_to<typename It::size_type>;
     };
+
+// A bit iterator of any Alignment, a raw pointer denoting a bit range, or a
+// random-access iterator over integral words.
+template <typename T>
+concept bit_iterator_like_c =
+    std::is_pointer_v<std::remove_cvref_t<T>> ||
+    requires { typename std::remove_cvref_t<T>::iterator_type; } ||
+    (std::random_access_iterator<std::remove_cvref_t<T>> &&
+     std::is_integral_v<
+         std::remove_cv_t<std::iter_value_t<std::remove_cvref_t<T>>>>);
 
 template <typename It>
 concept bit_contiguous_iterator_c = bit_iterator_c<It> &&
                                     std::contiguous_iterator<typename It::iterator_type> &&
                                     std::has_unique_object_representations_v<typename std::iterator_traits<typename It::iterator_type>::value_type>;
 
-
 template <typename R>
 concept bit_range =
     std::ranges::range<R> &&
-    std::convertible_to<std::ranges::range_value_t<R>, bit_value>;
+    std::convertible_to<std::ranges::range_value_t<R>, primitive<1>>;
 
 template <typename R>
 concept bit_sized_range =
@@ -98,6 +123,6 @@ concept bit_contiguous_sized_range =
     std::ranges::sized_range<R>;
 #endif
 
-} // namespace bit
+}  // namespace bit
 
 #endif

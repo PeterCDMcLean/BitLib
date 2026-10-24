@@ -1,8 +1,9 @@
 #ifndef _BIT_BITSOF_HPP_INCLUDED
 #define _BIT_BITSOF_HPP_INCLUDED
 
-#include <span>
 #include <concepts>
+#include <limits>
+#include <span>
 
 /*
 A bitsof() template function that resembles sizeof() as much as possible.
@@ -17,9 +18,9 @@ When calling within template code with a type, the callee must use the `bitsof<t
 namespace bit {
 
 // Concept to check for a public static constexpr size_t bits member.
-template<typename T>
+template <typename T>
 concept HasBits = requires {
-    { T::bits } -> std::convertible_to<std::size_t>;
+  { T::bits } -> std::convertible_to<std::size_t>;
 };
 
 // General case: for types that do not have a bits member.
@@ -36,17 +37,18 @@ constexpr std::size_t bitsof() noexcept {
 }
 
 // Overload for types with a bits member.
-template <typename T> requires HasBits<T>
+template <typename T>
+  requires HasBits<T>
 constexpr std::size_t bitsof() noexcept {
   return T::bits;
 }
 
 // Overload for objects of any non-bits type.
 template <typename T>
-constexpr std::size_t bitsof(const T&) noexcept{
+constexpr std::size_t bitsof(const T&) noexcept {
   return bitsof<T>();
 }
 
-} // namespace bit
+}  // namespace bit
 
 #endif

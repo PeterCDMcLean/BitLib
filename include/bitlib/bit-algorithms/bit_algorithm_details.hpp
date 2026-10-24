@@ -11,12 +11,11 @@
 #define _BIT_ALGORITHM_DETAILS_HPP_INCLUDED
 // ========================================================================== //
 
-
-
 // ============================== PREAMBLE ================================== //
 // C++ standard library
 // Project sources
-#include "bitlib/bit-iterator/bit.hpp"
+#include "bitlib/bit-iterator/bit_details.hpp"
+#include "bitlib/bit-iterator/bit_value.hpp"
 // Third-party libraries
 // Miscellaneous
 namespace bit {
@@ -25,13 +24,14 @@ namespace bit {
 // -------------------------- Iterator Algorithms --------------------------- //
 // Returns the number of increments needed to get to last from first.
 // May be negative if last comes before first (Only when input is RAI)
-template <class InputIt>
-typename bit_iterator<InputIt>::difference_type
-distance(bit_iterator<InputIt> first,
-         bit_iterator<InputIt> last) {
+template <class InputIt, primitive_c ValueType, size_t Alignment>
+typename iterator<InputIt, ValueType, Alignment>::difference_type
+distance(iterator<InputIt, ValueType, Alignment> first,
+         iterator<InputIt, ValueType, Alignment> last) {
   _assert_range_viability(first, last);
-  using word_type = typename bit_iterator<InputIt>::word_type;
-  using difference_type = typename bit_iterator<InputIt>::difference_type;
+  using word_type = typename iterator<InputIt, ValueType, Alignment>::word_type;
+  using difference_type =
+      typename iterator<InputIt, ValueType, Alignment>::difference_type;
   constexpr difference_type digits = binary_digits<word_type>::value;
   return std::distance(first.base(), last.base()) * digits +
          static_cast<difference_type>(last.position()) -
@@ -39,8 +39,9 @@ distance(bit_iterator<InputIt> first,
 }
 
 // Increments the iterator n times. (If n is negative, the iterator is decremented n times)
-template <class InputIt>
-void advance(bit_iterator<InputIt>& first, typename bit_iterator<InputIt>::difference_type n) {
+template <class InputIt, primitive_c ValueType, size_t Alignment>
+void advance(iterator<InputIt, ValueType, Alignment>& first,
+             typename iterator<InputIt, ValueType, Alignment>::difference_type n) {
   first += n;
 }
 
@@ -63,47 +64,39 @@ bit_iterator<ForwardIt> next(
 // Returns distance(first, last) <= n
 template <class InputIt>
 bool is_within(
-        bit_iterator<InputIt> first,
-        bit_iterator<InputIt> last,
-        typename InputIt::difference_type n
-) {
-    //using word_type = typename bit_iterator<InputIt>::word_type;
-    //using size_type = typename bit_iterator<InputIt>::size_type;
-    //constexpr size_type digits = binary_digits<word_type>::value;
+    bit_iterator<InputIt> first,
+    bit_iterator<InputIt> last,
+    typename InputIt::difference_type n) {
+  //using word_type = typename bit_iterator<InputIt>::word_type;
+  //using size_type = typename bit_iterator<InputIt>::size_type;
+  //constexpr size_type digits = binary_digits<word_type>::value;
 
-    return distance(first, last) <= n;
+  return distance(first, last) <= n;
 }
 
 template <int N, class InputIt>
 constexpr bool is_within(
-        bit_iterator<InputIt> first,
-        bit_iterator<InputIt> last
-) {
-    using word_type = typename bit_iterator<InputIt>::word_type;
-    //using size_type = typename bit_iterator<InputIt>::size_type;
-    constexpr int digits = binary_digits<word_type>::value;
-    constexpr int full_words = N / digits;
-    constexpr int remainder_bits = N % digits;
+    bit_iterator<InputIt> first,
+    bit_iterator<InputIt> last) {
+  using word_type = typename bit_iterator<InputIt>::word_type;
+  //using size_type = typename bit_iterator<InputIt>::size_type;
+  constexpr int digits = binary_digits<word_type>::value;
+  constexpr int full_words = N / digits;
+  constexpr int remainder_bits = N % digits;
 
-    if constexpr (full_words > 0) {
-        return (first.base() == last.base())
-            || (std::next(first.base()) == last.base() && first.position() >= last.position())
-            || is_within<N-digits>(first + digits, last)
-        ;
-    } else if (remainder_bits >= 0) {
-        return (first.base() == last.base()
-                && first.position() + remainder_bits >= last.position()
-               ) || (std::next(first.base()) == last.base()
-                   && (static_cast<int>(first.position()) + remainder_bits - digits >= static_cast<int>(last.position()))
-               )
-        ;
-    }
+  if constexpr (full_words > 0) {
+    return (first.base() == last.base()) || (std::next(first.base()) == last.base() && first.position() >= last.position()) || is_within<N - digits>(first + digits, last);
+  } else if (remainder_bits >= 0) {
+    return (first.base() == last.base() && first.position() + remainder_bits >= last.position()) || (std::next(first.base()) == last.base() && (static_cast<int>(first.position()) + remainder_bits - digits >= static_cast<int>(last.position())));
+  }
 }
 
 // Get next len bits beginning at start and store them in a word of type T
-template <class T, class InputIt>
-T get_word(const bit_iterator<InputIt>& first, size_t len = binary_digits<T>::value) {
-  using native_word_type = typename bit_iterator<InputIt>::word_type;
+template <class T, class InputIt, primitive_c ValueType, size_t Alignment>
+T get_word(const iterator<InputIt, ValueType, Alignment>& first,
+           size_t len = binary_digits<T>::value) {
+  using native_word_type =
+      typename iterator<InputIt, ValueType, Alignment>::word_type;
   constexpr size_t digits = binary_digits<native_word_type>::value;
   assert(digits >= len);
   using non_const_T = std::remove_cvref_t<T>;
@@ -115,34 +108,35 @@ T get_word(const bit_iterator<InputIt>& first, size_t len = binary_digits<T>::va
     return ret_word;
   }
 
-    InputIt it = std::next(first.base());
-    len -= offset;
-    // Fill up ret_word starting at bit [offset] using it
-    // TODO define a mask and use the _bitblend that takes in the extra mask
-    while (len > digits) {
-        ret_word = _bitblend<T>(
-                ret_word,
-                static_cast<T>(static_cast<T>(*it) << offset),
-                offset,
-                digits
-        );
-        ++it;
-        offset += digits;
-        len -= digits;
-    }
-    // Assign remaining len bits of last word
+  InputIt it = std::next(first.base());
+  len -= offset;
+  // Fill up ret_word starting at bit [offset] using it
+  // TODO define a mask and use the _bitblend that takes in the extra mask
+  while (len > digits) {
     ret_word = _bitblend<T>(
-            ret_word,
-            static_cast<T>(static_cast<T>(*it) << offset),
-            offset,
-            len
-    );
-    return ret_word;
+        ret_word,
+        static_cast<T>(static_cast<T>(*it) << offset),
+        offset,
+        digits);
+    ++it;
+    offset += digits;
+    len -= digits;
+  }
+  // Assign remaining len bits of last word
+  ret_word = _bitblend<T>(
+      ret_word,
+      static_cast<T>(static_cast<T>(*it) << offset),
+      offset,
+      len);
+  return ret_word;
 }
 
-template <class T, class InputIt>
-T get_masked_word(const bit_iterator<InputIt>& first, size_t len = binary_digits<T>::value) {
-  return get_word<T>(first, len) & _mask<T>(len);
+template <class T, class InputIt, primitive_c ValueType, size_t Alignment>
+T get_masked_word(const iterator<InputIt, ValueType, Alignment>& first,
+                  size_t len = binary_digits<T>::value) {
+  // len can be the full word width when a caller peels a whole prefix word.
+  // Use the run-time mask path, which clamps len >= bitsof<T>() to all ones.
+  return get_word<T>(first, len) & _mask<T, _mask_len::unknown>(len);
 }
 
 // Writes len bits from src beginning at dstIt
@@ -226,56 +220,58 @@ RandomAccessIt word_shift_left(RandomAccessIt first,
 // NOT OPTIMIZED. Will be replaced with std::shift eventually.
 template <class RandomAccessIt>
 RandomAccessIt word_shift_right(RandomAccessIt first,
-                          RandomAccessIt last,
-                          typename RandomAccessIt::difference_type n
-)
-{
-    auto d = distance(first, last);
-    if (n <= 0) return first;
-    if (n >= d) return last;
-    std::move_backward(first, last-n, last);
-    return std::next(first, n);
+                                RandomAccessIt last,
+                                typename RandomAccessIt::difference_type n) {
+  auto d = distance(first, last);
+  if (n <= 0) {
+    return first;
+  }
+  if (n >= d) {
+    return last;
+  }
+  std::move_backward(first, last - n, last);
+  return std::next(first, n);
 }
 
 // returns a word consisting of all one bits
 constexpr auto _all_ones() {
-    return -1;
+  return -1;
 }
 
 // returns a word consisting of all zero bits
 constexpr auto _all_zeros() {
-    return 0;
+  return 0;
 }
 
 // checks that the passed iterator points to the first bit of a word
 template <class It>
 bool _is_aligned_lsb(bit_iterator<It> iter) {
-    return iter.position() == 0;
+  return iter.position() == 0;
 }
 
 // checks that maybe_end is one position past the last bit of base
 template <class ForwardIt>
 bool _is_one_past_last_bit(bit_iterator<ForwardIt> maybe_end,
-    ForwardIt base) {
-    return maybe_end.position() == 0 && std::next(base) == maybe_end.base();
+                           ForwardIt base) {
+  return maybe_end.position() == 0 && std::next(base) == maybe_end.base();
 }
 
 // checks that two bit iterators point to the same word
 template <class It>
 constexpr bool _in_same_word(bit_iterator<It> lhs, bit_iterator<It> rhs) {
-    return lhs.base() == rhs.base();
+  return lhs.base() == rhs.base();
 }
 
 // simple alias for right shift
 template <class WordType>
 WordType _shift_towards_lsb(WordType word, std::size_t n) {
-    return word >> n;
+  return word >> n;
 }
 
 // simple alias for left shift
 template <class WordType>
 WordType _shift_towards_msb(WordType word, std::size_t n) {
-    return word << n;
+  return word << n;
 }
 
 /* Used to read partial/full words and pad any missing digits. Will not

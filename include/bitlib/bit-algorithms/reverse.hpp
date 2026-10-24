@@ -37,6 +37,7 @@ constexpr void reverse(
     using word_type = typename bit_iterator<RandomAccessIt>::word_type;
     using size_type = typename bit_iterator<RandomAccessIt>::size_type;
     constexpr size_type digits = binary_digits<word_type>::value;
+    // Spell the alias with its argument: MSVC 19.51 ICEs on bit_iterator CTAD.
 
     // Initialization
     const bool is_first_aligned = first.position() == 0;
@@ -59,45 +60,42 @@ constexpr void reverse(
         std::reverse(first.base(), std::next(last.base(), !is_last_aligned));
         // Bitswap every element of the underlying sequence
         std::transform(
-                first.base(),
-                std::next(last.base(), !is_last_aligned),
-                first.base(),
-                [](word_type w) { return _bitswap(w); }
-        );
+            first.base(),
+            std::next(last.base(), !is_last_aligned),
+            first.base(),
+            [](word_type w) { return _bitswap(w); });
         // Shift the underlying sequence to the left
         if (first.position() < gap) {
-            gap = gap - first.position();
-            shift_left(
-                bit_iterator(first.base()),
-                bit_iterator(std::next(last.base())),
-                gap);
-            it = first.base();
-        // Shift the underlying sequence to the right
+          gap = gap - first.position();
+          shift_left(
+              bit_iterator<RandomAccessIt>(first.base()),
+              bit_iterator<RandomAccessIt>(std::next(last.base())),
+              gap);
+          it = first.base();
+          // Shift the underlying sequence to the right
         } else if (first.position() > gap) {
-            gap = first.position() - gap;
-            shift_right(
-                bit_iterator(first.base()),
-                bit_iterator(std::next(last.base(), !is_last_aligned)),
-                gap);
-            it = first.base();
+          gap = first.position() - gap;
+          shift_right(
+              bit_iterator<RandomAccessIt>(first.base()),
+              bit_iterator<RandomAccessIt>(std::next(last.base(), !is_last_aligned)),
+              gap);
+          it = first.base();
         }
         // Blend bits of the first element
         if (!is_first_aligned) {
-            *first.base() = _bitblend<word_type>(
-                    first_value,
-                    *first.base(),
-                    first.position(),
-                    digits - first.position()
-            );
+          *first.base() = _bitblend<word_type>(
+              first_value,
+              *first.base(),
+              first.position(),
+              digits - first.position());
         }
         // Blend bits of the last element
         if (!is_last_aligned) {
-            *last.base() = _bitblend<word_type>(
-                    *last.base(),
-                    last_value,
-                    last.position(),
-                    digits - last.position()
-            );
+          *last.base() = _bitblend<word_type>(
+              *last.base(),
+              last_value,
+              last.position(),
+              digits - last.position());
         }
         // Reverse when bit iterators belong to the same underlying word
     } else {

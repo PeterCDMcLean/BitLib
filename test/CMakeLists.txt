@@ -24,6 +24,7 @@ add_executable(bitlib-tests)
 
 set(TEST_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/src/fixtures.hpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/test-accumulate.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/test-addition.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/test-array.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/test-bitwise.cpp"

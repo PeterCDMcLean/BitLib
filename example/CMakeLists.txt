@@ -17,3 +17,9 @@ target_sources(BitLib_Example3 PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/src/example3.cpp"
 )
 target_link_libraries(BitLib_Example3 PRIVATE bitlib::bitlib)
+
+add_executable(BitLib_Example4 EXCLUDE_FROM_ALL)
+target_sources(BitLib_Example4 PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/example4.cpp"
+)
+target_link_libraries(BitLib_Example4 PRIVATE bitlib::bitlib)

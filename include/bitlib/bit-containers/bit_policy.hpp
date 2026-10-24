@@ -28,8 +28,8 @@ struct typical {
 struct truncate {
   template <std::integral U, std::size_t N, typename RandomAccessIt>
   constexpr static void to_integral(const bit_iterator<RandomAccessIt>& first, U& integral) noexcept {
-    bit_pointer<U> integral_begin(&integral);
-    ::bit::copy(first, first + bitsof<U>(), integral_begin);
+    bit_pointer<U, 0> integral_begin(&integral);
+    ::bit::copy(first, ::bit::next<bitsof<U>()>(first), integral_begin);
   }
 
   template <std::integral U, std::size_t N>
@@ -42,7 +42,7 @@ struct truncate {
       const U& integral,
       const bit_iterator<RandomAccessIt>& first,
       const bit_iterator<RandomAccessIt>& last) noexcept {
-    const bit_pointer<const U> integral_begin(&integral);
+    const bit_pointer<const U, 0> integral_begin(&integral);
     if constexpr (N == std::dynamic_extent) {
       ::bit::copy(integral_begin, integral_begin + distance(first, last), first);
     } else {
@@ -52,7 +52,7 @@ struct truncate {
 
   template <std::integral U, std::size_t N>
   constexpr static void from_integral(const U& integral, bit_sized_range auto& value) noexcept {
-    const bit_pointer<const U> integral_begin(&integral);
+    const bit_pointer<const U, 0> integral_begin(&integral);
     if constexpr (N == std::dynamic_extent) {
       ::bit::copy(integral_begin, integral_begin + value.size(), value.begin());
     } else {
@@ -68,7 +68,7 @@ struct sign_extend {
       const bit_iterator<RandomAccessIt>& first,
       const bit_iterator<RandomAccessIt>& last,
       U& integral) noexcept {
-    bit_pointer<U> integral_begin(&integral);
+    bit_pointer<U, 0> integral_begin(&integral);
     if constexpr (N == std::dynamic_extent) {
       if constexpr (std::is_signed_v<U>) {
         if (last[-1]) {
@@ -87,7 +87,7 @@ struct sign_extend {
   template <std::integral U, std::size_t N>
   constexpr static void to_integral(
       detail::initialized_t, const bit_sized_range auto& value, U& integral) noexcept {
-    bit_pointer<U> integral_begin(&integral);
+    bit_pointer<U, 0> integral_begin(&integral);
     if constexpr (N == std::dynamic_extent) {
       if constexpr (std::is_signed_v<U>) {
         if (value.end()[-1]) {
@@ -108,7 +108,7 @@ struct sign_extend {
       detail::uninitialized_t,
       const bit_iterator<RandomAccessIt>& first,
       const bit_iterator<RandomAccessIt>& last, U& integral) noexcept {
-    bit_pointer<U> integral_begin(&integral);
+    bit_pointer<U, 0> integral_begin(&integral);
     if constexpr (N == std::dynamic_extent) {
       if constexpr (std::is_signed_v<U>) {
         ::bit::fill(integral_begin + distance(first, last), integral_begin + bitsof<U>(), last[-1]);
@@ -125,7 +125,7 @@ struct sign_extend {
       detail::uninitialized_t,
       const bit_sized_range auto& value,
       U& integral) noexcept {
-    bit_pointer<U> integral_begin(&integral);
+    bit_pointer<U, 0> integral_begin(&integral);
     if constexpr (N == std::dynamic_extent) {
       if constexpr (std::is_signed_v<U>) {
         ::bit::fill(integral_begin + value.size(), integral_begin + bitsof<U>(), value.end()[-1]);

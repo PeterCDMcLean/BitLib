@@ -48,14 +48,13 @@ bit_iterator<ForwardIt> _rotate_via_copy_begin(
         bits_left_to_copy -= digits;
     }
     bit_iterator<ForwardIt> ret = shift_left(first, last, k);
-    copy(
+    ::bit::copy(
         bit_iterator<word_type*>(copy_arr, first.position()),
         bit_iterator<word_type*>(
-                copy_arr,
-                first.position()
-        ) + k,
-        ret
-    );
+            copy_arr,
+            first.position()) +
+            k,
+        ret);
     return ret;
 }
 
@@ -86,14 +85,13 @@ bit_iterator<ForwardIt> _rotate_via_copy_end(
         bits_left_to_copy -= digits;
     }
     bit_iterator<ForwardIt> ret = shift_right(first, last, k);
-    copy(
+    ::bit::copy(
         bit_iterator<word_type*>(copy_arr, n_first.position()),
         bit_iterator<word_type*>(
-                copy_arr,
-                n_first.position()
-        ) + k,
-        first
-    );
+            copy_arr,
+            n_first.position()) +
+            k,
+        first);
     return ret;
 }
 

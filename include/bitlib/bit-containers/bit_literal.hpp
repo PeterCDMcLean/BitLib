@@ -17,16 +17,9 @@
 #include "bitlib/bit-containers/bit_array.hpp"
 #include "bitlib/bit-containers/bit_policy.hpp"
 #include "bitlib/bit-iterator/bit_details.hpp"
+#include "bitlib/bit-iterator/bit_integral.hpp"
 
 namespace bit {
-
-class bit_value;
-
-template <typename T, std::size_t N, typename W, typename Policy>
-class array;
-
-template <std::size_t N, typename W, typename Policy>
-using bit_array = array<bit_value, N, W, Policy>;
 
 // ========================================================================== //
 template <char Bit>
@@ -110,7 +103,7 @@ constexpr std::pair<size_t, uint64_t> _parameter_pack_decode_prefixed_num() {
   return {bits, num};
 }
 
-} // namespace bit
+}  // namespace bit
 
 #ifdef BITLIB_LITERAL_NAMESPACE
 namespace BITLIB_LITERAL_NAMESPACE {
