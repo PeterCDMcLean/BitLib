@@ -710,8 +710,56 @@ static inline unsigned char add_carry_sub_borrow(unsigned char c_in, U a, U b, U
 #endif  // NO_X86_INTRINSICS
 
 template <std::integral U>
+  requires(std::is_unsigned_v<U>)
 static inline unsigned char add_carry(unsigned char c_in, U a, U b, U* out) noexcept {
   return add_carry_sub_borrow<true, U>(c_in, a, b, out);
+}
+
+// Add a full-width carry to a + b.  Unlike the unsigned char overload above,
+// c_in can be a multi-bit carry (for example, the overflow from a partial
+// word).  Returns the high part of the sum; for a full-width addition this is
+// zero or one.
+template <std::integral C, std::integral U>
+  requires(std::is_unsigned_v<C> && std::is_unsigned_v<U> &&
+           !std::is_same_v<C, bool> &&
+           !std::is_same_v<C, unsigned char> && (sizeof(C) >= sizeof(U)))
+static inline C add_carry(C c_in, U a, U b, U* out) noexcept {
+  const unsigned char carry_ab = add_carry_sub_borrow<true, U>(0, a, b, out);
+  using unsigned_c = std::make_unsigned_t<C>;
+  using unsigned_u = std::make_unsigned_t<U>;
+  const unsigned_u low = static_cast<unsigned_u>(*out);
+  const unsigned_c high_c = static_cast<unsigned_c>(c_in);
+  if constexpr (sizeof(C) > sizeof(U)) {
+    const unsigned_c sum = static_cast<unsigned_c>(low) + high_c;
+    *out = static_cast<U>(sum);
+    return static_cast<C>(static_cast<unsigned_c>(carry_ab) +
+                          (sum >> bitsof<U>()));
+  } else {
+    const unsigned_u sum =
+        static_cast<unsigned_u>(low + static_cast<unsigned_u>(high_c));
+    *out = static_cast<U>(sum);
+    return static_cast<C>(static_cast<unsigned_c>(carry_ab) +
+                          static_cast<unsigned_c>(sum < low));
+  }
+}
+
+// Signed counterpart of the full-width add_carry overload.  The bit pattern
+// is added as unsigned, then converted back to the original signed type.
+template <std::integral C, std::integral U>
+  requires((std::is_signed_v<C> || std::is_signed_v<U>) &&
+           !std::is_same_v<C, bool> && !std::is_same_v<U, bool> &&
+           (sizeof(C) >= sizeof(U)))
+static inline C add_carry(C c_in, U a, U b, U* out) noexcept {
+  using unsigned_c = std::make_unsigned_t<C>;
+  using unsigned_u = std::make_unsigned_t<U>;
+  using wide_c = std::conditional_t<(sizeof(unsigned_c) > 1), unsigned_c,
+                                    unsigned int>;
+  unsigned_u result = 0;
+  const wide_c high = ::bit::add_carry(
+      static_cast<wide_c>(static_cast<unsigned_c>(c_in)),
+      static_cast<unsigned_u>(a), static_cast<unsigned_u>(b), &result);
+  *out = static_cast<U>(result);
+  return static_cast<C>(high);
 }
 
 template <std::integral U>
